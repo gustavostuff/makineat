@@ -59,6 +59,7 @@ from net_classes import (
 
 NET_PATH = HERE / "makineat.net"
 PRO_PATHS = (
+    MAIN_PCB_DIR / "makineat_v_05.kicad_pro",
     MAIN_PCB_DIR / "makineat_v_04.kicad_pro",
     MAIN_PCB_DIR / "makineat_v_03.kicad_pro",
     MAIN_PCB_DIR / "makineat_v_02.kicad_pro",
@@ -71,7 +72,7 @@ HDR_FP = "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical"
 PWR_FP = "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 SPK_FP = "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 UPDI_FP = "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical"
-DISP_HDR_FP = "Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical"
+DISP_HDR_FP = "Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical"
 DRV_FP = "Package_DIP:DIP-24_W7.62mm"
 AUDIO_FP = "Package_DIP:DIP-28_W7.62mm"
 AMP_FP = "Package_DIP:DIP-8_W7.62mm"
@@ -128,24 +129,29 @@ MATRIX_DRV_PINS = {
     "F": 6,   # ROW 3 -> DIG2 (pin 6)
 }
 
-# 2x8 header pin to matrix pin map for 8-digit status display (Row A: pins 1-8, Row B: pins 9-16)
-HEADER_PIN_MAP = {
-    1: "0",
-    2: "1",
-    3: "2",
-    4: "3",
-    5: "8",
-    6: "9",
-    7: "A",
-    8: "B",
-    9: "4",
-    10: "5",
-    11: "6",
-    12: "7",
-    13: "C",
-    14: "D",
-    15: "E",
-    16: "F",
+# 2x4 header pin to matrix pin map for 8-digit status display
+# J7 connects to U7 segment pins (range 13-24)
+J7_PIN_MAP = {
+    1: "A",  # U7 pin 14 (SEGA)
+    2: "1",  # U7 pin 15 (SEGF)
+    3: "B",  # U7 pin 16 (SEGB)
+    4: "0",  # U7 pin 17 (SEGG)
+    5: "6",  # U7 pin 20 (SEGC)
+    6: "5",  # U7 pin 21 (SEGE)
+    7: "3",  # U7 pin 22 (SEGDP)
+    8: "D",  # U7 pin 23 (SEGD)
+}
+
+# J9 connects to U7 digit cathode pins (range 1-12)
+J9_PIN_MAP = {
+    1: "7",  # U7 pin 2 (DIG0)
+    2: "8",  # U7 pin 3 (DIG4)
+    3: "9",  # U7 pin 5 (DIG6)
+    4: "F",  # U7 pin 6 (DIG2)
+    5: "4",  # U7 pin 7 (DIG3)
+    6: "C",  # U7 pin 8 (DIG7)
+    7: "E",  # U7 pin 10 (DIG5)
+    8: "2",  # U7 pin 11 (DIG1)
 }
 
 DRV_PINS = (
@@ -537,20 +543,35 @@ def build() -> None:
     _tie(u7, 1, link_u4)
     _tie(u7, 24, Net("DOUT"))
 
-    # 16-pin connector for status digits daughterboard
-    disp_pins = tuple((i, str(i)) for i in range(1, 17))
-    disp_hdr = _part(
-        "PinHeader_2x08",
+    # 2x4 connectors for status digits daughterboard
+    # J7 connects to segment pins on U7 (pins 13-24)
+    # J9 connects to digit cathode pins on U7 (pins 1-12)
+    disp_pins = tuple((i, str(i)) for i in range(1, 9))
+    j7 = _part(
+        "PinHeader_2x04",
         "J7",
         DISP_HDR_FP,
         disp_pins,
-        "Status Digits",
-        "8-digit status display header",
+        "Status Segments",
+        "8-digit status display segment header (U7 pins 13-24)",
     )
-    for hdr_pin, matrix_pin in HEADER_PIN_MAP.items():
+    for hdr_pin, matrix_pin in J7_PIN_MAP.items():
         net = Net(f"DS5_{matrix_pin}")
         _tie(u7, MATRIX_DRV_PINS[matrix_pin], net)
-        _tie(disp_hdr, hdr_pin, net)
+        _tie(j7, hdr_pin, net)
+
+    j9 = _part(
+        "PinHeader_2x04",
+        "J9",
+        DISP_HDR_FP,
+        disp_pins,
+        "Status Digits",
+        "8-digit status display digit cathode header (U7 pins 1-12)",
+    )
+    for hdr_pin, matrix_pin in J9_PIN_MAP.items():
+        net = Net(f"DS5_{matrix_pin}")
+        _tie(u7, MATRIX_DRV_PINS[matrix_pin], net)
+        _tie(j9, hdr_pin, net)
 
 
 def _check(text: str) -> None:
@@ -580,8 +601,8 @@ def _check(text: str) -> None:
         raise SystemExit("expected 2 player control header footprints")
     if text.count(f'(footprint "{PWR_FP}")') != 2:
         raise SystemExit("expected 2 1x02 vertical header footprints (power and speaker)")
-    if text.count(f'(footprint "{DISP_HDR_FP}")') != 1:
-        raise SystemExit("expected status digits display header footprint")
+    if text.count(f'(footprint "{DISP_HDR_FP}")') != 2:
+        raise SystemExit("expected 2 status digits display header footprints (J7 and J9)")
     if text.count('(footprint "Package_DIP:DIP-24_W7.62mm")') != 5:
         raise SystemExit("expected 5 MAX7219 footprints")
     if text.count(f'(footprint "{MATRIX_FP}")') != 4:
@@ -789,10 +810,16 @@ def _check(text: str) -> None:
             expected = {(f"U{n}", str(MATRIX_DRV_PINS[pin_name])), (f"DS{n}", pin_name)}
             if actual != expected:
                 raise SystemExit(f"{net_name} nodes {actual} != {expected}")
-    for hdr_pin, matrix_pin in HEADER_PIN_MAP.items():
+    for hdr_pin, matrix_pin in J7_PIN_MAP.items():
         net_name = f"DS5_{matrix_pin}"
         actual = nodes(net_name)
         expected = {("U7", str(MATRIX_DRV_PINS[matrix_pin])), ("J7", str(hdr_pin))}
+        if actual != expected:
+            raise SystemExit(f"{net_name} nodes {actual} != {expected}")
+    for hdr_pin, matrix_pin in J9_PIN_MAP.items():
+        net_name = f"DS5_{matrix_pin}"
+        actual = nodes(net_name)
+        expected = {("U7", str(MATRIX_DRV_PINS[matrix_pin])), ("J9", str(hdr_pin))}
         if actual != expected:
             raise SystemExit(f"{net_name} nodes {actual} != {expected}")
 

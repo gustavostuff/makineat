@@ -6,7 +6,7 @@ The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `too
 
 The main system board is a 100x100 mm 2-layer board with ground pours on both sides. Parts are through-hole on a 2.54 mm grid. The game AVR is on the cartridge PCB. Six M3 (3.2 mm) mounting holes (H1 to H6) secure the corners and top edge.
 
-All external headers and the cart socket (J1 to J7) sit along the top area of the board. The 16x16 display field occupies the central and lower area.
+All external headers and the cart socket (J1 to J9) sit along the top area of the board. The 16x16 display field occupies the central and lower area.
 
 | Ref | Role |
 | --- | --- |
@@ -16,8 +16,9 @@ All external headers and the cart socket (J1 to J7) sit along the top area of th
 | J4 | 1x2 vertical header, 5 V power (JST XH: Pin 1 GND, Pin 2 +5V) |
 | J5 | 1x2 vertical header, speaker (Pin 1 GND, Pin 2 SPK) |
 | J6 | 1x3 header, audio AVR UPDI (Pin 1 UPDI, Pin 2 +5V, Pin 3 GND) |
-| J7 | 2x8 header, 8-digit status display |
-| J8 | 1x3 header, cartridge AVR UPDI (in-system flashing; Pin 1 UPDI, Pin 2 +5V, Pin 3 GND) |
+| J7 | 2x4 header, status display segments (U7 pins 13-24) |
+| J8 | 1x3 header, cartridge AVR UPDI (in-system flashing: Pin 1 UPDI, Pin 2 +5V, Pin 3 GND) |
+| J9 | 2x4 header, status display digits (U7 pins 1-12) |
 | U1 to U4 | MAX7219, one per 8x8 matrix block |
 | U5 | AVR128DB28, audio and planned brightness control |
 | U6 | LM386N-1 amplifier |
@@ -89,7 +90,7 @@ From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. MATR
 ## Not in the SKiDL netlist yet
 
 * Global brightness (Bright button with tap-to-increment and hold-plus-stick adjustment, system AVR writing MAX7219 intensity) and extra system wiring for that feature.
-* Status display daughterboard PCB itself (the driver U7 and 16-pin mating header J7 on the main PCB are now in the netlist; see [status-digits.md](status-digits.md)).
+* Status display daughterboard PCB itself (the driver U7 and mating headers J7 and J9 on the main PCB are now in the netlist; see [status-digits.md](status-digits.md)).
 * The playfield is the 256 LEDs from the four matrices only.
 
 ## Future plans
