@@ -14,7 +14,19 @@ The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `too
 
 The main system board is a 100x100 mm 2-layer board with ground pours on both sides. Parts are through-hole on a 2.54 mm grid. The game AVR is on the cartridge PCB. Six M3 (3.2 mm) mounting holes (H1 to H6) secure the corners and top edge.
 
-All external headers and the cart socket (J1 to J9) sit along the top area of the board. The 16x16 display field occupies the central and lower area.
+Cables for rear-mounted connectors leave the board from behind the cabinet face. Front-mounted connectors sit along the top edge toward the player for the cartridge and status digit daughterboard. The 16x16 display field occupies the central and lower area of the front.
+
+| Ref | PCB side |
+| --- | --- |
+| J1 | Rear |
+| J2 | Rear |
+| J3 | Front |
+| J4 | Rear |
+| J5 | Rear |
+| J6 | Rear |
+| J7 | Front |
+| J8 | Rear |
+| J9 | Front |
 
 | Ref | Role |
 | --- | --- |
