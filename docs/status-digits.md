@@ -68,7 +68,9 @@ The status display subsystem settles on two passive 4-digit SMD modules (eight d
 * Two 4-digit white SMD modules
 * All color styling achieved through overlay filtering
 
-These units are passive common-cathode SMD modules (29.2 mm x 12 mm x 3.75 mm) featuring castellated edge pads. Emitting pure white light allows the front overlay to tint each digit into any desired color scheme. Being passive, they contain no onboard controller and are wired directly to U7 (no +5V or GND rails required on the passive display module).
+These units are passive common-cathode SMD modules (29.2 mm x 12 mm x 3.75 mm) featuring castellated edge pads, in the GS3040 class. Emitting pure white light allows the front overlay to tint each digit into any desired color scheme. Being passive, they contain no onboard controller and are wired directly to U7 (no +5V or GND rails required on the passive display module).
+
+<img src="../img/references/digits_datasheet.png" alt="GS3040 4-digit 7-segment module mechanical dimensions, land pattern, and pinout" />
 
 <img src="../img/references/7-segment-displays.png" alt="Passive 4-digit SMD 7-segment display modules" />
 
