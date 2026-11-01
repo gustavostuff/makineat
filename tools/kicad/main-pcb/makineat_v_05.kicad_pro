@@ -541,7 +541,6 @@
         "bus_width": 12,
         "clearance": 0.2,
         "diff_pair_gap": 0.25,
-        "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
         "line_style": 0,
         "microvia_diameter": 0.3,
@@ -560,14 +559,13 @@
         "bus_width": 12,
         "clearance": 0.2,
         "diff_pair_gap": 0.25,
-        "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "AUDIO",
         "pcb_color": "rgb(44, 160, 44)",
-        "priority": 1,
+        "priority": 0,
         "schematic_color": "rgb(44, 160, 44)",
         "track_width": 0.4,
         "tuning_profile": "",
@@ -579,14 +577,31 @@
         "bus_width": 12,
         "clearance": 0.2,
         "diff_pair_gap": 0.25,
-        "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
-        "name": "MATRIX",
-        "pcb_color": "rgb(255, 255, 255)",
+        "name": "LCOL",
+        "pcb_color": "rgb(255, 255, 0)",
         "priority": 2,
+        "schematic_color": "rgb(178, 34, 34)",
+        "track_width": 0.4,
+        "tuning_profile": "",
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "RCOL",
+        "pcb_color": "rgb(255, 0, 255)",
+        "priority": 1,
         "schematic_color": "rgb(214, 39, 40)",
         "track_width": 0.4,
         "tuning_profile": "",
@@ -598,13 +613,12 @@
         "bus_width": 12,
         "clearance": 0.2,
         "diff_pair_gap": 0.25,
-        "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
         "name": "SPI",
-        "pcb_color": "rgb(31, 119, 180)",
+        "pcb_color": "rgb(255, 255, 255)",
         "priority": 3,
         "schematic_color": "rgb(31, 119, 180)",
         "track_width": 0.4,
@@ -659,196 +673,196 @@
         "SPI"
       ],
       "DS1_0": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_1": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_2": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_3": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_4": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_5": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_6": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_7": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS1_8": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_9": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_A": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_B": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_C": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_D": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_E": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS1_F": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_0": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_1": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_2": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_3": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_4": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_5": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_6": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_7": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS2_8": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_9": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_A": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_B": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_C": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_D": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_E": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS2_F": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_0": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_1": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_2": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_3": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_4": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_5": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_6": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_7": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS3_8": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_9": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_A": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_B": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_C": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_D": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_E": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS3_F": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_0": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_1": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_2": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_3": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_4": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_5": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_6": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_7": [
-        "MATRIX"
+        "RCOL"
       ],
       "DS4_8": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_9": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_A": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_B": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_C": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_D": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_E": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS4_F": [
-        "MATRIX"
+        "LCOL"
       ],
       "DS5_0": [
         "MATRIX"
@@ -974,23 +988,263 @@
         "pattern": "+5V"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS1_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_0"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS2_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_1"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS3_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_2"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS4_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_3"
       },
       {
-        "netclass": "MATRIX",
+        "netclass": "RCOL",
+        "pattern": "DS1_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_F"
+      },
+      {
+        "netclass": "Default",
         "pattern": "DS5_*"
       }
     ]

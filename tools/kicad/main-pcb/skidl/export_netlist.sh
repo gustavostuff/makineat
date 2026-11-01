@@ -7,7 +7,7 @@ NET="$DIR/makineat.net"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     echo "Usage: $0 [PROJECT.kicad_pro]"
-    echo "  Writes $NET and updates net classes in makineat_v_04.kicad_pro"
+    echo "  Writes $NET and updates net classes in main-board *.kicad_pro files"
     echo "  The cartridge netlist is tools/kicad/cart-pcb/skidl/export_netlist.sh"
     exit 0
 fi

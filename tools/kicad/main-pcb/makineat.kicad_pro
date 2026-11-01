@@ -570,7 +570,7 @@
         "via_diameter": 0.8,
         "via_drill": 0.4,
         "wire_width": 6,
-        "name": "MATRIX",
+        "name": "RCOL",
         "pcb_color": "rgb(214, 39, 40)",
         "schematic_color": "rgb(214, 39, 40)",
         "priority": 2
@@ -589,10 +589,48 @@
         "via_diameter": 0.8,
         "via_drill": 0.4,
         "wire_width": 6,
+        "name": "LCOL",
+        "pcb_color": "rgb(178, 34, 34)",
+        "schematic_color": "rgb(178, 34, 34)",
+        "priority": 3
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "track_width": 0.4,
+        "tuning_profile": "",
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "wire_width": 6,
+        "name": "MATRIX",
+        "pcb_color": "rgb(255, 99, 71)",
+        "schematic_color": "rgb(255, 99, 71)",
+        "priority": 4
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "track_width": 0.4,
+        "tuning_profile": "",
+        "via_diameter": 0.8,
+        "via_drill": 0.4,
+        "wire_width": 6,
         "name": "SPI",
         "pcb_color": "rgb(31, 119, 180)",
         "schematic_color": "rgb(31, 119, 180)",
-        "priority": 3
+        "priority": 5
       },
       {
         "bus_width": 12,
@@ -611,7 +649,7 @@
         "name": "5V",
         "pcb_color": "rgb(255, 127, 14)",
         "schematic_color": "rgb(255, 127, 14)",
-        "priority": 4
+        "priority": 6
       }
     ],
     "meta": {
@@ -632,70 +670,70 @@
       "DOUT_U2": "SPI",
       "DOUT_U3": "SPI",
       "DOUT_U4": "SPI",
-      "DS1_0": "MATRIX",
-      "DS1_1": "MATRIX",
-      "DS1_2": "MATRIX",
-      "DS1_3": "MATRIX",
-      "DS1_4": "MATRIX",
-      "DS1_5": "MATRIX",
-      "DS1_6": "MATRIX",
-      "DS1_7": "MATRIX",
-      "DS1_8": "MATRIX",
-      "DS1_9": "MATRIX",
-      "DS1_A": "MATRIX",
-      "DS1_B": "MATRIX",
-      "DS1_C": "MATRIX",
-      "DS1_D": "MATRIX",
-      "DS1_E": "MATRIX",
-      "DS1_F": "MATRIX",
-      "DS2_0": "MATRIX",
-      "DS2_1": "MATRIX",
-      "DS2_2": "MATRIX",
-      "DS2_3": "MATRIX",
-      "DS2_4": "MATRIX",
-      "DS2_5": "MATRIX",
-      "DS2_6": "MATRIX",
-      "DS2_7": "MATRIX",
-      "DS2_8": "MATRIX",
-      "DS2_9": "MATRIX",
-      "DS2_A": "MATRIX",
-      "DS2_B": "MATRIX",
-      "DS2_C": "MATRIX",
-      "DS2_D": "MATRIX",
-      "DS2_E": "MATRIX",
-      "DS2_F": "MATRIX",
-      "DS3_0": "MATRIX",
-      "DS3_1": "MATRIX",
-      "DS3_2": "MATRIX",
-      "DS3_3": "MATRIX",
-      "DS3_4": "MATRIX",
-      "DS3_5": "MATRIX",
-      "DS3_6": "MATRIX",
-      "DS3_7": "MATRIX",
-      "DS3_8": "MATRIX",
-      "DS3_9": "MATRIX",
-      "DS3_A": "MATRIX",
-      "DS3_B": "MATRIX",
-      "DS3_C": "MATRIX",
-      "DS3_D": "MATRIX",
-      "DS3_E": "MATRIX",
-      "DS3_F": "MATRIX",
-      "DS4_0": "MATRIX",
-      "DS4_1": "MATRIX",
-      "DS4_2": "MATRIX",
-      "DS4_3": "MATRIX",
-      "DS4_4": "MATRIX",
-      "DS4_5": "MATRIX",
-      "DS4_6": "MATRIX",
-      "DS4_7": "MATRIX",
-      "DS4_8": "MATRIX",
-      "DS4_9": "MATRIX",
-      "DS4_A": "MATRIX",
-      "DS4_B": "MATRIX",
-      "DS4_C": "MATRIX",
-      "DS4_D": "MATRIX",
-      "DS4_E": "MATRIX",
-      "DS4_F": "MATRIX",
+      "DS1_0": "RCOL",
+      "DS1_1": "RCOL",
+      "DS1_2": "RCOL",
+      "DS1_3": "RCOL",
+      "DS1_4": "RCOL",
+      "DS1_5": "RCOL",
+      "DS1_6": "RCOL",
+      "DS1_7": "RCOL",
+      "DS1_8": "LCOL",
+      "DS1_9": "LCOL",
+      "DS1_A": "LCOL",
+      "DS1_B": "LCOL",
+      "DS1_C": "LCOL",
+      "DS1_D": "LCOL",
+      "DS1_E": "LCOL",
+      "DS1_F": "LCOL",
+      "DS2_0": "RCOL",
+      "DS2_1": "RCOL",
+      "DS2_2": "RCOL",
+      "DS2_3": "RCOL",
+      "DS2_4": "RCOL",
+      "DS2_5": "RCOL",
+      "DS2_6": "RCOL",
+      "DS2_7": "RCOL",
+      "DS2_8": "LCOL",
+      "DS2_9": "LCOL",
+      "DS2_A": "LCOL",
+      "DS2_B": "LCOL",
+      "DS2_C": "LCOL",
+      "DS2_D": "LCOL",
+      "DS2_E": "LCOL",
+      "DS2_F": "LCOL",
+      "DS3_0": "RCOL",
+      "DS3_1": "RCOL",
+      "DS3_2": "RCOL",
+      "DS3_3": "RCOL",
+      "DS3_4": "RCOL",
+      "DS3_5": "RCOL",
+      "DS3_6": "RCOL",
+      "DS3_7": "RCOL",
+      "DS3_8": "LCOL",
+      "DS3_9": "LCOL",
+      "DS3_A": "LCOL",
+      "DS3_B": "LCOL",
+      "DS3_C": "LCOL",
+      "DS3_D": "LCOL",
+      "DS3_E": "LCOL",
+      "DS3_F": "LCOL",
+      "DS4_0": "RCOL",
+      "DS4_1": "RCOL",
+      "DS4_2": "RCOL",
+      "DS4_3": "RCOL",
+      "DS4_4": "RCOL",
+      "DS4_5": "RCOL",
+      "DS4_6": "RCOL",
+      "DS4_7": "RCOL",
+      "DS4_8": "LCOL",
+      "DS4_9": "LCOL",
+      "DS4_A": "LCOL",
+      "DS4_B": "LCOL",
+      "DS4_C": "LCOL",
+      "DS4_D": "LCOL",
+      "DS4_E": "LCOL",
+      "DS4_F": "LCOL",
       "DS5_0": "MATRIX",
       "DS5_1": "MATRIX",
       "DS5_2": "MATRIX",
@@ -782,20 +820,260 @@
         "pattern": "+5V"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS1_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_0"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS2_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_1"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS3_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_2"
       },
       {
-        "netclass": "MATRIX",
-        "pattern": "DS4_*"
+        "netclass": "RCOL",
+        "pattern": "DS1_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS1_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS1_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS2_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS2_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS3_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS3_F"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_0"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_1"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_2"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_3"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_4"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_5"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_6"
+      },
+      {
+        "netclass": "RCOL",
+        "pattern": "DS4_7"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_8"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_9"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_A"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_B"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_C"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_D"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_E"
+      },
+      {
+        "netclass": "LCOL",
+        "pattern": "DS4_F"
       },
       {
         "netclass": "MATRIX",

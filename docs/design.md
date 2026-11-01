@@ -1,6 +1,6 @@
 # System design
 
-The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `tools/kicad/main-pcb/skidl/export_netlist.sh` writes `tools/kicad/main-pcb/skidl/makineat.net` and patches net classes in `tools/kicad/main-pcb/makineat_v_04.kicad_pro`. The schematic and PCB live under `tools/kicad/main-pcb/`. The cartridge netlist is `tools/kicad/cart-pcb/skidl/`.
+The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `tools/kicad/main-pcb/skidl/export_netlist.sh` writes `tools/kicad/main-pcb/skidl/makineat.net` and patches net classes in the main-board `*.kicad_pro` files (including `makineat_v_05.kicad_pro`). The schematic and PCB live under `tools/kicad/main-pcb/`. The cartridge netlist is `tools/kicad/cart-pcb/skidl/`.
 
 ## Main system board
 
@@ -85,7 +85,7 @@ The cart drives EVENT on contact B8 from PA0. U5 listens on PA1 and plays rows f
 
 ## Net classes
 
-From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. MATRIX is segment and digit nets per driver block (`DS1_*` through `DS5_*`) and SPI cascade links (`DOUT_U1` through `DOUT_U4`), routed at 0.4 mm width instead of the default 0.25 mm. Each digit pin sinks up to eight LEDs simultaneously, carrying peak return currents around 160 mA. The 0.4 mm width lowers line resistance and voltage drop across the scan cycle, keeping LED brightness uniform between digits and reducing switching noise into adjacent lines. AUDIO is DAC, AUD, AUDIN, AMP, SPK, ZOBEL, and BYPASS. Default is 0.25 mm. GND is the pour.
+From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. **RCOL** and **LCOL** are the two pin strips on each 8x8 matrix (nets `DSn_0` through `DSn_7` and `DSn_8` through `DSn_F` for `n` = 1 to 4). **MATRIX** is the U7 status-digit nets (`DS5_*`). SPI is CLK, DIN, LOAD, DOUT, and the cascade links `DOUT_U1` through `DOUT_U4`. RCOL, LCOL, and MATRIX use 0.4 mm width instead of the default 0.25 mm. Each digit pin sinks up to eight LEDs simultaneously, carrying peak return currents around 160 mA. The 0.4 mm width lowers line resistance and voltage drop across the scan cycle, keeping LED brightness uniform between digits and reducing switching noise into adjacent lines. AUDIO is DAC, AUD, AUDIN, AMP, SPK, ZOBEL, and BYPASS. Default is 0.25 mm. GND is the pour.
 
 ## Not in the SKiDL netlist yet
 

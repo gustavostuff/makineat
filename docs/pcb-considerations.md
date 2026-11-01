@@ -37,6 +37,17 @@ Layout and routing rules for the main system PCB and the cartridge PCB focus on 
 - Routing rules:
   - `EVENT` routes cleanly from cart socket contact B8 to U5 pin 23, shielded by surrounding ground plane and kept away from high-speed SPI bus routing.
 
+### Display SPI versus +5V and layer crossings
+
+- Signals: `CLK`, `DIN`, `LOAD` versus `+5V`, and versus each other on F.Cu and B.Cu.
+- Context:
+  - Display SPI from cart contact B1 through B3 into U1 runs at about 1 MHz. The +5V rail is low impedance with bulk and local bypass capacitors, so short parallel runs or perpendicular crossings against +5V are lower risk than coupling into `EVENT`, `RESET`, `UPDI`, or matrix `RCOL`/`LCOL` returns.
+  - Broadside overlap of SPI traces on adjacent layers in the same direction couples more than a short perpendicular crossing with solid ground reference underneath.
+- Routing checklist:
+  - Group `CLK`, `DIN`, and `LOAD` from J3 toward U1 through U4. Where matrix strip nets share the same area, leave ground copper between the SPI group and `RCOL`/`LCOL` tracks when the layout allows it.
+  - Cross `+5V` at 90 degrees. Avoid long same-layer parallel runs of SPI and +5V when a path on the far side of a ground strip is available. The goal is a clean return path, not fear of the supply rail itself.
+  - At 1 MHz on a two-layer board with ground pour, differential pairs are unnecessary. SPI net class clearance and continuous pour are sufficient unless bring-up shows SPI or display errors on unusually long segments.
+
 ### Reset and programming lines versus matrix cathode returns
 
 - Signals: `RESET`, `AUDIO_UPDI` versus `DIG0` through `DIG7`.

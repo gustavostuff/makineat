@@ -27,7 +27,7 @@ Software is under the MIT License. The hardware design is under the CERN Open Ha
 
 ## PCBs
 
-Copper tracing is still a WIP for the main PCB, but the full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
+Copper tracing on the main PCB is technically done but not polished (EMI, test points, noise, etc). The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
 
 Main system PCB, 100x100 mm:
 
@@ -47,7 +47,7 @@ Cartridge PCB, 44x37 mm:
 
 `tools/sim` is a netlist simulation of the system. The simulator compiles the cartridge's C game code natively on the host to drive the hardware model. This same C code can be directly flashed to the AVR on the cartridge.
 
-SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net classes in `tools/kicad/main-pcb/makineat_v_04.kicad_pro`. See [firmware](docs/firmware.md).
+SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net classes in the main-board `*.kicad_pro` files. See [design](docs/design.md) and [firmware](docs/firmware.md).
 
 `./sim.sh` opens the UI. The active cart is named in `cart_placed.json`.
 

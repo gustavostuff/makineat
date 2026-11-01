@@ -1,9 +1,9 @@
 """KiCad net classes for the MakiNeat console.
 
-AUDIO is the sensitive analog path around U5 and U6. MATRIX is
-every segment and digit net from the MAX7219 drivers to their 8x8 blocks.
-SPI is the display SPI bus (CLK, DIN, LOAD, DOUT chain).
-5V is the +5V power distribution rail (0.8 mm width).
+AUDIO is the sensitive analog path around U5 and U6. RCOL and LCOL are
+the two pin strips on each 8x8 matrix (pads 0-7 and 8-F). MATRIX is the
+DS5 status-digit nets from U7. SPI is the display SPI bus (CLK, DIN, LOAD,
+DOUT chain). 5V is the +5V power distribution rail (0.8 mm width).
 Other nets stay in Default. GND is the pour.
 """
 
@@ -14,9 +14,14 @@ import re
 from typing import Iterable
 
 CLASS_AUDIO = "AUDIO"
+CLASS_RCOL = "RCOL"
+CLASS_LCOL = "LCOL"
 CLASS_MATRIX = "MATRIX"
 CLASS_SPI = "SPI"
 CLASS_5V = "5V"
+
+_RCOL_SUFFIXES = frozenset("01234567")
+_LCOL_SUFFIXES = frozenset("89ABCDEF")
 
 AUDIO_NETS = frozenset(
     ("DAC", "AUD", "AUDIN", "AMP", "SPK", "ZOBEL", "BYPASS")
@@ -49,7 +54,7 @@ _POWER_GEOM = {
     "track_width": 0.8,
 }
 
-# AUDIO is green. MATRIX is red. SPI is blue. 5V is orange.
+# AUDIO is green. RCOL/LCOL are matrix strips. MATRIX is DS5. SPI is blue. 5V is orange.
 KICAD_CLASSES = [
     {
         **_GEOM,
@@ -60,39 +65,74 @@ KICAD_CLASSES = [
     },
     {
         **_GEOM,
-        "name": CLASS_MATRIX,
+        "name": CLASS_RCOL,
         "pcb_color": "rgb(214, 39, 40)",
         "schematic_color": "rgb(214, 39, 40)",
         "priority": 2,
     },
     {
         **_GEOM,
+        "name": CLASS_LCOL,
+        "pcb_color": "rgb(178, 34, 34)",
+        "schematic_color": "rgb(178, 34, 34)",
+        "priority": 3,
+    },
+    {
+        **_GEOM,
+        "name": CLASS_MATRIX,
+        "pcb_color": "rgb(255, 99, 71)",
+        "schematic_color": "rgb(255, 99, 71)",
+        "priority": 4,
+    },
+    {
+        **_GEOM,
         "name": CLASS_SPI,
         "pcb_color": "rgb(31, 119, 180)",
         "schematic_color": "rgb(31, 119, 180)",
-        "priority": 3,
+        "priority": 5,
     },
     {
         **_POWER_GEOM,
         "name": CLASS_5V,
         "pcb_color": "rgb(255, 127, 14)",
         "schematic_color": "rgb(255, 127, 14)",
-        "priority": 4,
+        "priority": 6,
     },
 ]
+
+_MATRIX_DISPLAY = re.compile(r"^DS([1-4])_(.+)$")
+_STATUS_DISPLAY = re.compile(r"^DS5_")
+
+
+def _matrix_strip_class(name: str) -> str | None:
+    match = _MATRIX_DISPLAY.match(name)
+    if not match:
+        return None
+    suffix = match.group(2)
+    if suffix in _RCOL_SUFFIXES:
+        return CLASS_RCOL
+    if suffix in _LCOL_SUFFIXES:
+        return CLASS_LCOL
+    return None
+
+
+def _matrix_net_patterns() -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    for display in ("DS1", "DS2", "DS3", "DS4"):
+        for suffix in sorted(_RCOL_SUFFIXES):
+            out.append({"netclass": CLASS_RCOL, "pattern": f"{display}_{suffix}"})
+        for suffix in sorted(_LCOL_SUFFIXES):
+            out.append({"netclass": CLASS_LCOL, "pattern": f"{display}_{suffix}"})
+    return out
+
 
 PATTERNS = [
     *({"netclass": CLASS_AUDIO, "pattern": name} for name in sorted(AUDIO_NETS)),
     *({"netclass": CLASS_SPI, "pattern": name} for name in sorted(SPI_NETS)),
     *({"netclass": CLASS_5V, "pattern": name} for name in sorted(POWER_NETS)),
-    {"netclass": CLASS_MATRIX, "pattern": "DS1_*"},
-    {"netclass": CLASS_MATRIX, "pattern": "DS2_*"},
-    {"netclass": CLASS_MATRIX, "pattern": "DS3_*"},
-    {"netclass": CLASS_MATRIX, "pattern": "DS4_*"},
+    *_matrix_net_patterns(),
     {"netclass": CLASS_MATRIX, "pattern": "DS5_*"},
 ]
-
-_MATRIX = re.compile(r"^DS[1-5]_")
 
 
 def class_for_name(name: str) -> str:
@@ -102,7 +142,10 @@ def class_for_name(name: str) -> str:
         return CLASS_SPI
     if name in POWER_NETS:
         return CLASS_5V
-    if _MATRIX.match(name):
+    strip = _matrix_strip_class(name)
+    if strip is not None:
+        return strip
+    if _STATUS_DISPLAY.match(name):
         return CLASS_MATRIX
     return "Default"
 
