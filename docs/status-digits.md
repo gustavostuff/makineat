@@ -1,7 +1,7 @@
 # MakiNeat - Status Digits
 
-Status: In the SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`)  
-Scope: Add a fifth MAX7219 (U7) by extending the display chain. This chip drives up to eight 7-segment digits for credits, lives, score, level, timer, or other numeric information. All eight digits route to two 2x4 pin headers (J7 for segments, J9 for digits) for clean copper tracing and flexible physical placement.
+Status: U7, J7, and J9 are in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). The digit daughterboard has no KiCad PCB yet. Firmware still uses `CHAIN 4` and the simulator models four matrix drivers only.  
+Scope: A fifth MAX7219 (U7) extends the display chain to drive up to eight 7-segment digits for credits, lives, score, level, timer, or other numeric information. All eight digit lines route to two 2x4 pin headers (J7 for segments, J9 for digits) on the main PCB.
 
 ## 1. Goal
 
@@ -27,7 +27,7 @@ While most components across the MakiNeat system are through-hole parts for stra
 ### 2.1 Driver IC (U7) and Main Board Placement
 
 * Part: MAX7219ENG+ or MAX7219CNG+ in DIP-24 through-hole package
-* Placement: Both U7 and the male header connectors (J7 and J9) will live in the currently free space on the left side of the main system PCB.
+* Placement: U7 and the male header connectors (J7 and J9) sit on the left side of the main system PCB layout.
 * Power: +5V and GND from the main system rail, decoupled with a 100 nF ceramic capacitor (C7) and a 10 uF electrolytic bulk capacitor (C17)
 * ISET resistor: R7 (28 kohm) set to match current requirements of the selected 7-segment modules
 
@@ -44,9 +44,9 @@ The display chain extends through U7:
 
 ### 2.3 Display Daughterboard and Connectors
 
-The two 4-digit SMD white display units will be soldered to another PCB (a display daughterboard). This PCB connects to the main system board via two 2x4 pin headers (J7 for segments, J9 for digits, `Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical`) on the left side.
+The two 4-digit SMD white display units solder to a separate display daughterboard PCB. That board mates with the main system board through J7 and J9 (`Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical`) on the left edge of the main layout.
 
-No designs exist yet for the new PCB holding the digits boards, but it will probably be L-shaped:
+No KiCad project exists yet for the daughterboard. The intended outline is L-shaped:
 
 ```
  --------
@@ -100,13 +100,9 @@ The 16 display lines are split into two 2x4 headers on the main board to allow d
 | 7 | 10 | DIG5 | DS5_E |
 | 8 | 11 | DIG1 | DS5_2 |
 
-### 2.4 Auxiliary Expansion Header
+### 2.4 Auxiliary Expansion Header (planned)
 
-A 2x6 pin male header provides general-purpose expansion signals:
-
-* +5V and GND
-* Unused GPIO lines from the audio microcontroller (U5)
-* Optional I2C or SPI interface lines for external peripherals (such as EEPROM, real-time clocks, or auxiliary controls)
+A 2x6 pin male header is reserved in this document for general-purpose expansion (+5V, GND, spare U5 GPIO, optional I2C or SPI). It is not in the SKiDL netlist yet.
 
 ## 3. Firmware Architecture
 
@@ -173,7 +169,6 @@ Most parts are standard through-hole components, while the display modules are c
 | 1 | 100 nF ceramic capacitor (C7) | Through-hole decoupling capacitor |
 | 1 | 10 uF electrolytic capacitor (C17) | Through-hole bulk power rail capacitor |
 | 2 | 2x4 male pin headers (J7, J9) | Display daughterboard interface to main PCB (`PinHeader_2x04_P2.54mm_Vertical`) |
-| 1 | 2x6 male pin header | Auxiliary expansion interface |
 
 ## 6. Implementation Steps
 

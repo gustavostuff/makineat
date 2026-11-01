@@ -9,10 +9,10 @@ Once the base 16x16 LED matrix arcade hardware is proven and verified, several h
 
 ## 2. 7-Segment Status Display Subsystem
 
-A fifth MAX7219 driver (U7) cascaded from matrix driver U4 provides up to eight generic 7-segment numeric digits. Driver U7, its passives, and the two 2x4 connectors (J7 for segments and J9 for digits) are defined in the SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). While most components are through-hole, the status display uses two passive 4-digit white SMD modules.
+A fifth MAX7219 driver (U7) cascaded from matrix driver U4 provides up to eight generic 7-segment numeric digits. Driver U7, its passives, and the two 2x4 connectors (J7 for segments and J9 for digits) are already in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). Remaining work is the separate digit daughterboard, cartridge firmware chain depth (`CHAIN` is still 4 in `tools/fw/flush.c`), status API code, and simulator support.
 
-* **Daughterboard PCB**: The two 4-digit SMD modules solder to a dedicated display daughterboard PCB. While formal PCB designs are not created yet, the daughterboard will likely adopt an L-shaped outline, positioning two 2x4 male headers on its left side while extending the display section beneath the main 16x16 matrix.
-* **Main Board Placement**: Both U7 and the two mating display headers (J7 for segments, J9 for digits) reside in the currently free space on the left side of the main system PCB.
+* **Daughterboard PCB**: The two 4-digit SMD modules solder to a dedicated display daughterboard PCB. No KiCad project exists for that board yet. The daughterboard will likely adopt an L-shaped outline, positioning two 2x4 male headers on its left side while extending the display section beneath the main 16x16 matrix.
+* **Main Board Placement**: U7 and the mating display headers (J7 for segments, J9 for digits) sit on the left side of the main system PCB layout.
 * **Interface**: All eight segment lines (SEGA to SEGG, DP) route through J7 (pins 13-24 of U7) and all eight digit sinks (DIG0 to DIG7) route through J9 (pins 1-12 of U7), enabling direct, non-crossing copper tracing on both sides of U7.
 * **Protocol**: Driven via the existing SPI chain using Code-B decoding mode, requiring no additional cartridge edge pins.
 * **Visual Style**: White LED digits filtered into vibrant custom colors by a full-front overlay assembly that covers both the 16x16 matrix and the status digits, keeping display styling dynamic and customizable.

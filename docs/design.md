@@ -1,6 +1,14 @@
 # System design
 
-The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `tools/kicad/main-pcb/skidl/export_netlist.sh` writes `tools/kicad/main-pcb/skidl/makineat.net` and patches net classes in the main-board `*.kicad_pro` files (including `makineat_v_05.kicad_pro`). The schematic and PCB live under `tools/kicad/main-pcb/`. The cartridge netlist is `tools/kicad/cart-pcb/skidl/`.
+The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `tools/kicad/main-pcb/skidl/export_netlist.sh` writes `tools/kicad/main-pcb/skidl/makineat.net` and patches net classes in the main-board `*.kicad_pro` files (including `makineat_v_05.kicad_pro`). The schematic and PCB live under `tools/kicad/main-pcb/`. The cartridge netlist is `tools/kicad/cart-pcb/skidl/`. Cart edge finger names match `tools/kicad/shared/cart_edge.py`.
+
+## PCB and layout status
+
+| Board | KiCad tree | Layout state |
+| --- | --- | --- |
+| Main system | `tools/kicad/main-pcb/` (`makineat_v_05.kicad_pcb` is the active layout) | Copper routing is in place but not final. EMI margins, test points, noise review, and similar polish remain. Not fabricated or tested in hardware. |
+| Cartridge | `tools/kicad/cart-pcb/` | Layout matches the SKiDL netlist and appears ready for fabrication review. Not fabricated or tested in hardware. |
+| Status digit daughterboard | [status-digits.md](status-digits.md) | No KiCad project or PCB file yet. |
 
 ## Main system board
 
@@ -64,18 +72,18 @@ Side A pins sit at the bottom part of the connector on the main PCB, carrying pl
 
 | Contact | Side A | Side B |
 | --- | --- | --- |
-| 1 | P1_UP | CLK |
-| 2 | P1_DOWN | LOAD |
-| 3 | P1_LEFT | DIN |
-| 4 | P1_RIGHT | GND |
-| 5 | P1_BTN | GND |
-| 6 | P2_UP | UPDI |
-| 7 | P2_DOWN | RESET |
-| 8 | P2_LEFT | EVENT |
-| 9 | P2_RIGHT | GND |
-| 10 | P2_BTN | +5V |
+| 1 | P2_BTN | CLK |
+| 2 | P2_DOWN | LOAD |
+| 3 | P2_UP | DIN |
+| 4 | P2_RIGHT | GND |
+| 5 | P2_LEFT | GND |
+| 6 | P1_BTN | UPDI |
+| 7 | P1_DOWN | RESET |
+| 8 | P1_UP | EVENT |
+| 9 | P1_RIGHT | GND |
+| 10 | P1_LEFT | +5V |
 
-Player 1 cabinet stick and button wires land on J1 (a 1x6 header with pins 1 to 6 carrying GND, LEFT, RIGHT, UP, DOWN, BUTTON) and route to cart contacts A1 through A5. Player 2 stick and button wires land on J2 from the side connector (also a 1x6 header with the same pin arrangement) and route to cart contacts A6 through A10. RESET on cart contact B7 ties to U5 reset with a 10 kohm pull-up to +5V (R25).
+Player 2 cabinet stick and button wires land on J2 (a 1x6 header with pins 1 to 6 carrying GND, LEFT, RIGHT, UP, DOWN, BUTTON) and route to cart Side A contacts 1 through 5. Player 1 stick and button wires land on J1 (the same pin arrangement) and route to cart Side A contacts 6 through 10. +5V reaches the cart on Side B contact 10. RESET on cart contact B7 ties to U5 reset with a 10 kohm pull-up to +5V (R25).
 
 ## Audio (U5, U6, J5)
 
@@ -95,5 +103,5 @@ From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. **RC
 
 ## Future plans
 
-See [future-plans.md](future-plans.md) for roadmap items and technical specifications for post-base-design enhancements, including the 7-segment status display subsystem, translucent marquee backlighting, AKWF wavetable audio synthesis, dual-input USB-C power, headphone output, and the 32x32 display expansion.
+See [future-plans.md](future-plans.md) for roadmap items and technical specifications beyond the current main and cart PCBs, including the status digit daughterboard layout, translucent marquee backlighting, AKWF wavetable audio synthesis, dual-input USB-C power, headphone output, and the 32x32 display expansion.
 

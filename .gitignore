@@ -66,3 +66,4 @@ _autosave*
 *.kicad_pcb-bak
 *.kicad_sch-bak
 *.kicad_pro-bak
+doc-style-rules.txt

@@ -59,10 +59,11 @@ Physical translucent sheets, placed in front of the white matrix LEDs and status
 
 ## Docs
 
-- [Design](docs/design.md) is the system netlist, cart edge, display chain, and audio wiring from SKiDL and KiCad.
+- [Design](docs/design.md) is the system netlist, cart edge, display chain, audio wiring, and PCB layout status.
 - [Firmware](docs/firmware.md) is the game loop, inputs, sound, SDK, and simulator.
+- [PCB routing considerations](docs/pcb-considerations.md) is noise isolation and trace pairing rules for the main and cart layouts.
 - [Overlays](docs/overlays.md) is the colored sheet in front of the field.
 - [Future plans](docs/future-plans.md) is the hardware and firmware enhancement roadmap.
-- [Status digits](docs/status-digits.md) is the fifth driver and 7-segment display proposal.
+- [Status digits](docs/status-digits.md) is the fifth MAX7219 driver, J7/J9 interfaces, and the planned digit daughterboard.
 - [Driver to matrix pinout](docs/driver_to_matrix_pinout.md) is the MAX7219 and 1088AS LED matrix pinout and activation reference.
 

@@ -52,9 +52,9 @@ Both microcontrollers (cartridge AVR on J8 and audio AVR on J6) use identical 3-
 - Pin 2: +5V
 - Pin 3: GND
 
-Recommended low-cost programmers:
-1. **Adafruit UPDI Friend**: Compact USB-C/micro-USB to UPDI programmer with built-in bidirectional resistor/diode network and selectable 3.3V/5V target power. Connects directly to J6 or J8 via a 3-wire cable.
-2. **HiLetgo CH340 USB-UART adapter (SerialUPDI)**: Low-cost USB-to-serial adapter. Connect TX through a 4.7 kohm resistor to RX to form the single bidirectional UPDI line (Pin 1), with 5V on Pin 2 and GND on Pin 3.
+Common low-cost programmers:
+1. **Adafruit UPDI Friend**: Compact USB-C or micro-USB to UPDI programmer with built-in bidirectional resistor and diode network and selectable 3.3V or 5V target power. Uses a 3-wire cable to J6 or J8.
+2. **HiLetgo CH340 USB-UART adapter (SerialUPDI)**: Low-cost USB-to-serial adapter. SerialUPDI wiring joins TX to RX through a 4.7 kohm resistor for the bidirectional UPDI line on Pin 1, with 5V on Pin 2 and GND on Pin 3.
 
 Flash commands using `pymcuprog`:
 ```bash
@@ -67,4 +67,4 @@ pymcuprog write -d avr128db28 -t uart -u /dev/ttyACM0 --verify -f tools/fw/audio
 
 ## Simulator
 
-`./sim.sh` builds and launches `tools/sim/makineat-ui`. The netlist model connects simulated cartridge pins to U1 through U4, EVENT, and J5. Host simulation runs at 60 Hz with 12 MHz and 20 MHz timing constants defined in `tools/sim/clocks.h`.
+`./sim.sh` builds and launches `tools/sim/makineat-ui`. The netlist model connects simulated cartridge pins to U1 through U4, EVENT, and J5. U7 and the status digit path are not modeled yet. Host simulation runs at 60 Hz with 12 MHz and 20 MHz timing constants defined in `tools/sim/clocks.h`.

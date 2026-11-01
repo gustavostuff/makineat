@@ -1,14 +1,14 @@
-Note: This doc is for the design-phase only and will be removed once the PCBs are fabricated and tested.
+Note: This doc is a routing reference during PCB layout. It will be removed once the boards are fabricated, tested, and these rules are no longer needed for day-to-day edits.
 
 # PCB routing considerations
 
-Layout and routing rules for the main system PCB and the cartridge PCB focus on noise isolation between high-current pulsed matrix lines, fast digital clocks, sensitive high-impedance analog audio paths, and timing-critical pulse trains.
+Layout and routing rules for the main system PCB (`makineat_v_05.kicad_pcb`) and the cartridge PCB focus on noise isolation between high-current pulsed matrix lines, fast digital clocks, sensitive high-impedance analog audio paths, and timing-critical pulse trains.
 
 ## Main PCB
 
 ### Audio analog versus display SPI and matrix lines
 
-- Signals: `DAC`, `AUDIN` (LM386 pin 3), `BYPASS` (LM386 pin 7), `AMP`, `SPK` versus `CLK`, `DIN`, `LOAD`, and matrix `DS1_*` through `DS4_*` tracks.
+- Signals: `DAC`, `AUDIN` (LM386 pin 3), `BYPASS` (LM386 pin 7), `AMP`, `SPK` versus `CLK`, `DIN`, `LOAD`, and matrix `RCOL`/`LCOL` nets (`DS1_*` through `DS4_*`).
 - Why critical:
   - The LM386 amplifier operates with high voltage gain (up to 46 dB). At its high-impedance non-inverting input, millivolt-level coupled noise is amplified directly into the speaker output.
   - The four MAX7219 matrix drivers scan at approximately 800 Hz, with digit cathode pins sinking up to 160 mA of pulse current. Fast switching rise and fall times generate strong electromagnetic and capacitive fields.
@@ -48,13 +48,14 @@ Layout and routing rules for the main system PCB and the cartridge PCB focus on 
   - Cross `+5V` at 90 degrees. Avoid long same-layer parallel runs of SPI and +5V when a path on the far side of a ground strip is available. The goal is a clean return path, not fear of the supply rail itself.
   - At 1 MHz on a two-layer board with ground pour, differential pairs are unnecessary. SPI net class clearance and continuous pour are sufficient unless bring-up shows SPI or display errors on unusually long segments.
 
-### Reset and programming lines versus matrix cathode returns
+### Reset and programming lines versus matrix returns
 
-- Signals: `RESET`, `AUDIO_UPDI` versus `DIG0` through `DIG7`.
+- Signals: `RESET`, `UPDI`, and `AUDIO_UPDI` versus matrix `RCOL`/`LCOL` returns and digit-heavy segments of the `DS1_*` through `DS4_*` nets.
 - Why critical:
-  - Digit cathode return tracks carry up to 160 mA in rapid switching pulses. High-impedance reset and UPDI programming lines running beside or over these high-current tracks risk false resets or flashing interruptions from induced inductive transients.
+  - Digit and segment return tracks carry up to 160 mA in rapid switching pulses. High-impedance reset and UPDI lines running beside or over these high-current tracks risk false resets or flashing interruptions from induced inductive transients.
 - Routing rules:
-  - Reset and UPDI lines route away from the matrix scan lines and remain surrounded by the ground pour.
+  - Reset and UPDI lines route away from matrix scan lines and remain surrounded by the ground pour.
+  - Display SPI (`CLK`, `DIN`, `LOAD`) may run parallel together for long distances. Those three nets stay separated from `EVENT`, `RESET`, and `UPDI`. `EVENT` and `RESET` may share a routing corridor. Perpendicular crossings with ground reference are acceptable where nets must meet.
 
 ## Cartridge PCB
 
