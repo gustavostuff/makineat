@@ -1009,8 +1009,8 @@
 		(layer "F.Cu")
 		(uuid "7dc04605-e8d3-491c-a7b5-f6396b63e4a4")
 		(at 38.77 74.37914 90)
-		(descr "Double-sided gold fingers for the EDAC 395-020-520-202. Ten contacts a side, 2.54mm center to center. Pads A1-A10 are F.Cu. Pads B1-B10 are B.Cu at the same centers. Pad size 8.0 x 1.7mm. Place the X=0 edge on the board outline, copper toward +X. Mating edge width 27.94mm.")
-		(tags "cart edge gold finger EDAC 395-020-520-202 2.54mm 2x10")
+		(descr "Double-sided gold fingers for the EDAC 395-020 card edge. Ten contacts a side, 2.54mm center to center. Pads A1-A10 are F.Cu. Pads B1-B10 are B.Cu at the same centers. Pad size 8.0 x 1.7mm. Place the X=0 edge on the board outline, copper toward +X. Mating edge width 27.94mm. Mates 395-020-558-212 socket on the console.")
+		(tags "cart edge gold finger EDAC 395-020 2.54mm 2x10")
 		(property "Reference" "J1"
 			(at 10 -3.2 90)
 			(layer "F.SilkS")

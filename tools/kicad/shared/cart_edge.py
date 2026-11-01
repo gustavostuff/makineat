@@ -1,6 +1,6 @@
 """Shared 20-contact cart edge.
 
-The console socket is an EDAC 395-020-520-202, ten contacts a side.
+The console socket is an EDAC 395-020-558-212 (90° motherboard part), ten contacts a side.
 Side A sits at the bottom of the connector on the main PCB, carrying
 player inputs. Side B sits at the top of the connector on the main PCB,
 carrying power, audio events, reset, programming, and display signals.

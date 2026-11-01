@@ -17387,8 +17387,8 @@
 		(layer "F.Cu")
 		(uuid "b38ccae0-80aa-493e-925a-62ea4b9ccc0b")
 		(at 81.43 30.08 -90)
-		(descr "EDAC 395-020-520-202 motherboard socket. 2x10 THT, 2.54mm pitch along a row, 5.08mm between row centers (pads 1/3/5.. at X=0, 2/4/6.. at X=-5.08). Pad 1 rect at origin. Ten contacts per row.")
-		(tags "EDAC 395-020-520-202 mobo socket 2x10 2.54mm 5.08mm")
+		(descr "EDAC 395-020-558-212 right-angle motherboard socket. 2x10 THT, 2.54mm pitch along a row, 5.08mm between row centers (pads 1/3/5.. at X=0, 2/4/6.. at X=-5.08). Pad 1 rect at origin. Ten contacts per row. Same pad layout as 395-020-520-202.")
+		(tags "EDAC 395-020-558-212 mobo socket 2x10 2.54mm 5.08mm 90deg")
 		(property "Reference" "J3"
 			(at 3.712504 13.63 0)
 			(layer "F.SilkS")
@@ -17422,7 +17422,7 @@
 				)
 			)
 		)
-		(property "Description" "EDAC 395-020-520-202"
+		(property "Description" "EDAC 395-020-558-212"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)

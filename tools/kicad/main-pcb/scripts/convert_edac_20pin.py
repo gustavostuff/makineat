@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Convert EDAC_395-020-520-202.STEP to WRL with silver pins and dark black body.
+"""Convert EDAC 395-020 socket STEP to WRL with silver pins and dark black body.
+
+Default input is EDAC_395-020-520-202.STEP (straight). For J3 use 395-020-558-212
+when a 558-212 STEP is available. Pad footprint is unchanged between variants.
 
 Body diffuse: 30/255 = 0.1176 (RGB 30, 30, 30)
 Pins diffuse: silver (0.78, 0.78, 0.80), shiny specular (0.85, 0.85, 0.88)

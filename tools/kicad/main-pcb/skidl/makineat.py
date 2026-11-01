@@ -418,12 +418,12 @@ def build() -> None:
         **p2_switches,
     }
     socket = _part(
-        "EDAC-395-020-520-202",
+        "EDAC-395-020-558-212",
         "J3",
         SOCKET_FP,
         socket_pins(),
         "Cart",
-        "EDAC 395-020-520-202",
+        "EDAC 395-020-558-212",
     )
     for number, side, net_name, _avr in contacts():
         pad = socket_pad(number, side)
@@ -593,7 +593,7 @@ def _check(text: str) -> None:
         chunk = text[start : start + (nxt.start() if nxt else len(text))]
         return set(re.findall(r'\(ref "([^"]+)"\)\s*\(pin "([^"]+)"\)', chunk))
 
-    if '(value "Cart")' not in text or '(description "EDAC 395-020-520-202")' not in text:
+    if '(value "Cart")' not in text or '(description "EDAC 395-020-558-212")' not in text:
         raise SystemExit("cart socket is not the 20-contact EDAC")
     if text.count(f'(footprint "{SOCKET_FP}")') != 1:
         raise SystemExit("cart socket footprint missing")
