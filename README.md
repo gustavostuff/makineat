@@ -1,8 +1,8 @@
 <img src="img/logos/logo_v_06_scaled.png" alt="Logo V6" />
 
-MakiNeat is a cartridge-based, two-player portable tabletop Arcade. The name comes from _maquinita_ (pronounced very similarly), the Mexican word generally used for an arcade machine. The display is four white 8x8 LED matrices in a 16x16 field. Graphics are 1-bit (LEDs are either ON or OFF).
+MakiNeat is a cartridge-based, two-player portable tabletop Arcade. The name comes from _maquinita_, a Mexican word generally used for an arcade machine (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field. Graphics are 1-bit (LEDs are either ON or OFF).
 
-On a similar spirit as the Magnavox Odyssey and the Vectrex, MakiNeat uses colored, translucent sheets to cover the screen. So the overlay is an extension of the cartridge, part of the game experience. The cabinet uses a top-loader cart door at the upper housing. A magnetic marquee panel mounts near the top as well. The [overlays](docs/overlays.md) and [design](docs/design.md) docs cover the sheet and the system netlist.
+On a similar spirit as the Magnavox Odyssey and the Vectrex, MakiNeat uses colored, translucent sheets to cover the screen. So the overlay is an extension of the cartridge, part of the game experience. The cabinet uses a top-loader cart door and a magnetic marquee panel mounts near the top as well. The [overlays](docs/overlays.md) and [design](docs/design.md) docs cover the sheet and the system netlist.
 
 An AVR128DB28 on a cartridge runs the game and holds the picture (the cartridge is both the system brain and the game data). Four MAX7219 drivers refresh the screen grid.
 
@@ -10,24 +10,18 @@ An AVR128DB28 on a cartridge runs the game and holds the picture (the cartridge 
 
 Simple graphics + simple input can still be fun. A stick (and sometimes a button) is all that's needed. Together with cartridges, colored overlays, and a sturdy design, that is the spirit of MakiNeat.
 
-The build is a simple soldering job.
-
-- Parts are through-hole, on a 2.54 mm grid.
-- Chips sit in sockets, so a bad one can be swapped.
-- Wires leave the board on headers. Two for player controls, another one for power/reset, and one more for the speaker.
-
-Parts are cheap.
-
-- The main system board is a two-layer 100x100 mm board (~5 USD + shipping). The cartridge is an even smaller PCB.
-- The screen is four white 8x8 LED matrices (normally less than 1 USD each), and the chips are commonly available (not EOL or NRND).
-
+- The build is DIY friendly and straight forward.
+- Parts are mostly through-hole, on a 2.54 mm grid.
+- Parts are cheap, the main system board is a two-layer 100x100 mm board (~5 USD + shipping). - The cartridge is an even smaller PCB.
+- The screen is four white 8x8 LED matrices (normally less than 1 USD each).
+- Chips and LED matrices can sit in sockets.
 - Power is any generic/regulated 5 V adapter.
 
 Software is under the MIT License. The hardware design is under the CERN Open Hardware Licence Version 2, Strongly Reciprocal.
 
 ## PCBs
 
-Copper tracing on the main PCB is technically done but not polished (EMI, test points, noise, etc). The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
+Copper tracing is mostly done but not polished (EMI, test points, noise, etc). The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
 
 Main system PCB, 100x100 mm:
 
@@ -53,7 +47,7 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 ## Screen overlay
 
-Physical translucent sheets, placed in front of the white matrix LEDs and status digits, make multi-colored graphics. A single framed overlay holds colored acetate cutouts across both zones, with game labels along the frame:
+Physical translucent sheets, placed in front of the white matrix LEDs and status digits, make multi-colored graphics.
 
 <img src="img/acetate_examples/Full_overlay_example.png" alt="Full overlay example" />
 
