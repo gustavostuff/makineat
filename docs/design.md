@@ -45,6 +45,8 @@ Cables for rear-mounted connectors leave the board from behind the cabinet face.
 | U7 | MAX7219, 8-digit status display driver |
 | DS1 to DS4 | 8x8 common-cathode matrices |
 
+The planned cabinet routes J2 to a side-panel port for an external arcade stick and button harness (1x6, same pinout as the table above). J1 remains on the rear harness for the primary in-cabinet controls. Both headers feed the same cart edge input nets.
+
 A part on "UN" uses "N" as part of its silkscreen label. A second part on that IC adds 10, a third adds 20. For instance:
 
 - On U5: C5 is the first bypass, C15 the second, C25 the third. R5 is EVENT pull-up, R15 is DAC load, R25 is RESET pull-up.

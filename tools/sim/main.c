@@ -8,6 +8,7 @@
 #include "input.h"
 #include "score.h"
 #include "text.h"
+#include "seven_seg.h"
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -16,19 +17,21 @@
 #include <stdio.h>
 
 #define GRID 16
-#define LED 4
+#define LED 6 /* led_on/off.png native size (includes margin); 1:1 blit, no gap */
+#define FIELD_PX (GRID * LED) /* 96x96 LED grid; canvas size stays fixed below */
 #define CANVAS_W 128
 #define CANVAS_H 192
-#define FIELD_X ((CANVAS_W - GRID * LED) / 2)
 #define CTRL_H 64
 #define CTRL_Y (CANVAS_H - CTRL_H)
-#define FIELD_Y ((CTRL_Y - GRID * LED) / 2)
+#define SEVEN_SEG_Y (FIELD_Y + FIELD_PX + 2)
+#define SEVEN_SEG_X SEVEN_SEG_CENTER_X(CANVAS_W)
+#define FIELD_X ((CANVAS_W - FIELD_PX) / 2)
+#define FIELD_Y 8
 #define SCALE 4
 #define MARGIN 16
 #define BG ((Uint8)(0.0 * 255)) // fully dark
 #define VRAM_N 32
-#define VRAM_CELL 8
-#define VRAM_DOT 4
+#define VRAM_CELL LED
 #define VRAM_PX (VRAM_N * VRAM_CELL)
 #define VRAM_GAP 12
 
@@ -67,7 +70,7 @@ static SDL_Texture *load_tex(SDL_Renderer *renderer, const char *file)
 
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
-                 const Board *board, int sx, int sy, int pressed)
+                 const SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed)
 {
     int x;
     int y;
@@ -98,6 +101,9 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
                            NULL, &cell);
         }
     }
+
+    if (status != NULL)
+        seven_seg_draw(status, renderer, SEVEN_SEG_X, SEVEN_SEG_Y, CANVAS_W, CANVAS_H);
 
     SDL_RenderCopy(renderer, stick_tex, NULL, &stick);
     if (pressed)
@@ -135,7 +141,7 @@ static void present_canvas(SDL_Renderer *renderer, SDL_Texture *canvas)
     SDL_RenderPresent(renderer);
 }
 
-/* The center 16 by 16 cells are the screen. The rest is the 8-pixel margin. */
+/* The center 16 by 16 cells are the screen. The rest is entity margin in world space. */
 static void draw_vram(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off)
 {
     int col;
@@ -154,10 +160,10 @@ static void draw_vram(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *
         for (col = 0; col < VRAM_N; col++) {
             int on = world_lit(col + ENTITY_LO, row + ENTITY_LO);
             SDL_Rect dot = {
-                col * VRAM_CELL + (VRAM_CELL - VRAM_DOT) / 2,
-                row * VRAM_CELL + (VRAM_CELL - VRAM_DOT) / 2,
-                VRAM_DOT,
-                VRAM_DOT,
+                col * VRAM_CELL,
+                row * VRAM_CELL,
+                VRAM_CELL,
+                VRAM_CELL,
             };
 
             SDL_RenderCopy(renderer, on ? led_on : led_off, NULL, &dot);
@@ -344,6 +350,7 @@ int main(void)
     SDL_Texture *led_off;
     SDL_Texture *stick_tex;
     SDL_Texture *button_tex;
+    SevenSegDisplay status_disp;
     int running = 1;
     int loaded;
 
@@ -431,6 +438,21 @@ int main(void)
         SDL_Quit();
         return 1;
     }
+    if (seven_seg_init(&status_disp, renderer) != 0) {
+        SDL_Log("7-segment layer load failed");
+        seven_seg_quit(&status_disp);
+        SDL_DestroyTexture(led_on);
+        SDL_DestroyTexture(led_off);
+        SDL_DestroyTexture(stick_tex);
+        SDL_DestroyTexture(button_tex);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    seven_seg_print(&status_disp, "99.00-007");
 
     SDL_Texture *canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
                                             SDL_TEXTUREACCESS_TARGET,
@@ -455,7 +477,7 @@ int main(void)
     TTF_Font *font = open_font();
 
     SDL_SetRenderTarget(renderer, canvas);
-    draw(renderer, led_on, led_off, stick_tex, button_tex, &board, 0, 0, 0);
+    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0);
     present_canvas(renderer, canvas);
     vram = open_vram(window, &vram_renderer);
     if (vram != NULL) {
@@ -596,7 +618,7 @@ int main(void)
         board_advance(&board, TICK_NS);
 
         SDL_SetRenderTarget(renderer, canvas);
-        draw(renderer, led_on, led_off, stick_tex, button_tex, &board,
+        draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board,
              sx, sy, pressed);
         if (fps_tex != NULL) {
             SDL_Rect dst = {
@@ -627,6 +649,7 @@ int main(void)
     if (vram != NULL)
         SDL_DestroyWindow(vram);
     SDL_DestroyTexture(canvas);
+    seven_seg_quit(&status_disp);
     SDL_DestroyTexture(led_on);
     SDL_DestroyTexture(led_off);
     SDL_DestroyTexture(stick_tex);
