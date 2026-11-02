@@ -33,6 +33,30 @@ static SDL_Texture *load_layer(SDL_Renderer *renderer, const char *name)
     return tex;
 }
 
+static int texture_size(SDL_Texture *tex, int *w, int *h)
+{
+    if (tex == NULL || w == NULL || h == NULL)
+        return -1;
+    if (SDL_QueryTexture(tex, NULL, NULL, w, h) != 0)
+        return -1;
+    return 0;
+}
+
+static int layer_matches_digit(const SevenSegDisplay *disp, SDL_Texture *tex, const char *name)
+{
+    int w;
+    int h;
+
+    if (texture_size(tex, &w, &h) != 0)
+        return -1;
+    if (w != disp->digit_w || h != disp->digit_h) {
+        SDL_Log("seven_seg layer %s is %dx%d, expected %dx%d", name, w, h, disp->digit_w,
+                disp->digit_h);
+        return -1;
+    }
+    return 0;
+}
+
 int seven_seg_init(SevenSegDisplay *disp, SDL_Renderer *renderer)
 {
     static const char *seg_files[7] = {
@@ -44,13 +68,19 @@ int seven_seg_init(SevenSegDisplay *disp, SDL_Renderer *renderer)
     disp->base = load_layer(renderer, "all_off.png");
     if (disp->base == NULL)
         return -1;
+    if (texture_size(disp->base, &disp->digit_w, &disp->digit_h) != 0)
+        return -1;
     for (i = 0; i < 7; i++) {
         disp->seg[i] = load_layer(renderer, seg_files[i]);
         if (disp->seg[i] == NULL)
             return -1;
+        if (layer_matches_digit(disp, disp->seg[i], seg_files[i]) != 0)
+            return -1;
     }
     disp->dp = load_layer(renderer, "dp.png");
     if (disp->dp == NULL)
+        return -1;
+    if (layer_matches_digit(disp, disp->dp, "dp.png") != 0)
         return -1;
     seven_seg_clear(disp);
     return 0;
@@ -212,8 +242,8 @@ static void draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int 
                        uint8_t mask, const SDL_Rect *clip)
 {
     int bit;
-    int w = SEVEN_SEG_DIGIT_W;
-    int h = SEVEN_SEG_DIGIT_H;
+    int w = disp->digit_w;
+    int h = disp->digit_h;
 
     blit_layer(renderer, disp->base, x, y, w, h, clip);
     for (bit = 0; bit < 7; bit++) {
@@ -224,13 +254,46 @@ static void draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int 
         blit_layer(renderer, disp->dp, x, y, w, h, clip);
 }
 
+int seven_seg_row_width(const SevenSegDisplay *disp)
+{
+    if (disp == NULL || disp->digit_w <= 0)
+        return 0;
+    return disp->digit_w * SEVEN_SEG_DIGITS;
+}
+
 void seven_seg_draw(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
                     int canvas_w, int canvas_h)
 {
     int i;
     SDL_Rect clip = {0, 0, canvas_w, canvas_h};
 
+    if (disp == NULL || disp->digit_w <= 0)
+        return;
+
     for (i = 0; i < SEVEN_SEG_DIGITS; i++) {
-        draw_digit(disp, renderer, x + i * SEVEN_SEG_DIGIT_PITCH, y, disp->mask[i], &clip);
+        draw_digit(disp, renderer, x + i * disp->digit_w, y, disp->mask[i], &clip);
     }
+}
+
+void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *renderer,
+                                int field_x, int field_y, int field_px, int grid_margin,
+                                int canvas_w, int canvas_h)
+{
+    int row_w;
+    int x;
+    int y;
+    int avail;
+
+    if (disp == NULL || disp->digit_w <= 0)
+        return;
+
+    row_w = seven_seg_row_width(disp);
+    y = field_y + field_px + grid_margin;
+    avail = field_px - 2 * grid_margin;
+    if (row_w <= avail)
+        x = field_x + grid_margin + (avail - row_w) / 2;
+    else
+        x = field_x + (field_px - row_w) / 2;
+
+    seven_seg_draw(disp, renderer, x, y, canvas_w, canvas_h);
 }

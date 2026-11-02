@@ -17,14 +17,15 @@
 #include <stdio.h>
 
 #define GRID 16
-#define LED 6 /* led_on/off.png native size (includes margin); 1:1 blit, no gap */
-#define FIELD_PX (GRID * LED) /* 96x96 LED grid; canvas size stays fixed below */
+#define LED 6 /* led_on/off.png native size; 1:1 blit into each cell */
+#define FIELD_LED_MARGIN 1 /* px gap between adjacent LED sprites in the 16×16 grid */
+#define LED_PITCH (LED + FIELD_LED_MARGIN)
+#define FIELD_LED_PX ((GRID - 1) * LED_PITCH + LED)
+#define FIELD_PX FIELD_LED_PX
 #define CANVAS_W 128
 #define CANVAS_H 192
 #define CTRL_H 64
 #define CTRL_Y (CANVAS_H - CTRL_H)
-#define SEVEN_SEG_Y (FIELD_Y + FIELD_PX + 2)
-#define SEVEN_SEG_X SEVEN_SEG_CENTER_X(CANVAS_W)
 #define FIELD_X ((CANVAS_W - FIELD_PX) / 2)
 #define FIELD_Y 8
 #define SCALE 4
@@ -94,7 +95,12 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
 
     for (y = 0; y < GRID; y++) {
         for (x = 0; x < GRID; x++) {
-            SDL_Rect cell = {FIELD_X + x * LED, FIELD_Y + y * LED, LED, LED};
+            SDL_Rect cell = {
+                FIELD_X + x * LED_PITCH,
+                FIELD_Y + y * LED_PITCH,
+                LED,
+                LED,
+            };
 
             SDL_RenderCopy(renderer,
                            board_led_on(board, x, y) ? led_on : led_off,
@@ -103,7 +109,8 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
     }
 
     if (status != NULL)
-        seven_seg_draw(status, renderer, SEVEN_SEG_X, SEVEN_SEG_Y, CANVAS_W, CANVAS_H);
+        seven_seg_draw_below_field(status, renderer, FIELD_X, FIELD_Y, FIELD_PX,
+                                   SEVEN_SEG_GRID_MARGIN, CANVAS_W, CANVAS_H);
 
     SDL_RenderCopy(renderer, stick_tex, NULL, &stick);
     if (pressed)
