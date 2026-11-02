@@ -85,7 +85,6 @@
 		)
 		(capping no)
 		(filling no)
-		(zone_defaults)
 		(grid_origin 20 20)
 		(pcbplotparams
 			(layerselection 0x00000000_00000000_00000000_02a000af)
@@ -134,7 +133,7 @@
 			(at 0 -3.75 0)
 			(layer "F.SilkS")
 			(hide yes)
-			(uuid "28ef9da1-5a64-42ba-ae47-846173fee9f2")
+			(uuid "10084777-c3d9-4186-9f83-f28647f038b5")
 			(effects
 				(font
 					(size 1 1)
@@ -145,7 +144,7 @@
 		(property "Value" "M3: 3.2mm"
 			(at 2 8 0)
 			(layer "F.Fab")
-			(uuid "deee6099-36f2-4ed4-9064-76a668b77553")
+			(uuid "0a369ef3-9278-4b06-a9d6-174934156586")
 			(effects
 				(font
 					(size 1 1)
@@ -157,7 +156,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "25472903-6441-44c1-85e7-a636992fa8df")
+			(uuid "6180a96b-c8f7-451a-88e9-48bb113ed6e3")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -168,7 +167,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "efd2d8cb-4508-4d85-9b25-a1a37be67eda")
+			(uuid "d4f50d20-2723-476e-9789-d83aad28ca78")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -243,7 +242,7 @@
 			(at 0 -3.75 0)
 			(layer "F.SilkS")
 			(hide yes)
-			(uuid "23b3f64c-1d5b-4f91-96f7-04e5c3abf656")
+			(uuid "6127470f-1064-4ffe-b4a7-9c99dc0bc29d")
 			(effects
 				(font
 					(size 1 1)
@@ -254,7 +253,7 @@
 		(property "Value" "M3: 3.2mm"
 			(at 11 2 0)
 			(layer "F.Fab")
-			(uuid "73e56cf3-e8bd-4cc1-9e27-b39b9c1cf85b")
+			(uuid "32eec0b8-c046-4c69-9ec8-9bc463c945a5")
 			(effects
 				(font
 					(size 1 1)
@@ -266,7 +265,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "d6f55b26-ad45-472f-ad4f-953243dad6f9")
+			(uuid "f8a99dc2-ce9a-497d-b2c6-a39e43e5d1e4")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -277,7 +276,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "5dacdae9-4104-4bec-8f0c-ad522e580b81")
+			(uuid "f0673de6-cbd7-413f-bec3-a385691ffa91")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -352,7 +351,7 @@
 			(at 3.88 3.5 0)
 			(layer "B.SilkS")
 			(hide yes)
-			(uuid "27ba4595-d54f-47c2-9f9a-f00a08ebc7f3")
+			(uuid "4a4bce65-6547-49b9-8930-f24a153fdf92")
 			(effects
 				(font
 					(size 1 1)
@@ -362,9 +361,9 @@
 			)
 		)
 		(property "Value" "SEG"
-			(at 2.16 -11 -0)
+			(at 2.16 -11 0)
 			(layer "F.SilkS")
-			(uuid "d0b6049b-d3eb-4473-863c-29171de25532")
+			(uuid "6b89ea6a-9697-4735-8cc0-678e221e553f")
 			(effects
 				(font
 					(size 1 1)
@@ -376,7 +375,7 @@
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "910a9a6f-3e98-4839-95e7-372fbe85d444")
+			(uuid "98cee361-c511-401e-95c1-258c0f013581")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -388,7 +387,7 @@
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "d42048bc-a896-4d7d-b3d6-409fe6bf626c")
+			(uuid "198276e7-4a72-4cf0-941e-62a6e8486b9c")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -583,7 +582,7 @@
 			(uuid "b87cc0e7-ead1-4dff-a9bd-a7c32e865f22")
 		)
 		(fp_text user "${REFERENCE}"
-			(at -1.12 -11 -180)
+			(at -1.12 -11 180)
 			(layer "F.SilkS")
 			(uuid "d4df9197-d5d7-49f9-90ec-21c8c681ee62")
 			(effects
@@ -693,9 +692,9 @@
 		(descr "Through hole straight pin header, 2x04, 2.54mm pitch, double rows")
 		(tags "Through hole pin header THT 2x04 2.54mm double row")
 		(property "Reference" "J7"
-			(at 0.54 -11 -0)
+			(at 0.54 -11 0)
 			(layer "F.SilkS")
-			(uuid "d11099b8-0791-467f-982a-92ef954f2916")
+			(uuid "4e54c93d-b888-4ef0-99ff-d595d3a322ab")
 			(effects
 				(font
 					(size 1 1)
@@ -704,9 +703,9 @@
 			)
 		)
 		(property "Value" "DIG"
-			(at 3.54 -11 -0)
+			(at 3.54 -11 0)
 			(layer "F.SilkS")
-			(uuid "dd638430-0cfd-48d9-8413-60c333d489d5")
+			(uuid "2d241eab-90dc-4df9-a197-a52341c60ceb")
 			(effects
 				(font
 					(size 1 1)
@@ -718,7 +717,7 @@
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "735d54f1-424e-4c87-9ea1-efa406838a89")
+			(uuid "658311e4-dbd9-476d-a3e7-b8528e6086e8")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -730,7 +729,7 @@
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "2044f81b-50e4-4c5f-aa13-f87e7883e8b7")
+			(uuid "3809720c-0f24-4d5d-a867-83f55b26488c")
 			(effects
 				(font
 					(size 1.27 1.27)

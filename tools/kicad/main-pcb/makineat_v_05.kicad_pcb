@@ -9741,6 +9741,7 @@
 			)
 		)
 		(model "${KIPRJMOD}/library/MakiNeat.3dshapes/NFM-12881xx.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -19898,6 +19899,7 @@
 			)
 		)
 		(model "${KIPRJMOD}/library/MakiNeat.3dshapes/NFM-12881xx.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -21301,6 +21303,7 @@
 			)
 		)
 		(model "${KIPRJMOD}/library/MakiNeat.3dshapes/NFM-12881xx.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
@@ -25117,6 +25120,7 @@
 			)
 		)
 		(model "${KIPRJMOD}/library/MakiNeat.3dshapes/NFM-12881xx.wrl"
+			(hide yes)
 			(offset
 				(xyz 0 0 0)
 			)
