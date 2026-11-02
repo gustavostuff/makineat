@@ -12,7 +12,8 @@ Simple graphics + simple input can still be fun. A stick (and sometimes a button
 
 - The build is DIY friendly and straight forward.
 - Parts are mostly through-hole, on a 2.54 mm grid.
-- Parts are cheap, the main system board is a two-layer 100x100 mm board (~5 USD + shipping). - The cartridge is an even smaller PCB.
+- Parts are cheap, the main system board is a two-layer 100x100 mm board (~5 USD + shipping).
+- The cartridge is an even smaller PCB.
 - The screen is four white 8x8 LED matrices (normally less than 1 USD each).
 - Chips and LED matrices can sit in sockets.
 - Power is any generic/regulated 5 V adapter.
