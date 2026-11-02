@@ -9,8 +9,12 @@
  * over_tick returns 1 when the button may start the next round.
  */
 
+#define OVER_HOLD 60
+
 void over_clear(void);
 void over_start(void);
+void over_celebrate(void);
+void over_paint(void);
 int over_tick(const Input *in);
 
 #endif

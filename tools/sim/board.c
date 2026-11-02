@@ -62,7 +62,8 @@ void board_eval(Board *board)
     for (i = 0; i < NDRV; i++)
         max7219_pins(&board->drv[i], board->now_ns);
     settle_all(board);
-    for (i = 0; i < NDRV; i++)
+    status_digits_sample(&board->status);
+    for (i = 0; i < NMAT; i++)
         matrix8x8_sample(&board->mat[i]);
 }
 
@@ -185,9 +186,9 @@ static void tie_chip_rails(Board *board, Max7219 *chip)
 void board_init(Board *board)
 {
     static const char *refdes[NDRV] = {
-        "U1", "U2", "U3", "U4",
+        "U1", "U2", "U3", "U4", "U7",
     };
-    static const char *mat_refdes[NDRV] = {
+    static const char *mat_refdes[NMAT] = {
         "DS1", "DS2", "DS3", "DS4",
     };
     /*
@@ -224,7 +225,8 @@ void board_init(Board *board)
     avr_output(&board->cpu, AVR_PA0, SIG_H);
     for (i = 0; i < NDRV; i++)
         max7219_init(&board->drv[i], refdes[i]);
-    for (i = 0; i < NDRV; i++) {
+    status_digits_init(&board->status, "DS5");
+    for (i = 0; i < NMAT; i++) {
         int p;
 
         matrix8x8_init(&board->mat[i], mat_refdes[i]);
@@ -235,6 +237,18 @@ void board_init(Board *board)
             net_init(&board->ds_net[i][p], net_name, SIG_L);
             net_tie(&board->ds_net[i][p], max7219_pin(&board->drv[i], matrix_drv_pins[p]));
             net_tie(&board->ds_net[i][p], matrix8x8_pin(&board->mat[i], p));
+        }
+    }
+    {
+        int p;
+
+        for (p = 0; p < 16; p++) {
+            char net_name[16];
+
+            snprintf(net_name, sizeof net_name, "DS5_%s", mat_pin_hex[p]);
+            net_init(&board->ds_net[4][p], net_name, SIG_L);
+            net_tie(&board->ds_net[4][p], max7219_pin(&board->drv[4], matrix_drv_pins[p]));
+            net_tie(&board->ds_net[4][p], status_digits_pin(&board->status, p));
         }
     }
 
@@ -284,11 +298,13 @@ void board_init(Board *board)
     net_tie(&board->din, max7219_pin(&board->drv[0], MAX7219_DIN));
     for (i = 0; i < NDRV; i++)
         tie_chip_rails(board, &board->drv[i]);
-    for (i = 0; i < NDRV - 1; i++) {
+    for (i = 0; i < NMAT - 1; i++) {
         net_tie(&board->cascade[i], max7219_pin(&board->drv[i], MAX7219_DOUT));
         net_tie(&board->cascade[i], max7219_pin(&board->drv[i + 1], MAX7219_DIN));
     }
-    net_tie(&board->dout, max7219_pin(&board->drv[NDRV - 1], MAX7219_DOUT));
+    net_tie(&board->cascade[NMAT - 1], max7219_pin(&board->drv[NMAT - 1], MAX7219_DOUT));
+    net_tie(&board->cascade[NMAT - 1], max7219_pin(&board->drv[4], MAX7219_DIN));
+    net_tie(&board->dout, max7219_pin(&board->drv[4], MAX7219_DOUT));
 
     for (i = 0; i < 5; i++) {
         net_tie(&board->sw[i], avr_pin(&board->cpu, sw_pin[i]));
@@ -367,7 +383,7 @@ void board_matrix_sample(Board *board)
 {
     int i;
 
-    for (i = 0; i < NDRV; i++)
+    for (i = 0; i < NMAT; i++)
         matrix8x8_sample(&board->mat[i]);
 }
 
@@ -375,8 +391,22 @@ void board_matrix_clear_frame(Board *board)
 {
     int i;
 
-    for (i = 0; i < NDRV; i++)
+    for (i = 0; i < NMAT; i++)
         matrix8x8_clear_frame(&board->mat[i]);
+}
+
+const Max7219 *board_status_driver(const Board *board)
+{
+    if (board == NULL)
+        return NULL;
+    return &board->drv[4];
+}
+
+uint8_t board_status_digit_mask(const Board *board, int digit)
+{
+    if (board == NULL)
+        return 0;
+    return status_digits_frame_mask(&board->status, digit);
 }
 
 int board_fault(const Board *board)

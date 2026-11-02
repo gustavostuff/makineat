@@ -1,3 +1,4 @@
+#include "board.h"
 #include "cart.h"
 #include "entity.h"
 #include "flush.h"
@@ -71,7 +72,7 @@ static SDL_Texture *load_tex(SDL_Renderer *renderer, const char *file)
 
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
-                 const SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed)
+                 SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed)
 {
     int x;
     int y;
@@ -108,9 +109,14 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
         }
     }
 
-    if (status != NULL)
+    if (status != NULL) {
+        const Max7219 *u7 = board_status_driver(board);
+
+        if (u7 != NULL)
+            seven_seg_sync_from_max7219(status, u7);
         seven_seg_draw_below_field(status, renderer, FIELD_X, FIELD_Y, FIELD_PX,
                                    SEVEN_SEG_GRID_MARGIN, CANVAS_W, CANVAS_H);
+    }
 
     SDL_RenderCopy(renderer, stick_tex, NULL, &stick);
     if (pressed)
@@ -459,8 +465,6 @@ int main(void)
         SDL_Quit();
         return 1;
     }
-    seven_seg_print(&status_disp, "99.00-007");
-
     SDL_Texture *canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
                                             SDL_TEXTUREACCESS_TARGET,
                                             CANVAS_W, CANVAS_H);

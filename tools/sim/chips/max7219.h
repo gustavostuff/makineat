@@ -105,6 +105,8 @@ void max7219_sense(Max7219 *chip, uint64_t now_ns);
 void max7219_pins(Max7219 *chip, uint64_t now_ns);
 int max7219_led_on(const Max7219 *chip, int col, int row, uint64_t now_ns);
 int max7219_active_digit(const Max7219 *chip, uint64_t now_ns);
+/* Latched segment byte for one digit row (bit 7 DP, bit 6 A, .. bit 0 G). */
+uint8_t max7219_segment_byte(const Max7219 *chip, int digit);
 Pin *max7219_pin(Max7219 *chip, int number);
 
 #endif

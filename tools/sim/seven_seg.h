@@ -4,6 +4,9 @@
 #include <SDL.h>
 #include <stdint.h>
 
+struct Max7219;
+typedef struct Max7219 Max7219;
+
 #define SEVEN_SEG_DIGITS 8
 /* Gap between the 16×16 LED matrix edge and the digit row (horizontal inset / vertical). */
 #define SEVEN_SEG_GRID_MARGIN 4
@@ -35,6 +38,10 @@ void seven_seg_set_mask(SevenSegDisplay *disp, int digit, uint8_t mask);
 uint8_t seven_seg_get_mask(const SevenSegDisplay *disp, int digit);
 
 uint8_t seven_seg_encode_char(char c);
+uint8_t seven_seg_mask_from_max7219(uint8_t segment_byte);
+
+void seven_seg_sync_from_max7219(SevenSegDisplay *disp, const Max7219 *chip);
+void seven_seg_sync_from_status_frame(SevenSegDisplay *disp, const uint8_t *frame, int n);
 void seven_seg_put_char(SevenSegDisplay *disp, int digit, char c);
 
 /* Writes up to SEVEN_SEG_DIGITS characters. '.' sets DP on the previous digit. */

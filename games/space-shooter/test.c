@@ -2,7 +2,9 @@
 #include "frame.h"
 #include "game.h"
 #include "input.h"
+#include "over.h"
 #include "score.h"
+#include "status.h"
 #include "tests/report.h"
 #include "tests/sound_log.h"
 #include "text.h"
@@ -329,6 +331,22 @@ static void test_score(void)
         score_add(1);
     die();
     expect(smile() && !flat_mouth(), "a second 999 still shows the wide smile");
+
+    input_reset();
+    game_reset();
+    for (i = 0; i < 99; i++)
+        score_add(1);
+    feed(0, 0, 0, 0, 0);
+    expect(status_get_digit(6) == 9 && status_get_digit(7) == 9,
+           "the two right status digits show 99");
+    score_add(1);
+    feed(0, 0, 0, 0, 0);
+    expect(score_get() == 100, "the score can pass 99");
+    expect(smile(), "passing 99 shows the happy face");
+    for (i = 0; i < OVER_HOLD; i++)
+        feed(0, 0, 0, 0, 0);
+    expect(pixel_get(7, 13) && score_get() == 0,
+           "the celebration restarts the round with a zero score");
 }
 
 static void test_ramp(void)

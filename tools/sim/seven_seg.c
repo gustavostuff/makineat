@@ -1,5 +1,7 @@
 #include "seven_seg.h"
 
+#include "chips/max7219.h"
+
 #include <SDL_image.h>
 #include <stdio.h>
 #include <string.h>
@@ -123,6 +125,54 @@ uint8_t seven_seg_get_mask(const SevenSegDisplay *disp, int digit)
     if (digit < 0 || digit >= SEVEN_SEG_DIGITS)
         return 0;
     return disp->mask[digit];
+}
+
+uint8_t seven_seg_mask_from_max7219(uint8_t segment_byte)
+{
+    uint8_t mask = 0;
+
+    if ((segment_byte & 0x40) != 0)
+        mask |= SEVEN_SEG_A;
+    if ((segment_byte & 0x20) != 0)
+        mask |= SEVEN_SEG_B;
+    if ((segment_byte & 0x10) != 0)
+        mask |= SEVEN_SEG_C;
+    if ((segment_byte & 0x08) != 0)
+        mask |= SEVEN_SEG_D;
+    if ((segment_byte & 0x04) != 0)
+        mask |= SEVEN_SEG_E;
+    if ((segment_byte & 0x02) != 0)
+        mask |= SEVEN_SEG_F;
+    if ((segment_byte & 0x01) != 0)
+        mask |= SEVEN_SEG_G;
+    if ((segment_byte & 0x80) != 0)
+        mask |= SEVEN_SEG_DP;
+    return mask;
+}
+
+void seven_seg_sync_from_max7219(SevenSegDisplay *disp, const Max7219 *chip)
+{
+    int d;
+
+    if (disp == NULL || chip == NULL)
+        return;
+    for (d = 0; d < SEVEN_SEG_DIGITS; d++)
+        disp->mask[d] = seven_seg_mask_from_max7219(max7219_segment_byte(chip, d));
+}
+
+void seven_seg_sync_from_status_frame(SevenSegDisplay *disp, const uint8_t *frame, int n)
+{
+    int d;
+    int count = n;
+
+    if (disp == NULL || frame == NULL)
+        return;
+    if (count > SEVEN_SEG_DIGITS)
+        count = SEVEN_SEG_DIGITS;
+    for (d = 0; d < count; d++)
+        disp->mask[d] = frame[d];
+    for (; d < SEVEN_SEG_DIGITS; d++)
+        disp->mask[d] = 0;
 }
 
 uint8_t seven_seg_encode_char(char c)

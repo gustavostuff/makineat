@@ -289,6 +289,13 @@ void max7219_pins(Max7219 *chip, uint64_t now_ns)
     }
 }
 
+uint8_t max7219_segment_byte(const Max7219 *chip, int digit)
+{
+    if (digit < 0 || digit > 7)
+        return 0;
+    return segments_of(chip, digit);
+}
+
 int max7219_led_on(const Max7219 *chip, int col, int row, uint64_t now_ns)
 {
     uint8_t bits;

@@ -19,11 +19,13 @@
  * drivers scan.
  */
 
-#define NDRV 4
+#define NMAT 4
+#define NDRV 5
 
 #include "chips/avr128db28.h"
 #include "chips/max7219.h"
 #include "chips/matrix8x8.h"
+#include "chips/status_digits.h"
 
 #include <stdint.h>
 
@@ -48,7 +50,8 @@ typedef struct Board {
     Avr128 cpu;
     Avr128 audio;
     Max7219 drv[NDRV];
-    Matrix8x8 mat[NDRV];
+    Matrix8x8 mat[NMAT];
+    StatusDigits status;
     Pin contact[5];
     Net vcc;
     Net gnd;
@@ -84,5 +87,7 @@ void board_matrix_sample(Board *board);
 void board_matrix_clear_frame(Board *board);
 Sig board_sense(const Board *board, int avr_pin);
 int board_fault(const Board *board);
+const Max7219 *board_status_driver(const Board *board);
+uint8_t board_status_digit_mask(const Board *board, int digit);
 
 #endif

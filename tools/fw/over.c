@@ -13,8 +13,6 @@ static const uint16_t mouth[3][2] = {
     {0x1428, 0x03c0},
 };
 
-#define OVER_HOLD 60
-
 static int hold;
 static int mark;
 
@@ -67,6 +65,18 @@ void over_start(void)
 {
     mark = score_judge();
     hold = OVER_HOLD;
+    draw_over();
+}
+
+void over_celebrate(void)
+{
+    mark = 1;
+    hold = OVER_HOLD;
+    draw_over();
+}
+
+void over_paint(void)
+{
     draw_over();
 }
 

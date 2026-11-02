@@ -2,8 +2,9 @@
 
 #include "frame.h"
 #include "hal.h"
+#include "status.h"
 
-#define CHAIN 4
+#define CHAIN 5
 
 static void shift_bit(int bit)
 {
@@ -56,44 +57,48 @@ static unsigned pack_byte(uint16_t row, int origin)
     return byte;
 }
 
-static void send_same(unsigned addr, unsigned data)
+static void send_mixed(unsigned addr, unsigned matrix_data, unsigned status_data)
 {
     unsigned word[CHAIN];
     int i;
 
-    for (i = 0; i < CHAIN; i++)
-        word[i] = reg_word(addr, data);
+    for (i = 0; i < CHAIN - 1; i++)
+        word[i] = reg_word(addr, matrix_data);
+    word[CHAIN - 1] = reg_word(addr, status_data);
     send_words(word, CHAIN);
 }
 
 void drivers_init(void)
 {
     int d;
+    const uint8_t *status = status_digits();
 
-    send_same(0x0F, 0x00);
-    send_same(0x09, 0x00);
-    send_same(0x0A, 0x0F);
-    send_same(0x0B, 0x07);
+    send_mixed(0x0F, 0x00, 0x00);
+    send_mixed(0x09, 0x00, 0xFF);
+    send_mixed(0x0A, 0x0F, 0x0F);
+    send_mixed(0x0B, 0x07, 0x07);
     for (d = 0; d < 8; d++)
-        send_same((unsigned)(d + 1), 0x00);
-    send_same(0x0C, 0x01);
+        send_mixed((unsigned)(d + 1), 0x00, status[d]);
+    send_mixed(0x0C, 0x01, 0x01);
 }
 
 void drivers_flush(void)
 {
     int d;
+    const uint8_t *status = status_digits();
 
     for (d = 0; d < 8; d++) {
         unsigned word[CHAIN];
         int b;
 
-        for (b = 0; b < CHAIN; b++) {
+        for (b = 0; b < CHAIN - 1; b++) {
             int br = b / 2;
             int bc = b % 2;
 
             word[b] = reg_word((unsigned)(d + 1),
                                pack_byte(frame[br * 8 + d], bc * 8));
         }
+        word[CHAIN - 1] = reg_word((unsigned)(d + 1), status[d]);
         send_words(word, CHAIN);
     }
 }

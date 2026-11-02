@@ -5,6 +5,8 @@
 #include "game.h"
 #include "host.h"
 #include "input.h"
+#include "chips/max7219.h"
+#include "status.h"
 
 #include "tests/report.h"
 
@@ -101,6 +103,29 @@ static void test_flush_border(void)
     expect(board_matrix_led_frame(&board, 0, 15), "matrix hardware sees bottom-left border pixel");
     expect(board_matrix_led_frame(&board, 15, 15), "matrix hardware sees bottom-right border pixel");
     expect(!board_matrix_led_frame(&board, 1, 1), "matrix hardware leaves inside border dark");
+
+    expect(board.drv[4].decode == 0xFF, "U7 runs Code-B decode");
+    expect(board.drv[4].shutdown == 0, "U7 is out of shutdown");
+}
+
+static void test_status_flush(void)
+{
+    Board board;
+
+    board_init(&board);
+    sim_bind(&board);
+    status_set_digit(6, 4);
+    status_set_digit(7, 2);
+    drivers_init();
+    drivers_flush();
+    board_advance(&board, MAX7219_WAKE_NS);
+    expect(board.drv[4].digit[6] == 4, "status tens lands in U7 digit 6");
+    expect(board.drv[4].digit[7] == 2, "status ones lands in U7 digit 7");
+    expect(max7219_segment_byte(&board.drv[4], 6) == 0x33u,
+           "U7 Code-B tens pattern for digit 4");
+    expect(max7219_segment_byte(&board.drv[4], 7) == 0x6Du,
+           "U7 Code-B ones pattern for digit 2");
+
 }
 
 static void test_square_on_leds(void)
@@ -181,6 +206,7 @@ int main(void)
     report_begin("board");
     test_switches();
     test_flush_border();
+    test_status_flush();
     test_square_on_leds();
     test_event();
     return report_end();
