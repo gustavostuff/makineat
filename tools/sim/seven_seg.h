@@ -21,6 +21,9 @@ typedef struct Max7219 Max7219;
 #define SEVEN_SEG_G (1u << 6)
 #define SEVEN_SEG_DP (1u << 7)
 
+typedef void (*SevenSegLayerBlitFn)(SDL_Renderer *renderer, SDL_Texture *tex,
+                                    const SDL_Rect *src, const SDL_Rect *dst, int lit);
+
 typedef struct SevenSegDisplay {
     SDL_Texture *base;
     SDL_Texture *seg[7];
@@ -29,6 +32,8 @@ typedef struct SevenSegDisplay {
     int digit_h;
     uint8_t mask[SEVEN_SEG_DIGITS];
 } SevenSegDisplay;
+
+void seven_seg_set_layer_blit(SevenSegLayerBlitFn fn);
 
 int seven_seg_init(SevenSegDisplay *disp, SDL_Renderer *renderer);
 void seven_seg_quit(SevenSegDisplay *disp);

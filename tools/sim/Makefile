@@ -21,11 +21,13 @@ COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
 TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_board tests/test_game \
-            tests/test_paddle tests/test_arkaled tests/test_text_test tests/test_cart tests/test_synth
+            tests/test_paddle tests/test_arkaled tests/test_text_test tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
-makineat-ui: main.c seven_seg.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(LDLIBS)
+UI_HDRS = acetate.h seven_seg.h board.h cart.h host.h
+
+makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(UI_HDRS)
+	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(LDLIBS)
 
 tests/test_max7219: tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
@@ -63,6 +65,9 @@ tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PADDLE) $(ARKAL
 tests/test_synth: tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
 
+tests/test_acetate: tests/test_acetate.c acetate_geom.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_acetate.c acetate_geom.c $(CHECK)
+
 test: $(TEST_BINS)
 	./tests/test_max7219
 	./tests/test_matrix
@@ -76,6 +81,7 @@ test: $(TEST_BINS)
 	./tests/test_cart
 	./tests/test_board
 	./tests/test_synth
+	./tests/test_acetate
 
 clean:
 	rm -f makineat-ui maki-nita-ui makinita-ui retrodiode-ui test_chips $(TEST_BINS)

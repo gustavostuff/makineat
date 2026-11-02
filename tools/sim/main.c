@@ -10,6 +10,7 @@
 #include "score.h"
 #include "text.h"
 #include "seven_seg.h"
+#include "acetate.h"
 
 #include <SDL.h>
 #include <SDL_image.h>
@@ -70,26 +71,31 @@ static SDL_Texture *load_tex(SDL_Renderer *renderer, const char *file)
     return tex;
 }
 
+static void control_rects(int sx, int sy, SDL_Rect *stick, SDL_Rect *button)
+{
+    int travel = (sx != 0 || sy != 0) ? 6 : 8;
+    int ctrl_rest = CTRL_Y + (CTRL_H - 32) / 2 + 8;
+
+    stick->x = MARGIN + sx * travel;
+    stick->y = ctrl_rest + sy * travel;
+    stick->w = 32;
+    stick->h = 32;
+    button->x = 64 + MARGIN;
+    button->y = ctrl_rest;
+    button->w = 32;
+    button->h = 32;
+}
+
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
                  SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed)
 {
     int x;
     int y;
-    int travel = (sx != 0 && sy != 0) ? 6 : 8;
-    int ctrl_rest = CTRL_Y + (CTRL_H - 32) / 2;
-    SDL_Rect stick = {
-        MARGIN + sx * travel,
-        ctrl_rest + sy * travel,
-        32,
-        32,
-    };
-    SDL_Rect button = {
-        64 + MARGIN,
-        ctrl_rest,
-        32,
-        32,
-    };
+    SDL_Rect stick;
+    SDL_Rect button;
+
+    control_rects(sx, sy, &stick, &button);
 
     SDL_SetRenderDrawColor(renderer, BG, BG, BG, 255);
     SDL_RenderClear(renderer);
@@ -103,9 +109,8 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
                 LED,
             };
 
-            SDL_RenderCopy(renderer,
-                           board_led_on(board, x, y) ? led_on : led_off,
-                           NULL, &cell);
+            acetate_draw_led_tint(renderer, led_on, led_off, x, y, cell.x, cell.y, cell.w,
+                                  cell.h, board_led_on(board, x, y));
         }
     }
 
@@ -124,6 +129,9 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
     else
         SDL_SetTextureColorMod(button_tex, 255, 255, 255);
     SDL_RenderCopy(renderer, button_tex, NULL, &button);
+
+    acetate_draw_overlay(renderer, (unsigned)(SDL_GetTicks() / 16));
+    acetate_draw_swatch(renderer);
 }
 
 /* The canvas is 1:1 with the art. One integer scale of that whole picture
@@ -148,6 +156,7 @@ static void present_canvas(SDL_Renderer *renderer, SDL_Texture *canvas)
     dst.y = (out_h - CANVAS_H * scale) / 2;
     dst.w = CANVAS_W * scale;
     dst.h = CANVAS_H * scale;
+    acetate_notify_present(out_w, out_h, scale, dst.x, dst.y);
     SDL_SetRenderDrawColor(renderer, BG, BG, BG, 255);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, canvas, NULL, &dst);
@@ -514,6 +523,14 @@ int main(void)
     int fps_w = 0;
     int fps_h = 0;
 
+    acetate_init();
+    acetate_set_window(window);
+    if (cart_name() != NULL)
+        acetate_set_cart(cart_name());
+    else
+        acetate_set_cart("default");
+    seven_seg_set_layer_blit(acetate_render_copy);
+
     sound_open();
     sound_render();
 
@@ -544,10 +561,34 @@ int main(void)
                     SDL_DestroyTexture(fps_tex);
                     fps_tex = next;
                     fps_show = fps;
+                    acetate_set_clock_hit(CANVAS_W - fps_w - 2, 2, fps_w, fps_h);
                 }
             }
         }
         frame_start = now;
+
+        keys = SDL_GetKeyboardState(NULL);
+        up = (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) ? 1 : 0;
+        down = (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) ? 1 : 0;
+        left = (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) ? 1 : 0;
+        right = (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) ? 1 : 0;
+        sx = 0;
+        sy = 0;
+        if (up && !down)
+            sy = -1;
+        if (down && !up)
+            sy = 1;
+        if (left && !right)
+            sx = -1;
+        if (right && !left)
+            sx = 1;
+        {
+            SDL_Rect stick_hit;
+            SDL_Rect button_hit;
+
+            control_rects(sx, sy, &stick_hit, &button_hit);
+            acetate_set_control_hits(&stick_hit, &button_hit);
+        }
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT)
@@ -568,6 +609,16 @@ int main(void)
             if (event.type == SDL_KEYDOWN &&
                 event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 running = 0;
+            {
+                int cur = 0;
+                acetate_event(&event, &cur);
+            }
+            if (event.type == SDL_MOUSEMOTION) {
+                int cx;
+                int cy;
+                if (acetate_window_to_canvas(event.motion.x, event.motion.y, &cx, &cy))
+                    acetate_update_hover(cx, cy);
+            }
             if (event.type == SDL_KEYDOWN && !event.key.repeat &&
                 event.key.keysym.scancode == SDL_SCANCODE_V &&
                 (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) == 0 &&
@@ -599,21 +650,6 @@ int main(void)
                 }
             }
         }
-        keys = SDL_GetKeyboardState(NULL);
-        up = (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) ? 1 : 0;
-        down = (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) ? 1 : 0;
-        left = (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) ? 1 : 0;
-        right = (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) ? 1 : 0;
-        sx = 0;
-        sy = 0;
-        if (up && !down)
-            sy = -1;
-        if (down && !up)
-            sy = 1;
-        if (left && !right)
-            sx = -1;
-        if (right && !left)
-            sx = 1;
         pressed = keys[SDL_SCANCODE_SPACE] ? 1 : 0;
         board_set_switches(&board, up, down, left, right, pressed);
         input_tick(board_sense(&board, AVR_PD1) == SIG_L,
@@ -627,6 +663,7 @@ int main(void)
             drivers_flush();
         }
         board_advance(&board, TICK_NS);
+        acetate_drag_tick();
 
         SDL_SetRenderTarget(renderer, canvas);
         draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board,
@@ -634,7 +671,7 @@ int main(void)
         if (fps_tex != NULL) {
             SDL_Rect dst = {
                 CANVAS_W - fps_w - 2,
-                CANVAS_H - fps_h - 2,
+                2,
                 fps_w,
                 fps_h,
             };
@@ -642,6 +679,7 @@ int main(void)
             SDL_RenderCopy(renderer, fps_tex, NULL, &dst);
         }
         present_canvas(renderer, canvas);
+        acetate_apply_cursor(renderer);
         if (vram != NULL && (SDL_GetWindowFlags(vram) & SDL_WINDOW_SHOWN))
             draw_vram(vram_renderer, vram_led_on, vram_led_off);
         sound_render();
@@ -649,6 +687,7 @@ int main(void)
     }
 
     sound_close();
+    acetate_quit();
 
     SDL_DestroyTexture(fps_tex);
     if (vram_led_on != NULL)

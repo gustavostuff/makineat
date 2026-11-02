@@ -13,6 +13,7 @@
 const char *cart_id(const char *json);
 int cart_read_file(const char *path);
 int cart_loaded(void);
+const char *cart_name(void);
 const char *cart_eeprom(void);
 void cart_reset(void);
 void cart_tick(const Input *in);

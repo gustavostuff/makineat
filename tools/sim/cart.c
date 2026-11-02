@@ -119,6 +119,19 @@ int cart_loaded(void)
     return which != 0;
 }
 
+const char *cart_name(void)
+{
+    if (which == 1)
+        return "space-shooter";
+    if (which == 2)
+        return "paddle";
+    if (which == 3)
+        return "arkaled";
+    if (which == 4)
+        return "text-test";
+    return NULL;
+}
+
 const char *cart_eeprom(void)
 {
     if (which == 2)

@@ -2,6 +2,8 @@
 
 #include "chips/max7219.h"
 
+static SevenSegLayerBlitFn layer_blit;
+
 #include <SDL_image.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +59,11 @@ static int layer_matches_digit(const SevenSegDisplay *disp, SDL_Texture *tex, co
         return -1;
     }
     return 0;
+}
+
+void seven_seg_set_layer_blit(SevenSegLayerBlitFn fn)
+{
+    layer_blit = fn;
 }
 
 int seven_seg_init(SevenSegDisplay *disp, SDL_Renderer *renderer)
@@ -254,7 +261,7 @@ int seven_seg_print(SevenSegDisplay *disp, const char *text)
 }
 
 static void blit_layer(SDL_Renderer *renderer, SDL_Texture *tex, int x, int y, int w, int h,
-                       const SDL_Rect *clip)
+                       const SDL_Rect *clip, int lit)
 {
     SDL_Rect src = {0, 0, w, h};
     SDL_Rect dst = {x, y, w, h};
@@ -285,7 +292,10 @@ static void blit_layer(SDL_Renderer *renderer, SDL_Texture *tex, int x, int y, i
         if (dst.w <= 0 || dst.h <= 0)
             return;
     }
-    SDL_RenderCopy(renderer, tex, &src, &dst);
+    if (layer_blit != NULL)
+        layer_blit(renderer, tex, &src, &dst, lit);
+    else
+        SDL_RenderCopy(renderer, tex, &src, &dst);
 }
 
 static void draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
@@ -295,13 +305,13 @@ static void draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int 
     int w = disp->digit_w;
     int h = disp->digit_h;
 
-    blit_layer(renderer, disp->base, x, y, w, h, clip);
+    blit_layer(renderer, disp->base, x, y, w, h, clip, 0);
     for (bit = 0; bit < 7; bit++) {
         if ((mask & (1u << bit)) != 0)
-            blit_layer(renderer, disp->seg[bit], x, y, w, h, clip);
+            blit_layer(renderer, disp->seg[bit], x, y, w, h, clip, 1);
     }
     if ((mask & SEVEN_SEG_DP) != 0)
-        blit_layer(renderer, disp->dp, x, y, w, h, clip);
+        blit_layer(renderer, disp->dp, x, y, w, h, clip, 1);
 }
 
 int seven_seg_row_width(const SevenSegDisplay *disp)
