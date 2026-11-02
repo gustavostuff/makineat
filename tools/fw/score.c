@@ -2,7 +2,7 @@
 
 #include "persist.h"
 
-#define SCORE_MAX 999
+#define SCORE_MAX 9999
 
 static int score;
 static int saved;

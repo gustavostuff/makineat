@@ -21,5 +21,6 @@ int rock_fall_period(int base, int age);
 void rock_reset(void);
 void rock_add(int x, int y, int size, int every, int dx, int xevery);
 int rock_tick(void);
+int rock_score_get(void);
 
 #endif

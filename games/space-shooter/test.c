@@ -212,11 +212,10 @@ static void test_crash(void)
 {
     int i;
 
-    score_clear_saved();
     input_reset();
     game_reset();
     die();
-    expect(flat_mouth(), "a matching score draws the straight mouth");
+    expect(frown(), "zero player against one rock score is a loss");
     expect(pixel_get(4, 0) && !pixel_get(1, 7), "the face is on screen");
     expect(pixel_get(1, 8) && pixel_get(2, 8) && pixel_get(3, 8) && !pixel_get(4, 8),
            "a zero score starts at column 1, row 8");
@@ -227,44 +226,38 @@ static void test_crash(void)
 
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
-    expect(flat_mouth() && !pixel_get(7, 12), "a press in the first second stays on the end picture");
+    expect(frown() && !pixel_get(7, 12), "a press in the first second stays on the end picture");
     for (i = 0; i < 57; i++)
         feed(0, 0, 0, 0, 0);
-    expect(flat_mouth(), "the end picture lasts one second");
+    expect(frown(), "the end picture lasts one second");
     feed(0, 0, 0, 0, 1);
-    expect(flat_mouth(), "one tick does not pass the button debounce");
+    expect(frown(), "one tick does not pass the button debounce");
     feed(0, 0, 0, 0, 1);
-    expect(pixel_get(7, 13) && !pixel_get(6, 13) && !flat_mouth(),
+    expect(pixel_get(7, 13) && !pixel_get(6, 13) && !frown(),
            "the button starts the next round");
 
     input_reset();
     game_reset();
     score_add(2);
     die();
-    expect(smile(), "a higher score draws the wide smile");
+    expect(smile(), "more player points than rocks draws the wide smile");
     expect(pixel_get(1, 8) && pixel_get(2, 9) && !pixel_get(1, 9) && pixel_get(3, 10),
            "the score is the digit 2");
     expect(!pixel_get(6, 8), "a one-digit score does not draw a second glyph");
 
     input_reset();
     game_reset();
-    score_add(2);
+    score_add(1);
     die();
-    expect(flat_mouth(), "the same score draws the straight mouth again");
-    expect(pixel_get(2, 9) && !pixel_get(1, 9), "the digit 2 is still there");
+    expect(flat_mouth(), "equal player and rock scores draw the straight mouth");
+    expect(pixel_get(2, 9) && !pixel_get(1, 9), "the digit 1 is still there");
 
     input_reset();
     game_reset();
     die();
-    expect(frown(), "a lower score draws the small frown");
+    expect(frown(), "fewer player points than rocks draws the small frown");
     expect(pixel_get(1, 8) && pixel_get(1, 9) && !pixel_get(2, 9),
-           "the lower score is a zero");
-
-    input_reset();
-    game_reset();
-    score_add(2);
-    die();
-    expect(flat_mouth(), "a lower score leaves the saved score in place");
+           "the lower player score is a zero");
 }
 
 static void test_glyphs(void)
@@ -308,45 +301,43 @@ static void test_score(void)
 {
     int i;
 
-    score_clear_saved();
     score_reset();
-    for (i = 0; i < 999; i++)
+    for (i = 0; i < 9999; i++)
         score_add(1);
-    expect(score_get() == 999, "the score reaches 999");
+    expect(score_get() == 9999, "the score reaches 9999");
     score_add(1);
-    expect(score_get() == 999, "the score stops at 999");
-
-    input_reset();
-    game_reset();
-    for (i = 0; i < 999; i++)
-        score_add(1);
-    die();
-    expect(smile(), "the first 999 shows the wide smile");
-    expect(pixel_get(1, 8) && pixel_get(5, 8) && pixel_get(9, 8) && !pixel_get(4, 8),
-           "999 is three nines");
-
-    input_reset();
-    game_reset();
-    for (i = 0; i < 999; i++)
-        score_add(1);
-    die();
-    expect(smile() && !flat_mouth(), "a second 999 still shows the wide smile");
+    expect(score_get() == 9999, "the score stops at 9999");
 
     input_reset();
     game_reset();
     for (i = 0; i < 99; i++)
         score_add(1);
     feed(0, 0, 0, 0, 0);
-    expect(status_get_digit(6) == 9 && status_get_digit(7) == 9,
-           "the two right status digits show 99");
+    expect(status_get_digit(0) == 0 && status_get_digit(1) == 0 &&
+           status_get_digit(2) == 9 && status_get_digit(3) == 9,
+           "the left four status digits show player 99");
+    expect(status_get_digit(4) == 0 && status_get_digit(5) == 0 &&
+           status_get_digit(6) == 0 && status_get_digit(7) == 0,
+           "the right four status digits start at zero rocks");
     score_add(1);
     feed(0, 0, 0, 0, 0);
     expect(score_get() == 100, "the score can pass 99");
-    expect(smile(), "passing 99 shows the happy face");
-    for (i = 0; i < OVER_HOLD; i++)
+    expect(status_get_digit(1) == 1 && status_get_digit(2) == 0 && status_get_digit(3) == 0,
+           "player score 100 uses the hundreds digit");
+}
+
+static void test_rock_line_score(void)
+{
+    int i;
+
+    input_reset();
+    game_reset();
+    rock_add(0, 11, 2, 4, 0, 30);
+    for (i = 0; i < 8 && rock_score_get() == 0; i++)
         feed(0, 0, 0, 0, 0);
-    expect(pixel_get(7, 13) && score_get() == 0,
-           "the celebration restarts the round with a zero score");
+    expect(rock_score_get() == 1, "a rock past row 13 scores for the rocks");
+    expect(status_get_digit(7) == 1, "the rocks score shows in the right digit");
+    expect(pixel_get(7, 13), "the ship survives a rock that only crossed the line");
 }
 
 static void test_ramp(void)
@@ -373,6 +364,7 @@ int main(void)
     test_both_sizes();
     test_crash();
     test_score();
+    test_rock_line_score();
     test_ramp();
     test_glyphs();
     return report_end();

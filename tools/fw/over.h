@@ -13,6 +13,8 @@
 
 void over_clear(void);
 void over_start(void);
+/* judge is 1 win, 0 tie, -1 lose (same as score_judge). */
+void over_start_mark(int judge);
 void over_celebrate(void);
 void over_paint(void);
 int over_tick(const Input *in);

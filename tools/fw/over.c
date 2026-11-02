@@ -61,11 +61,21 @@ void over_clear(void)
     mark = 0;
 }
 
-void over_start(void)
+void over_start_mark(int judge)
 {
-    mark = score_judge();
+    if (judge > 0)
+        mark = 1;
+    else if (judge < 0)
+        mark = -1;
+    else
+        mark = 0;
     hold = OVER_HOLD;
     draw_over();
+}
+
+void over_start(void)
+{
+    over_start_mark(score_judge());
 }
 
 void over_celebrate(void)

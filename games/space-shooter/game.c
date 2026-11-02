@@ -10,29 +10,49 @@
 #include "status.h"
 
 static int over;
-static int celebrate;
+
+static void status_put4(int start, int value)
+{
+    if (value < 0)
+        value = 0;
+    if (value > 9999)
+        value = 9999;
+    status_set_digit((uint8_t)start, (uint8_t)(value / 1000));
+    status_set_digit((uint8_t)(start + 1), (uint8_t)((value / 100) % 10));
+    status_set_digit((uint8_t)(start + 2), (uint8_t)((value / 10) % 10));
+    status_set_digit((uint8_t)(start + 3), (uint8_t)(value % 10));
+}
 
 static void status_sync_score(void)
 {
-    int s = score_get();
-
-    if (s > 99)
-        s = 99;
-    status_set_digit(6, (uint8_t)(s / 10));
-    status_set_digit(7, (uint8_t)(s % 10));
+    status_put4(0, score_get());
+    status_put4(4, rock_score_get());
 }
 
 static void draw(void)
 {
-    if (!celebrate)
-        status_sync_score();
+    status_sync_score();
     world_draw();
+}
+
+static void game_over_judge(void)
+{
+    int player = score_get();
+    int rocks = rock_score_get();
+    int judge;
+
+    if (player > rocks)
+        judge = 1;
+    else if (player < rocks)
+        judge = -1;
+    else
+        judge = 0;
+    over_start_mark(judge);
 }
 
 void game_reset(void)
 {
     over = 0;
-    celebrate = 0;
     over_clear();
     score_reset();
     status_clear();
@@ -46,13 +66,6 @@ void game_reset(void)
 
 void game_tick(const Input *in)
 {
-    if (celebrate) {
-        over_paint();
-        celebrate--;
-        if (celebrate <= 0)
-            game_reset();
-        return;
-    }
     if (over) {
         if (over_tick(in))
             game_reset();
@@ -66,12 +79,7 @@ void game_tick(const Input *in)
         sound(1);
     if (rock_tick()) {
         over = 1;
-        over_start();
-        return;
-    }
-    if (score_get() > 99) {
-        celebrate = OVER_HOLD;
-        over_celebrate();
+        game_over_judge();
         return;
     }
     draw();

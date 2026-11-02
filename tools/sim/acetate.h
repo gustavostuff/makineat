@@ -9,11 +9,12 @@
 #define ACETATE_CANVAS_W 128
 #define ACETATE_CANVAS_H 192
 /* Max canvas Y extent: island bottom is y + h, must be <= this value. */
-#define ACETATE_MAX_Y 141
+#define ACETATE_MAX_Y 143
 
 void acetate_init(void);
 void acetate_quit(void);
 void acetate_set_window(SDL_Window *window);
+void acetate_set_renderer(SDL_Renderer *renderer);
 
 void acetate_set_cart(const char *cart_id);
 void acetate_save(void);

@@ -2,7 +2,7 @@
 #define FW_SCORE_H
 
 /*
- * The round's score. It stops at 999.
+ * The round's score. It stops at 9999.
  * score_judge compares it with the saved score. The saved score
  * changes only when the round's score is higher. score_load reads
  * that word from the EEPROM image. An erased image reads as no score.

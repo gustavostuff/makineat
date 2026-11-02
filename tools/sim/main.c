@@ -17,6 +17,7 @@
 #include <SDL_ttf.h>
 
 #include <stdio.h>
+#include <string.h>
 
 #define GRID 16
 #define LED 6 /* led_on/off.png native size; 1:1 blit into each cell */
@@ -402,7 +403,8 @@ int main(void)
     input_reset();
     if (loaded) {
         persist_bind(cart_eeprom());
-        score_load();
+        if (cart_name() == NULL || strcmp(cart_name(), "space-shooter") != 0)
+            score_load();
         cart_reset();
         drivers_init();
         drivers_flush();
@@ -525,6 +527,7 @@ int main(void)
 
     acetate_init();
     acetate_set_window(window);
+    acetate_set_renderer(renderer);
     if (cart_name() != NULL)
         acetate_set_cart(cart_name());
     else

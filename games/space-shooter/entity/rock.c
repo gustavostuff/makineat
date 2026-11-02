@@ -11,6 +11,9 @@
 #define FIELD 16
 #define ROCK_MAX 32
 #define SPAWN_EVERY 36
+/* Screen row 13 counting from 1 is y=12; beyond that is bottom >= 13 (0-based). */
+#define ROCK_SCORE_LINE 13
+#define ROCK_SCORE_MAX 9999
 
 #if ROCK_MAX + 8 + 1 > ENTITY_MAX
 #error the shooter does not fit in the entity table
@@ -28,12 +31,14 @@ typedef struct Rock {
     int dx;
     int xevery;
     int xpace;
+    int scored_line;
 } Rock;
 
 static Rock rock[ROCK_MAX];
 static int spawn_wait;
 static int age;
 static uint16_t rng;
+static int rock_score;
 
 int rock_fall_period(int base, int age_ticks)
 {
@@ -67,10 +72,41 @@ void rock_reset(void)
     for (i = 0; i < ROCK_MAX; i++) {
         entity_kill(rock[i].id);
         rock[i].id = -1;
+        rock[i].scored_line = 0;
     }
     spawn_wait = 12;
     age = 0;
     rng = 1;
+    rock_score = 0;
+}
+
+int rock_score_get(void)
+{
+    return rock_score;
+}
+
+static void rock_score_add(int points)
+{
+    if (points <= 0 || rock_score >= ROCK_SCORE_MAX)
+        return;
+    rock_score += points;
+    if (rock_score > ROCK_SCORE_MAX)
+        rock_score = ROCK_SCORE_MAX;
+}
+
+static int rock_bottom(const Entity *e, int size)
+{
+    return e->y + size - 1;
+}
+
+static void rock_try_score_line(Rock *r, const Entity *e)
+{
+    if (r->scored_line)
+        return;
+    if (rock_bottom(e, r->size) < ROCK_SCORE_LINE)
+        return;
+    r->scored_line = 1;
+    rock_score_add(1);
 }
 
 void rock_add(int x, int y, int size, int every, int dx, int xevery)
@@ -103,6 +139,7 @@ void rock_add(int x, int y, int size, int every, int dx, int xevery)
         rock[i].dx = dx;
         rock[i].xevery = xevery;
         rock[i].xpace = 0;
+        rock[i].scored_line = 0;
         return;
     }
 }
@@ -189,6 +226,7 @@ int rock_tick(void)
                 e->x = nx;
             }
         }
+        rock_try_score_line(r, e);
         if (e->y >= FIELD) {
             entity_kill(r->id);
             r->id = -1;

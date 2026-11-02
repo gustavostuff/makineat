@@ -82,6 +82,7 @@ static SDL_Rect ctrl_button_hit;
 static int ctrl_hits_active;
 static int island_max_y = ACETATE_MAX_Y;
 static SDL_Window *event_window;
+static SDL_Renderer *map_renderer;
 
 static Hit last_hit = HIT_NONE;
 static SDL_Cursor *cur_default;
@@ -203,9 +204,21 @@ static Hit hit_island(const Island *is, int x, int y, int for_island_index)
     return HIT_NONE;
 }
 
+static int canvas_picks_islands(int y)
+{
+    /* Resize handles extend HANDLE/2 px past the island bottom. */
+    return y <= island_max_y + HANDLE / 2;
+}
+
 static int topmost_at(int x, int y, Hit *out_hit)
 {
     int i;
+
+    if (!canvas_picks_islands(y)) {
+        if (out_hit != NULL)
+            *out_hit = HIT_NONE;
+        return -1;
+    }
 
     for (i = island_n - 1; i >= 0; i--) {
         Hit h = hit_island(&islands[i], x, y, i);
@@ -339,6 +352,11 @@ static void save_file(void)
 void acetate_set_window(SDL_Window *window)
 {
     event_window = window;
+}
+
+void acetate_set_renderer(SDL_Renderer *renderer)
+{
+    map_renderer = renderer;
 }
 
 void acetate_init(void)
@@ -612,11 +630,28 @@ static int window_point_to_canvas(int wx, int wy, int *cx, int *cy, int clamp_to
     int ly;
     int max_lx;
     int max_ly;
+    int rx;
+    int ry;
 
     int scale = present_scale > 0 ? present_scale : 1;
 
-    lx = wx - present_dx;
-    ly = wy - present_dy;
+    rx = wx;
+    ry = wy;
+    if (map_renderer != NULL && event_window != NULL) {
+        int ww;
+        int wh;
+        int ow;
+        int oh;
+
+        SDL_GetWindowSize(event_window, &ww, &wh);
+        SDL_GetRendererOutputSize(map_renderer, &ow, &oh);
+        if (ww > 0 && wh > 0) {
+            rx = wx * ow / ww;
+            ry = wy * oh / wh;
+        }
+    }
+    lx = rx - present_dx;
+    ly = ry - present_dy;
     max_lx = ACETATE_CANVAS_W * scale - 1;
     max_ly = ACETATE_CANVAS_H * scale - 1;
     if (!clamp_to_canvas) {
