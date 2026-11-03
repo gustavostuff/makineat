@@ -11,7 +11,7 @@ Each game is conceived as a complete, tactile physical release rather than just 
 - A snap-on magnetic marquee panel featuring game title artwork.
 - A printed mini-manual illustrating controls, scoring, and lore.
 
-Preparing to play involves an enjoyable physical ritual. Loading the cartridge through the top-loader cart door, snapping the matching magnetic marquee onto the cabinet top, and snapping the overlay into the faceplate turns the tabletop system into a dedicated arcade cabinet for that specific title.
+Preparing to play involves an enjoyable physical ritual. Sliding the cartridge into the edge slot, snapping the matching magnetic marquee onto the cabinet top, and snapping the overlay into the faceplate turns the tabletop system into a dedicated arcade cabinet for that specific title.
 
 ## Visual mechanics
 

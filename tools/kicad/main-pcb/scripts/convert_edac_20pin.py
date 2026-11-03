@@ -11,13 +11,13 @@ Coordinates are kept in mm (1:1 with STEP and KiCad WRL).
 
 Examples:
 
-    # J3 right-angle socket (558-212):
+    # J3 straight socket (520-202 STEP; order 395-020-520-802):
+    python3 tools/kicad/main-pcb/scripts/convert_edac_20pin.py
+
+    # Legacy right-angle 558-212 (not used on main PCB):
     python3 tools/kicad/main-pcb/scripts/convert_edac_20pin.py \\
         --step "tools/kicad/main-pcb/library/MakiNeat.3dshapes/395-020-558-212 - EDAC Card Edge Connector.STEP" \\
         --wrl tools/kicad/main-pcb/library/MakiNeat.3dshapes/EDAC_395-020-558-212.wrl
-
-    # Straight socket (520-202), legacy default:
-    python3 tools/kicad/main-pcb/scripts/convert_edac_20pin.py
 """
 
 from __future__ import annotations
@@ -152,7 +152,7 @@ def main() -> None:
         "--variant",
         choices=("520", "558", "auto"),
         default="auto",
-        help="520=straight 520-202, 558=right-angle 558-212, auto=pick 558 STEP if --step omitted and file exists",
+        help="520=straight 520-202 (default), 558=right-angle 558-212, auto=pick 520 STEP if --step omitted",
     )
     args = parser.parse_args()
 

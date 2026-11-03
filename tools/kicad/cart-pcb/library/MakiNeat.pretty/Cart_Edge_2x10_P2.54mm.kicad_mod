@@ -3,8 +3,8 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "Double-sided gold fingers for the EDAC 395-020 card edge. Ten contacts a side, 2.54mm center to center. Pads A1-A10 are F.Cu. Pads B1-B10 are B.Cu at the same centers. Pad size 8.0 x 1.7mm. Place the X=0 edge on the board outline, copper toward +X. Mating edge width 27.94mm. Mates 395-020-558-212 socket on the console.")
-	(tags "cart edge gold finger EDAC 395-020 2.54mm 2x10")
+	(descr "Double-sided gold fingers, 2.54mm pitch (ten contacts per side, 5.08mm between rows). Pads A1-A10 are F.Cu. Pads B1-B10 are B.Cu at the same centers. Pad size 8.0 x 1.7mm. Place the X=0 edge on the board outline, copper toward +X. Mating edge width 27.94mm. Mates a straight 2x10 card-edge socket on the console (e.g. EDAC 395-020-520-802).")
+	(tags "cart edge gold finger 2.54mm 2x10 card edge")
 	(property "Reference" "REF**"
 		(at 10 -3.2 0)
 		(layer "F.SilkS")

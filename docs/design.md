@@ -14,7 +14,7 @@ The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `too
 
 The main system board is a 100x100 mm 2-layer board with ground pours on both sides. Parts are through-hole on a 2.54 mm grid. The game AVR is on the cartridge PCB. Six M3 (3.2 mm) mounting holes (H1 to H6) secure the corners and top edge.
 
-Cables for rear-mounted connectors leave the board from behind the cabinet face. Front-mounted connectors sit along the top edge of the main PCB toward the player. The planned cabinet loads cartridges through a top-loader door at the upper housing. J3 uses a right-angle EDAC socket so the cart edge mates when the cartridge drops in from above. J7 and J9 mate the status digit daughterboard on the front. The 16x16 display field occupies the central and lower area of the front.
+Cables for rear-mounted connectors leave the board from behind the cabinet face. Front-mounted connectors sit along the top edge of the main PCB toward the player. The planned cabinet accepts cartridges perpendicular to the main PCB through a front or side card-edge slot. J3 is a straight card-edge socket on that mating plane. J7 and J9 mate the status digit daughterboard on the front. The 16x16 display field occupies the central and lower area of the front.
 
 | Ref | PCB side |
 | --- | --- |
@@ -32,7 +32,7 @@ Cables for rear-mounted connectors leave the board from behind the cabinet face.
 | --- | --- |
 | J1 | 1x6 header, Player 1 controls (GND, LEFT, RIGHT, UP, DOWN, button) |
 | J2 | 1x6 header, Player 2 controls (GND, LEFT, RIGHT, UP, DOWN, button) |
-| J3 | EDAC 395-020-558-212, 20-contact 90° motherboard socket (cart edge) |
+| J3 | 20-contact card-edge socket, 2.54 mm pitch (10 contacts per side, 5.08 mm between rows) |
 | J4 | 1x2 vertical header, 5 V power (JST XH: Pin 1 GND, Pin 2 +5V) |
 | J5 | 1x2 vertical header, speaker (Pin 1 GND, Pin 2 SPK) |
 | J6 | 1x3 header, audio AVR UPDI (Pin 1 UPDI, Pin 2 +5V, Pin 3 GND) |
@@ -80,7 +80,11 @@ The MAX7219 multiplexes its eight rows using an autonomous internal oscillator a
 
 ## Cart edge (J3)
 
-The main board cart socket is an EDAC 395-020-558-212 right-angle motherboard connector with 20 contacts (10 contacts per side, 2.54 mm pitch).
+The electrical and mechanical interface is defined by 2.54 mm pitch on both the main-board through-hole pattern and the cartridge gold fingers (ten contacts per edge, 5.08 mm between the two rows). Any socket and cart edge that match that geometry can mate. The design is not tied to a single manufacturer part number.
+
+J3 is a straight 2x10 card-edge motherboard socket. EDAC 395-020-520-802 is a recommended default for price and distributor availability (DigiKey, Mouser, and similar).
+
+The KiCad 3D view of the main PCB (currently `makineat_v_05.kicad_pcb`) assigns the 395-020-520-802 model to J3.
 
 Side A pins sit at the bottom part of the connector on the main PCB, carrying player inputs. Side B pins sit at the top part of the connector on the main PCB, carrying power, audio events, reset, programming, and display signals.
 
@@ -112,7 +116,7 @@ From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. **RC
 ## Not in the SKiDL netlist yet
 
 * Global brightness (Bright button with tap-to-increment and hold-plus-stick adjustment, system AVR writing MAX7219 intensity) and extra system wiring for that feature.
-* Status display daughterboard PCB itself (the driver U7 and mating headers J7 and J9 on the main PCB are now in the netlist; see [status-digits.md](status-digits.md)).
+* Status display daughterboard PCB layout (see [status-digits.md](status-digits.md)). Driver U7 and mating headers J7 and J9 are on the main PCB netlist.
 * The playfield is the 256 LEDs from the four matrices only.
 
 ## Future plans

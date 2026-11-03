@@ -89,7 +89,8 @@ static void control_rects(int sx, int sy, SDL_Rect *stick, SDL_Rect *button)
 
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
-                 SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed)
+                 SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed,
+                 unsigned ui_frame)
 {
     int x;
     int y;
@@ -131,7 +132,7 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
         SDL_SetTextureColorMod(button_tex, 255, 255, 255);
     SDL_RenderCopy(renderer, button_tex, NULL, &button);
 
-    acetate_draw_overlay(renderer, (unsigned)(SDL_GetTicks() / 16));
+    acetate_draw_overlay(renderer, ui_frame);
     acetate_draw_swatch(renderer);
 }
 
@@ -313,33 +314,40 @@ static SDL_Texture *fps_text(SDL_Renderer *renderer, TTF_Font *font, int fps,
     return tex;
 }
 
-/* Sleep the rest of a 1/60 s frame, then spin the last slice. SDL_Delay
- * wakes late, and that late wake is the uneven ship step. */
-static void pace(Uint64 frame_start, Uint64 freq)
+/* Block until the next 1/TICK_HZ slot. Uses a fixed schedule so the UI and
+ * game stay at 60 Hz without drifting fast like a per-frame "start + sleep". */
+static void wait_next_frame(Uint64 *next_frame, Uint64 freq, Uint64 period)
 {
-    const double target = 1.0 / 60.0;
+    Uint64 now;
 
+    if (*next_frame == 0) {
+        *next_frame = SDL_GetPerformanceCounter();
+        return;
+    }
+    *next_frame += period;
     for (;;) {
-        Uint64 now = SDL_GetPerformanceCounter();
-        double left = target - (double)(now - frame_start) / (double)freq;
-
-        if (left <= 0.0)
-            return;
-        if (left > 0.002) {
-            Uint32 ms = (Uint32)((left - 0.001) * 1000.0);
-
-            if (ms > 0)
-                SDL_Delay(ms);
-        } else {
+        now = SDL_GetPerformanceCounter();
+        if ((Sint64)(now - *next_frame) >= 0)
             break;
+        {
+            double left = (double)(*next_frame - now) / (double)freq;
+
+            if (left > 0.002) {
+                Uint32 ms = (Uint32)((left - 0.001) * 1000.0);
+
+                if (ms > 0)
+                    SDL_Delay(ms);
+            }
         }
     }
     for (;;) {
-        Uint64 now = SDL_GetPerformanceCounter();
-
-        if ((double)(now - frame_start) / (double)freq >= target)
-            return;
+        now = SDL_GetPerformanceCounter();
+        if ((Sint64)(now - *next_frame) >= 0)
+            break;
     }
+    now = SDL_GetPerformanceCounter();
+    if ((Sint64)(now - *next_frame) > (Sint64)(period * 2))
+        *next_frame = now;
 }
 
 static int open_cart(void)
@@ -499,7 +507,7 @@ int main(void)
     TTF_Font *font = open_font();
 
     SDL_SetRenderTarget(renderer, canvas);
-    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0);
+    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0, 0);
     present_canvas(renderer, canvas);
     vram = open_vram(window, &vram_renderer);
     if (vram != NULL) {
@@ -519,7 +527,10 @@ int main(void)
     place_vram(window, vram);
 
     Uint64 freq = SDL_GetPerformanceFrequency();
-    Uint64 frame_start = 0;
+    Uint64 frame_period = freq / TICK_HZ;
+    Uint64 next_frame = 0;
+    Uint64 last_frame = 0;
+    unsigned ui_frame = 0;
     SDL_Texture *fps_tex = NULL;
     int fps_show = -1;
     int fps_w = 0;
@@ -548,10 +559,12 @@ int main(void)
         int sx = 0;
         int sy = 0;
         int pressed;
-        Uint64 now = SDL_GetPerformanceCounter();
+        Uint64 now;
 
-        if (frame_start != 0 && now > frame_start) {
-            double dt = (double)(now - frame_start) / (double)freq;
+        wait_next_frame(&next_frame, freq, frame_period);
+        now = SDL_GetPerformanceCounter();
+        if (last_frame != 0) {
+            double dt = (double)(now - last_frame) / (double)freq;
             int fps = (int)(1.0 / dt + 0.5);
 
             if (fps > 999)
@@ -568,7 +581,8 @@ int main(void)
                 }
             }
         }
-        frame_start = now;
+        last_frame = now;
+        ui_frame++;
 
         keys = SDL_GetKeyboardState(NULL);
         up = (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) ? 1 : 0;
@@ -670,7 +684,7 @@ int main(void)
 
         SDL_SetRenderTarget(renderer, canvas);
         draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board,
-             sx, sy, pressed);
+             sx, sy, pressed, ui_frame);
         if (fps_tex != NULL) {
             SDL_Rect dst = {
                 CANVAS_W - fps_w - 2,
@@ -686,7 +700,6 @@ int main(void)
         if (vram != NULL && (SDL_GetWindowFlags(vram) & SDL_WINDOW_SHOWN))
             draw_vram(vram_renderer, vram_led_on, vram_led_off);
         sound_render();
-        pace(frame_start, freq);
     }
 
     sound_close();
