@@ -16,6 +16,7 @@ void over_start(void);
 void over_start_mark(int judge);
 /* Space shooter: saved player score, duel vs rocks, no score on the matrix. */
 void over_start_shooter(int player, int rocks);
+void over_start_pong(int winner);
 void over_celebrate(void);
 void over_paint(void);
 int over_tick(const Input *in);

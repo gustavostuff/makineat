@@ -2,7 +2,7 @@
 
 #include "arkaled.h"
 #include "game.h"
-#include "paddle.h"
+#include "pong.h"
 #include "text_test.h"
 
 #include <stdio.h>
@@ -38,8 +38,8 @@ static int read_string(const char **p, char *out, int cap)
 
 static const char *known(const char *name)
 {
-    if (strcmp(name, "paddle") == 0)
-        return "paddle";
+    if (strcmp(name, "pong") == 0 || strcmp(name, "paddle") == 0)
+        return "pong";
     if (strcmp(name, "space-shooter") == 0)
         return "space-shooter";
     if (strcmp(name, "arkaled") == 0)
@@ -86,7 +86,7 @@ static void select_name(const char *name)
 {
     if (name == NULL)
         which = 0;
-    else if (strcmp(name, "paddle") == 0)
+    else if (strcmp(name, "pong") == 0 || strcmp(name, "paddle") == 0)
         which = 2;
     else if (strcmp(name, "space-shooter") == 0)
         which = 1;
@@ -124,7 +124,7 @@ const char *cart_name(void)
     if (which == 1)
         return "space-shooter";
     if (which == 2)
-        return "paddle";
+        return "pong";
     if (which == 3)
         return "arkaled";
     if (which == 4)
@@ -134,8 +134,6 @@ const char *cart_name(void)
 
 const char *cart_eeprom(void)
 {
-    if (which == 2)
-        return "tools/sim/paddle.eep";
     if (which == 3)
         return "tools/sim/arkaled.eep";
     return NULL;
@@ -146,7 +144,7 @@ void cart_reset(void)
     if (which == 1)
         game_reset();
     else if (which == 2)
-        paddle_reset();
+        pong_reset();
     else if (which == 3)
         arkaled_reset();
     else if (which == 4)
@@ -158,7 +156,7 @@ void cart_tick(const Input *in)
     if (which == 1)
         game_tick(in);
     else if (which == 2)
-        paddle_tick(in);
+        pong_tick(in);
     else if (which == 3)
         arkaled_tick(in);
     else if (which == 4)

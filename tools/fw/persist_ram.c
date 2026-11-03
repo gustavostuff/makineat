@@ -9,6 +9,10 @@ void persist_bind(const char *stored)
     (void)stored;
 }
 
+void persist_detach(void)
+{
+}
+
 uint16_t persist_read(void)
 {
     return word;

@@ -9,13 +9,23 @@
 
 static uint8_t image[EEPROM_BYTES];
 static int ready;
+static int detached;
 static const char *path;
 static const char *bound;
 
 static const char *const cand[] = {"tools/sim/makineat.eep", "makineat.eep"};
 
+void persist_detach(void)
+{
+    bound = NULL;
+    path = NULL;
+    detached = 1;
+    ready = 0;
+}
+
 void persist_bind(const char *stored)
 {
+    detached = 0;
     bound = stored;
     path = NULL;
     ready = 0;
@@ -26,6 +36,11 @@ static void load(void)
     int i;
     FILE *f;
 
+    if (detached) {
+        memset(image, 0xFF, sizeof image);
+        ready = 1;
+        return;
+    }
     memset(image, 0xFF, sizeof image);
     path = NULL;
     ready = 1;
@@ -56,6 +71,8 @@ static int store(void)
     int i;
     FILE *f;
 
+    if (detached)
+        return 1;
     if (path != NULL) {
         f = fopen(path, "wb");
         if (f != NULL) {

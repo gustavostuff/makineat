@@ -360,10 +360,22 @@ static void wait_next_frame(Uint64 *next_frame, Uint64 freq, Uint64 period)
         *next_frame = now;
 }
 
+static int cart_is_pong(void)
+{
+    const char *name = cart_name();
+
+    return name != NULL && strcmp(name, "pong") == 0;
+}
+
 static void sim_start_cart(Board *board)
 {
-    persist_bind(cart_eeprom());
-    score_load();
+    if (cart_is_pong()) {
+        persist_detach();
+        score_reset();
+    } else {
+        persist_bind(cart_eeprom());
+        score_load();
+    }
     cart_reset();
     drivers_init();
     drivers_flush();
@@ -599,10 +611,17 @@ int main(void)
         ui_frame++;
 
         keys = SDL_GetKeyboardState(NULL);
-        up = (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) ? 1 : 0;
-        down = (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) ? 1 : 0;
-        left = (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) ? 1 : 0;
-        right = (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) ? 1 : 0;
+        if (loaded && cart_name() != NULL && strcmp(cart_name(), "pong") == 0) {
+            up = keys[SDL_SCANCODE_W] ? 1 : 0;
+            down = keys[SDL_SCANCODE_S] ? 1 : 0;
+            left = keys[SDL_SCANCODE_A] ? 1 : 0;
+            right = keys[SDL_SCANCODE_D] ? 1 : 0;
+        } else {
+            up = (keys[SDL_SCANCODE_W] || keys[SDL_SCANCODE_UP]) ? 1 : 0;
+            down = (keys[SDL_SCANCODE_S] || keys[SDL_SCANCODE_DOWN]) ? 1 : 0;
+            left = (keys[SDL_SCANCODE_A] || keys[SDL_SCANCODE_LEFT]) ? 1 : 0;
+            right = (keys[SDL_SCANCODE_D] || keys[SDL_SCANCODE_RIGHT]) ? 1 : 0;
+        }
         sx = 0;
         sy = 0;
         if (up && !down)
@@ -664,9 +683,11 @@ int main(void)
             }
             if (event.type == SDL_KEYDOWN && !event.key.repeat &&
                 event.key.keysym.scancode == SDL_SCANCODE_F12 && loaded) {
-                persist_reset();
-                score_clear_saved();
-                score_load();
+                if (!cart_is_pong()) {
+                    persist_reset();
+                    score_clear_saved();
+                    score_load();
+                }
                 eep_blink_left = EEP_BLINK_FRAMES;
             }
             if (event.type == SDL_KEYDOWN &&
@@ -696,6 +717,13 @@ int main(void)
                    board_sense(&board, AVR_PD4) == SIG_L,
                    board_sense(&board, AVR_PD5) == SIG_L,
                    &in);
+        if (loaded && cart_name() != NULL && strcmp(cart_name(), "pong") == 0) {
+            int p2_up = keys[SDL_SCANCODE_UP] ? 1 : 0;
+            int p2_down = keys[SDL_SCANCODE_DOWN] ? 1 : 0;
+            int p2_button = (keys[SDL_SCANCODE_RSHIFT] || keys[SDL_SCANCODE_RETURN]) ? 1 : 0;
+
+            input_tick_p2(p2_up, p2_down, 0, 0, p2_button, &in);
+        }
         if (eep_blink_left > 0) {
             int elapsed = EEP_BLINK_FRAMES - eep_blink_left;
 

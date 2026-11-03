@@ -2,9 +2,13 @@
 #   make -C tools/sim
 #   ./tools/sim/makineat-ui
 #   make -C tools/sim test
+#   make -C tools/sim PONG_DEBUG=1 makineat-ui   # pong ball at 1 FPS
 
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/paddle -I../../games/arkaled -I../../games/text-test -I.
+CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-test -I.
+ifeq ($(PONG_DEBUG),1)
+CFLAGS += -DPONG_DEBUG_SLOW_BALL=1
+endif
 SDL_CFLAGS = $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 LDLIBS = $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
@@ -14,20 +18,20 @@ SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/player.c \
           ../../games/space-shooter/entity/bullet.c \
           ../../games/space-shooter/entity/rock.c
-PADDLE = ../../games/paddle/paddle.c
+PONG = ../../games/pong/pong.c
 ARKALED = ../../games/arkaled/arkaled.c
 TEXT_TEST = ../../games/text-test/text_test.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
 TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_board tests/test_game \
-            tests/test_paddle tests/test_arkaled tests/test_text_test tests/test_cart tests/test_synth tests/test_acetate
+            tests/test_pong tests/test_arkaled tests/test_text_test tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
 UI_HDRS = acetate.h seven_seg.h board.h cart.h host.h
 
-makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(UI_HDRS)
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(LDLIBS)
+makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(UI_HDRS)
+	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(LDLIBS)
 
 tests/test_max7219: tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
@@ -50,8 +54,8 @@ tests/test_board: tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tes
 tests/test_game: ../../games/space-shooter/test.c $(COMMON) $(SHOOTER) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ ../../games/space-shooter/test.c $(COMMON) $(SHOOTER) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
-tests/test_paddle: ../../games/paddle/test.c $(COMMON) $(PADDLE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ ../../games/paddle/test.c $(COMMON) $(PADDLE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+tests/test_pong: ../../games/pong/test.c ../../games/pong/test_grids.c ../../games/pong/test_grids.h $(COMMON) $(PONG) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -DPONG_DEBUG_SLOW_BALL=0 -o $@ ../../games/pong/test.c ../../games/pong/test_grids.c $(COMMON) $(PONG) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_arkaled: ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
@@ -59,8 +63,8 @@ tests/test_arkaled: ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) .
 tests/test_text_test: ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
-tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PADDLE) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_synth: tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
@@ -75,7 +79,7 @@ test: $(TEST_BINS)
 	./tests/test_avr128db28
 	./tests/test_entity
 	./tests/test_game
-	./tests/test_paddle
+	./tests/test_pong
 	./tests/test_arkaled
 	./tests/test_text_test
 	./tests/test_cart

@@ -25,11 +25,11 @@ __pycache__/
 # Simulator EEPROM image and firmware images
 tools/sim/makineat.eep
 tools/sim/maki-nita.eep
-tools/sim/paddle.eep
+tools/sim/pong.eep
 tools/sim/arkaled.eep
 makineat.eep
 maki-nita.eep
-paddle.eep
+pong.eep
 arkaled.eep
 unit-tests.sh
 tools/sim/makineat-ui
@@ -43,7 +43,7 @@ tools/sim/tests/test_avr128db28
 tools/sim/tests/test_entity
 tools/sim/tests/test_board
 tools/sim/tests/test_game
-tools/sim/tests/test_paddle
+tools/sim/tests/test_pong
 tools/sim/tests/test_arkaled
 tools/sim/tests/test_cart
 tools/sim/tests/test_synth

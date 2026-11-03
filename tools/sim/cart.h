@@ -5,7 +5,7 @@
 
 /*
  * Which game image is in the socket. cart_id reads a JSON object
- * and returns "paddle", "space-shooter", "arkaled", or NULL.
+ * and returns "pong", "space-shooter", "arkaled", or NULL.
  * cart_read_file returns 1 for a known cart, 0 when the file has
  * no usable cart, and -1 when the file is missing.
  */

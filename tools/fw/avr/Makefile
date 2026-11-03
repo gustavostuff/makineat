@@ -11,8 +11,10 @@ OBJCOPY = avr-objcopy
 CART ?= space-shooter
 CART_DIR = ../../../games/$(CART)
 
-ifeq ($(CART),paddle)
-GAME_SRCS = $(CART_DIR)/paddle.c
+ifeq ($(CART),pong)
+GAME_SRCS = $(CART_DIR)/pong.c
+else ifeq ($(CART),paddle)
+GAME_SRCS = ../../../games/pong/pong.c
 else ifeq ($(CART),space-shooter)
 GAME_SRCS = $(CART_DIR)/game.c \
             $(CART_DIR)/entity/player.c \
@@ -22,7 +24,7 @@ GAME_SRCS = $(CART_DIR)/arkaled.c ../collide.c
 else ifeq ($(CART),text-test)
 GAME_SRCS = $(CART_DIR)/text_test.c
 else
-$(error CART must be space-shooter, paddle, arkaled, or text-test)
+$(error CART must be space-shooter, pong, arkaled, or text-test)
 endif
 
 CFLAGS = -std=c11 -Wall -Wextra -Os -mmcu=$(MCU) -DF_CPU=$(CLOCK)UL -I$(CART_DIR) -I..

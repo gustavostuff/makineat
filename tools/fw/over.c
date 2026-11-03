@@ -18,11 +18,13 @@ typedef enum {
     OVER_STYLE_SHOOTER_RECORD,
     OVER_STYLE_SHOOTER_WIN,
     OVER_STYLE_SHOOTER_LOSE,
+    OVER_STYLE_PONG_WIN,
 } OverStyle;
 
 static int over_frame;
 static int mark;
 static OverStyle style;
+static int pong_winner;
 static TextScroll lose_scroll;
 
 static void paint(int y, uint16_t bits)
@@ -79,6 +81,11 @@ static void draw_over(void)
         text_scroll_paint(&lose_scroll);
         return;
     }
+    if (style == OVER_STYLE_PONG_WIN) {
+        text_print(1, 1, pong_winner == 1 ? "P1" : "P2");
+        text_print(1, 5, "wins");
+        return;
+    }
     draw_face();
     draw_points();
 }
@@ -126,6 +133,14 @@ void over_start_shooter(int player, int rocks)
     draw_over();
 }
 
+void over_start_pong(int winner)
+{
+    style = OVER_STYLE_PONG_WIN;
+    pong_winner = winner == 2 ? 2 : 1;
+    over_frame = 0;
+    draw_over();
+}
+
 void over_start(void)
 {
     over_start_mark(score_judge());
@@ -149,5 +164,7 @@ int over_tick(const Input *in)
     if (style == OVER_STYLE_SHOOTER_LOSE)
         text_scroll_advance(&lose_scroll);
     draw_over();
+    if (style == OVER_STYLE_PONG_WIN)
+        return in->button_pressed || in->p2_button_pressed ? 1 : 0;
     return in->button_pressed ? 1 : 0;
 }

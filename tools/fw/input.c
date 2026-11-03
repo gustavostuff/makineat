@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define SWITCHES 5
+#define SWITCHES 10
 #define DEBOUNCE 2
 
 static bool stable[SWITCHES];
@@ -45,4 +45,13 @@ void input_tick(bool up, bool down, bool left, bool right, bool button, Input *o
     one(left, 2, &out->left, &out->left_pressed, &out->left_released);
     one(right, 3, &out->right, &out->right_pressed, &out->right_released);
     one(button, 4, &out->button, &out->button_pressed, &out->button_released);
+}
+
+void input_tick_p2(bool up, bool down, bool left, bool right, bool button, Input *out)
+{
+    one(up, 5, &out->p2_up, &out->p2_up_pressed, &out->p2_up_released);
+    one(down, 6, &out->p2_down, &out->p2_down_pressed, &out->p2_down_released);
+    one(left, 7, &out->p2_left, &out->p2_left_pressed, &out->p2_left_released);
+    one(right, 8, &out->p2_right, &out->p2_right_pressed, &out->p2_right_released);
+    one(button, 9, &out->p2_button, &out->p2_button_pressed, &out->p2_button_released);
 }

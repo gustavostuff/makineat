@@ -41,8 +41,8 @@ Games can use `tools/fw/entity.c` for sprite movement and collisions, supporting
 
 ## Carts
 
-Each cart implements `void game_tick(const Input *in)`. Test carts configured in `cart_placed.json` are `space-shooter`, `paddle`, and `arkaled`.
-- Build cartridge firmware with `make -C tools/fw/avr` or `make -C tools/fw/avr CART=paddle`.
+Each cart implements `void game_tick(const Input *in)`. Test carts configured in `cart_placed.json` are `space-shooter`, `pong`, and `arkaled`.
+- Build cartridge firmware with `make -C tools/fw/avr` or `make -C tools/fw/avr CART=pong`.
 - Build system audio firmware with `make -C tools/fw/audio`.
 
 ## Flashing hardware (UPDI)
