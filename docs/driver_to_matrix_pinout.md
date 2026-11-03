@@ -111,20 +111,20 @@ The MAX7219 is a multiplexed Common-Cathode driver:
 - **Digits (`DIG0`-`DIG7`)** are current sinks -> Connect to **Row Cathodes** (`PIN 2`, `4`, `7`, `8`, `9`, `C`, `E`, `F`).
 
 ```
-               +---------------+
-           DIN | 1          24 | DOUT
-         PIN 7 | 2          23 | PIN D
-         PIN 8 | 3          22 | PIN 3
-           GND | 4          21 | PIN 5
-         PIN 9 | 5          20 | PIN 6
-         PIN F | 6 MAX7219  19 | V+
-         PIN 4 | 7          18 | ISET
-         PIN C | 8          17 | PIN 0
-           GND | 9          16 | PIN B
-         PIN E | 10         15 | PIN 1
-         PIN 2 | 11         14 | PIN A
-     LOAD (CS) | 12         13 | CLK
-               +---------------+
+               +----------------+
+           DIN | 1           24 | DOUT
+         PIN 7 | 2           23 | PIN D
+         PIN 8 | 3           22 | PIN 3
+           GND | 4           21 | PIN 5
+         PIN 9 | 5           20 | PIN 6
+         PIN F | 6  MAX7219  19 | V+
+         PIN 4 | 7           18 | ISET
+         PIN C | 8           17 | PIN 0
+           GND | 9           16 | PIN B
+         PIN E | 10          15 | PIN 1
+         PIN 2 | 11          14 | PIN A
+     LOAD (CS) | 12          13 | CLK
+               +----------------+
 ```
 
 *(Note: Matrix pins `PIN 0` through `PIN F` correspond to nets `DSn_0` through `DSn_F` in the system netlist).*

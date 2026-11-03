@@ -4,7 +4,8 @@
 #include "input.h"
 
 /*
- * Text test cart: cycles through shared text_print and print_scroll flows.
+ * Text test cart: cycles through shared text_print, outline, blink, and
+ * print_scroll flows.
  *
  * Row 2: demo name (bounce scroll). Row 7: sample body for each flow.
  *

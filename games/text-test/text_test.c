@@ -29,6 +29,8 @@ typedef enum {
     DEMO_SCROLL_RESET,
     DEMO_SCROLL_VIEW8,
     DEMO_SCROLL_FAST,
+    DEMO_OUTLINE,
+    DEMO_BLINK,
     DEMO_COUNT
 } DemoKind;
 
@@ -43,11 +45,14 @@ static const Demo demos[DEMO_COUNT] = {
     {"RESET", DEMO_SCROLL_RESET},
     {"VIEW 8", DEMO_SCROLL_VIEW8},
     {"FAST", DEMO_SCROLL_FAST},
+    {"OUTLINE", DEMO_OUTLINE},
+    {"BLINK", DEMO_BLINK},
 };
 
 static int demo_index;
 static TextScroll title_scroll;
 static TextScroll body_scroll;
+static TextBlink body_blink;
 
 static void title_scroll_begin(void)
 {
@@ -91,8 +96,33 @@ static void demo_begin(void)
         body_scroll.speed_fps = 60;
         text_scroll_start(&body_scroll, 0, BODY_Y, sample);
         break;
+    case DEMO_OUTLINE:
+        body_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        text_scroll_start(&body_scroll, 0, BODY_Y, sample);
+        break;
+    case DEMO_BLINK:
+        body_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        text_scroll_start(&body_scroll, 0, BODY_Y, sample);
+        memset(&body_blink, 0, sizeof body_blink);
+        text_blink_start(&body_blink);
+        break;
     default:
         break;
+    }
+}
+
+static void noise_draw(void)
+{
+    int x;
+    int y;
+
+    for (y = 5; y <= 11; y++) {
+        for (x = 0; x < 16; x++) {
+            uint8_t n = (uint8_t)((x * 7) ^ (y * 13) ^ (x * y));
+
+            if (n & 1u)
+                pixel((uint8_t)x, (uint8_t)y, true);
+        }
     }
 }
 
@@ -118,7 +148,10 @@ static void frame_draw(void)
     DemoKind kind = demos[demo_index].kind;
 
     clear();
-    footer_draw();
+    if (kind == DEMO_OUTLINE || kind == DEMO_BLINK)
+        noise_draw();
+    else
+        footer_draw();
     print_scroll(&title_scroll);
     switch (kind) {
     case DEMO_PRINT:
@@ -129,6 +162,12 @@ static void frame_draw(void)
     case DEMO_SCROLL_VIEW8:
     case DEMO_SCROLL_FAST:
         print_scroll(&body_scroll);
+        break;
+    case DEMO_OUTLINE:
+        print_scroll_outline(&body_scroll);
+        break;
+    case DEMO_BLINK:
+        print_scroll_outline_blink(&body_scroll, &body_blink);
         break;
     default:
         break;

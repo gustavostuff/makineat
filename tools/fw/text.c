@@ -97,7 +97,11 @@ static int text_pixel_w(const char *s)
     return len * TEXT_W;
 }
 
-static void blit(int x, int y, const uint8_t *rows)
+/* Left, right, up, down, then the four corners. */
+static const int8_t outline_dx[8] = { -1, 1, 0, 0, -1, 1, -1, 1 };
+static const int8_t outline_dy[8] = { 0, 0, -1, 1, -1, -1, 1, 1 };
+
+static void stamp(int x, int y, const uint8_t *rows, bool on)
 {
     int row;
     int col;
@@ -113,13 +117,104 @@ static void blit(int x, int y, const uint8_t *rows)
             py = y + row;
             if (px < 0 || py < 0 || px >= TEXT_FIELD_W || py >= TEXT_FIELD_W)
                 continue;
-            pixel((uint8_t)px, (uint8_t)py, true);
+            pixel((uint8_t)px, (uint8_t)py, on);
         }
     }
 }
 
-static void blit_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y, int clip_w,
-                      int clip_h)
+static void blit(int x, int y, const uint8_t *rows)
+{
+    stamp(x, y, rows, true);
+}
+
+void text_draw_outline(int x, int y, const char *s, int invert)
+{
+    const char *p;
+    int gx;
+    int i;
+    bool ring = invert != 0;
+    bool fill = invert == 0;
+
+    if (s == 0)
+        return;
+
+    for (i = 0; i < 8; i++) {
+        gx = x;
+        for (p = s; *p != '\0'; p++) {
+            const uint8_t *rows = text_glyph(*p);
+
+            if (rows == 0)
+                continue;
+            if (gx >= TEXT_FIELD_W)
+                break;
+            if (gx + TEXT_W > 0)
+                stamp(gx + outline_dx[i], y + outline_dy[i], rows, ring);
+            gx += TEXT_W;
+        }
+    }
+
+    gx = x;
+    for (p = s; *p != '\0'; p++) {
+        const uint8_t *rows = text_glyph(*p);
+
+        if (rows == 0)
+            continue;
+        if (gx >= TEXT_FIELD_W)
+            break;
+        if (gx + TEXT_W > 0)
+            stamp(gx, y, rows, fill);
+        gx += TEXT_W;
+    }
+}
+
+void text_print_outline(int x, int y, const char *s)
+{
+    text_draw_outline(x, y, s, 0);
+}
+
+static int blink_period(const TextBlink *tb)
+{
+    int fps = tb->fps;
+
+    if (fps <= 0)
+        fps = TEXT_BLINK_FPS_DEFAULT;
+    if (fps > TEXT_FRAME_HZ)
+        fps = TEXT_FRAME_HZ;
+    return TEXT_FRAME_HZ / fps;
+}
+
+void text_blink_start(TextBlink *tb)
+{
+    if (tb == 0)
+        return;
+    if (tb->fps <= 0)
+        tb->fps = TEXT_BLINK_FPS_DEFAULT;
+    tb->step = 0;
+    tb->invert = 0;
+}
+
+void text_blink_advance(TextBlink *tb)
+{
+    int period;
+
+    if (tb == 0)
+        return;
+    period = blink_period(tb);
+    tb->step++;
+    if (tb->step >= period) {
+        tb->step = 0;
+        tb->invert = tb->invert ? 0 : 1;
+    }
+}
+
+void text_print_outline_blink(int x, int y, const char *s, TextBlink *tb)
+{
+    text_blink_advance(tb);
+    text_draw_outline(x, y, s, tb != 0 ? tb->invert : 0);
+}
+
+static void stamp_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y, int clip_w,
+                       int clip_h, bool on)
 {
     int row;
     int col;
@@ -137,9 +232,15 @@ static void blit_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y,
                 continue;
             if (px < 0 || py < 0 || px >= TEXT_FIELD_W || py >= TEXT_FIELD_W)
                 continue;
-            pixel((uint8_t)px, (uint8_t)py, true);
+            pixel((uint8_t)px, (uint8_t)py, on);
         }
     }
+}
+
+static void blit_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y, int clip_w,
+                      int clip_h)
+{
+    stamp_clip(x, y, rows, clip_x, clip_y, clip_w, clip_h, true);
 }
 
 void text_draw(int x, int y, const char *s)
@@ -316,8 +417,80 @@ void text_scroll_paint(const TextScroll *ts)
     scroll_paint(ts);
 }
 
+static void scroll_paint_outline(const TextScroll *ts, int invert)
+{
+    int clip_w;
+    int clip_h;
+    int ring_x;
+    int ring_y;
+    int ring_w;
+    int ring_h;
+    int x;
+    int i;
+    const char *s;
+    bool ring = invert != 0;
+    bool fill = invert == 0;
+
+    if (ts == 0 || ts->text == 0)
+        return;
+
+    clip_w = scroll_view_w(ts);
+    clip_h = scroll_view_h(ts);
+    ring_x = ts->x - 1;
+    ring_y = ts->y - 1;
+    ring_w = clip_w + 2;
+    ring_h = clip_h + 2;
+
+    for (i = 0; i < 8; i++) {
+        x = ts->x + ts->scroll_x;
+        for (s = ts->text; *s != '\0'; s++) {
+            const uint8_t *rows = text_glyph(*s);
+
+            if (rows == 0)
+                continue;
+            if (x >= TEXT_FIELD_W + 1)
+                break;
+            if (x + TEXT_W + 1 > ts->x)
+                stamp_clip(x + outline_dx[i], ts->y + outline_dy[i], rows, ring_x, ring_y, ring_w,
+                           ring_h, ring);
+            x += TEXT_W;
+        }
+    }
+
+    x = ts->x + ts->scroll_x;
+    for (s = ts->text; *s != '\0'; s++) {
+        const uint8_t *rows = text_glyph(*s);
+
+        if (rows == 0)
+            continue;
+        if (x >= TEXT_FIELD_W)
+            break;
+        if (x + TEXT_W > ts->x)
+            stamp_clip(x, ts->y, rows, ts->x, ts->y, clip_w, clip_h, fill);
+        x += TEXT_W;
+    }
+}
+
+void text_scroll_paint_outline(const TextScroll *ts, int invert)
+{
+    scroll_paint_outline(ts, invert);
+}
+
 void print_scroll(TextScroll *ts)
 {
     scroll_advance(ts);
     scroll_paint(ts);
+}
+
+void print_scroll_outline(TextScroll *ts)
+{
+    scroll_advance(ts);
+    scroll_paint_outline(ts, 0);
+}
+
+void print_scroll_outline_blink(TextScroll *ts, TextBlink *tb)
+{
+    scroll_advance(ts);
+    text_blink_advance(tb);
+    scroll_paint_outline(ts, tb != 0 ? tb->invert : 0);
 }

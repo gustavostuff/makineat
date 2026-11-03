@@ -1,8 +1,11 @@
 #include "text_test.h"
 
+#include "frame.h"
 #include "input.h"
 #include "tests/report.h"
 #include "text.h"
+
+#include <string.h>
 
 static void expect(int cond, const char *msg)
 {
@@ -90,7 +93,78 @@ static void test_button_restarts_demo(void)
 
 static void test_all_demos_exist(void)
 {
-    expect(text_test_demo_count() == 5, "five text flows are available");
+    expect(text_test_demo_count() == 7, "seven text flows are available");
+}
+
+static void select_demo(int index)
+{
+    input_reset();
+    text_test_reset();
+    while (text_test_demo_index() != index) {
+        feed(0, 0, 0, 1, 0);
+        feed(0, 0, 0, 1, 0);
+        feed(0, 0, 0, 0, 0);
+        feed(0, 0, 0, 0, 0);
+    }
+}
+
+static void test_outline_scrolls(void)
+{
+    int i;
+    int x0;
+
+    select_demo(5);
+    expect(text_test_demo_index() == 5, "outline demo is selected");
+    x0 = text_test_scroll_x();
+    for (i = 0; i < 120; i++)
+        feed(0, 0, 0, 0, 0);
+    expect(text_test_scroll_x() < x0, "outline demo scrolls the sample text");
+}
+
+static void fill_on(void)
+{
+    int x;
+    int y;
+
+    for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++)
+            pixel((uint8_t)x, (uint8_t)y, true);
+    }
+}
+
+static void test_outline_punches(void)
+{
+    clear();
+    fill_on();
+    text_print_outline(0, 0, "I");
+    expect(pixel_get(0, 0) && pixel_get(1, 0) && pixel_get(2, 0),
+           "outline keeps the glyph pixels on");
+    expect(!pixel_get(0, 1) && pixel_get(1, 1) && !pixel_get(2, 1),
+           "outline punches the sides of I");
+    expect(!pixel_get(3, 0) && !pixel_get(1, 3),
+           "outline punches the 1px ring around I");
+}
+
+static void test_outline_blink(void)
+{
+    TextBlink tb;
+    int i;
+
+    clear();
+    fill_on();
+    memset(&tb, 0, sizeof tb);
+    text_blink_start(&tb);
+    text_print_outline_blink(0, 0, "I", &tb);
+    expect(pixel_get(1, 0) && !pixel_get(0, 1),
+           "blink starts with a normal outline");
+
+    for (i = 0; i < 29; i++) {
+        clear();
+        fill_on();
+        text_print_outline_blink(0, 0, "I", &tb);
+    }
+    expect(!pixel_get(1, 0) && pixel_get(0, 1),
+           "at 2 FPS the fill and ring swap after half a second");
 }
 
 static void test_font_coverage(void)
@@ -154,6 +228,9 @@ int main(void)
     test_bounce_scroll_moves();
     test_button_restarts_demo();
     test_all_demos_exist();
+    test_outline_scrolls();
+    test_outline_punches();
+    test_outline_blink();
     test_font_coverage();
     return report_end();
 }
