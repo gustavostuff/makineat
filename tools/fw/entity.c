@@ -14,6 +14,9 @@ typedef struct Slot {
 
 static Slot slot[ENTITY_MAX];
 static uint8_t grid[GRID * GRID / 8];
+static int debug_x;
+static int debug_y;
+static int debug_on;
 
 static int shape_ok(const Shape *shape)
 {
@@ -266,8 +269,21 @@ void world_draw(void)
     }
 }
 
+void world_debug_pixel(int x, int y, int on)
+{
+    if (on) {
+        debug_x = x;
+        debug_y = y;
+        debug_on = 1;
+    } else {
+        debug_on = 0;
+    }
+}
+
 int world_lit(int x, int y)
 {
+    if (debug_on && x == debug_x && y == debug_y)
+        return 1;
     return grid_on(x, y);
 }
 

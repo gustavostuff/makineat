@@ -91,3 +91,11 @@ void persist_write(uint16_t value)
     image[1] = (uint8_t)(value >> 8);
     store();
 }
+
+void persist_reset(void)
+{
+    if (!ready)
+        load();
+    memset(image, 0xFF, sizeof image);
+    store();
+}

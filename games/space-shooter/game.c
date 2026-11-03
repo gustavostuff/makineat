@@ -37,17 +37,7 @@ static void draw(void)
 
 static void game_over_judge(void)
 {
-    int player = score_get();
-    int rocks = rock_score_get();
-    int judge;
-
-    if (player > rocks)
-        judge = 1;
-    else if (player < rocks)
-        judge = -1;
-    else
-        judge = 0;
-    over_start_mark(judge);
+    over_start_shooter(score_get(), rock_score_get());
 }
 
 void game_reset(void)

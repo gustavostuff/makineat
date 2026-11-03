@@ -98,6 +98,9 @@ void world_draw(void);
 /* 1 when that cell of the 32 by 32 grid is lit. x and y run from -8 to 23. */
 int world_lit(int x, int y);
 
+/* Simulator: force one world cell on in VRAM until cleared (x,y) with on=0. */
+void world_debug_pixel(int x, int y, int on);
+
 void world_pairs(void (*fn)(int a, int b, void *user), void *user);
 
 #endif

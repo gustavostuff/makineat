@@ -18,3 +18,8 @@ void persist_write(uint16_t value)
 {
     word = value;
 }
+
+void persist_reset(void)
+{
+    word = 0xFFFF;
+}

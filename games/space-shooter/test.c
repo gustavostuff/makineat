@@ -193,11 +193,6 @@ static void die(void)
     feed(0, 0, 0, 0, 0);
 }
 
-static int flat_mouth(void)
-{
-    return pixel_get(6, 4) && pixel_get(9, 4) && !pixel_get(5, 4) && !pixel_get(6, 5);
-}
-
 static int smile(void)
 {
     return pixel_get(5, 4) && pixel_get(10, 4) && pixel_get(6, 5) && !pixel_get(6, 4);
@@ -208,56 +203,67 @@ static int frown(void)
     return pixel_get(7, 4) && pixel_get(8, 4) && pixel_get(6, 5) && !pixel_get(5, 4);
 }
 
+static void saved_high(int n)
+{
+    score_clear_saved();
+    score_add(n);
+    score_judge();
+    score_reset();
+}
+
 static void test_crash(void)
 {
     int i;
 
     input_reset();
+    score_clear_saved();
     game_reset();
     die();
     expect(frown(), "zero player against one rock score is a loss");
     expect(pixel_get(4, 0) && !pixel_get(1, 7), "the face is on screen");
-    expect(pixel_get(1, 8) && pixel_get(2, 8) && pixel_get(3, 8) && !pixel_get(4, 8),
-           "a zero score starts at column 1, row 8");
-    expect(pixel_get(1, 9) && !pixel_get(2, 9) && pixel_get(3, 9),
-           "the zero keeps its side pixels");
-    expect(pixel_get(1, 10) && pixel_get(3, 10) && !pixel_get(6, 8) && !pixel_get(7, 12),
-           "the digit stands alone and the ship is gone");
+    expect(pixel_get(9, 9) || pixel_get(10, 9),
+           "a loss shows the better luck message on the matrix");
+    expect(!pixel_get(1, 8) && !pixel_get(2, 8),
+           "the round score stays off the matrix");
 
-    feed(0, 0, 0, 0, 1);
-    feed(0, 0, 0, 0, 1);
-    expect(frown() && !pixel_get(7, 12), "a press in the first second stays on the end picture");
-    for (i = 0; i < 57; i++)
+    for (i = 0; i < 500; i++)
         feed(0, 0, 0, 0, 0);
-    expect(frown(), "the end picture lasts one second");
+    expect(frown(), "the end picture waits for the button");
     feed(0, 0, 0, 0, 1);
-    expect(frown(), "one tick does not pass the button debounce");
     feed(0, 0, 0, 0, 1);
     expect(pixel_get(7, 13) && !pixel_get(6, 13) && !frown(),
            "the button starts the next round");
 
     input_reset();
+    saved_high(10);
     game_reset();
     score_add(2);
     die();
-    expect(smile(), "more player points than rocks draws the wide smile");
-    expect(pixel_get(1, 8) && pixel_get(2, 9) && !pixel_get(1, 9) && pixel_get(3, 10),
-           "the score is the digit 2");
-    expect(!pixel_get(6, 8), "a one-digit score does not draw a second glyph");
+    expect(smile(), "beating the rocks without a record shows the smile");
+    expect(!pixel_get(1, 8), "the matrix stays clear of the score");
 
     input_reset();
+    saved_high(10);
     game_reset();
     score_add(1);
     die();
-    expect(flat_mouth(), "equal player and rock scores draw the straight mouth");
-    expect(pixel_get(2, 9) && !pixel_get(1, 9), "the digit 1 is still there");
+    expect(frown(), "a tied duel shows the frown");
+    expect(!pixel_get(1, 8), "a tie still skips matrix score digits");
 
     input_reset();
+    score_clear_saved();
+    score_reset();
+    score_add(3);
+    over_start_shooter(3, 0);
+    expect(!smile() && !frown(), "a new record skips the face");
+    expect(pixel_get(2, 5) && pixel_get(0, 10),
+           "a new record shows new record on the matrix");
+
+    input_reset();
+    saved_high(10);
     game_reset();
     die();
     expect(frown(), "fewer player points than rocks draws the small frown");
-    expect(pixel_get(1, 8) && pixel_get(1, 9) && !pixel_get(2, 9),
-           "the lower player score is a zero");
 }
 
 static void test_glyphs(void)

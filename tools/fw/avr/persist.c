@@ -13,3 +13,11 @@ void persist_write(uint16_t value)
 {
     eeprom_update_word((uint16_t *)0, value);
 }
+
+void persist_reset(void)
+{
+    uint16_t i;
+
+    for (i = 0; i < 512; i++)
+        eeprom_update_byte((uint8_t *)i, 0xFF);
+}

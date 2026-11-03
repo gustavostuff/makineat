@@ -12,5 +12,6 @@
 void persist_bind(const char *stored);
 uint16_t persist_read(void);
 void persist_write(uint16_t value);
+void persist_reset(void);
 
 #endif

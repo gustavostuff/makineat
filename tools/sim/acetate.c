@@ -602,7 +602,7 @@ void acetate_draw_swatch(SDL_Renderer *renderer)
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     SDL_RenderDrawRect(renderer, &r);
 
-    ensure_swatch_hint(renderer);
+    //ensure_swatch_hint(renderer);
     if (swatch_hint_tex != NULL) {
         SDL_Rect dst = {
             swatch_x() + ACETATE_SWATCH + 4,
@@ -827,12 +827,37 @@ static int pointer_canvas_coords(int *cx, int *cy)
     return window_point_to_canvas(mx, my, cx, cy, 1);
 }
 
+static int edit_mod_down(void)
+{
+    const Uint8 *keys = SDL_GetKeyboardState(NULL);
+
+    return keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+}
+
+static void abort_drag(void)
+{
+    if (drag_kind == DRAG_NONE)
+        return;
+    if (drag_kind == DRAG_CREATE && selected >= 0)
+        delete_selected();
+    else if (selected >= 0 &&
+             (drag_kind == DRAG_RESIZE || drag_kind == DRAG_MOVE))
+        islands[selected] = drag_snapshot;
+    drag_kind = DRAG_NONE;
+    drag_deselect_on_release = 0;
+    stop_capture();
+}
+
 void acetate_drag_tick(void)
 {
     int cx;
     int cy;
     Uint32 buttons;
 
+    if (!edit_mod_down()) {
+        abort_drag();
+        return;
+    }
     if (drag_kind == DRAG_NONE)
         return;
     buttons = SDL_GetMouseState(NULL, NULL);
@@ -849,6 +874,11 @@ void acetate_update_hover(int cx, int cy)
 {
     Hit h;
 
+    if (!edit_mod_down()) {
+        hover = -1;
+        last_hit = HIT_NONE;
+        return;
+    }
     if (drag_kind != DRAG_NONE)
         return;
     if (in_clock_hit(cx, cy) || in_control_hit(cx, cy)) {
@@ -871,6 +901,10 @@ void acetate_apply_cursor(SDL_Renderer *renderer)
     Hit h = HIT_NONE;
 
     (void)renderer;
+    if (!edit_mod_down()) {
+        SDL_SetCursor(cur_default);
+        return;
+    }
     if (drag_kind == DRAG_MOVE)
         h = HIT_BODY;
     else if (drag_kind == DRAG_RESIZE)
@@ -908,6 +942,13 @@ void acetate_event(const SDL_Event *event, int *cursor_changed)
 
     if (cursor_changed != NULL)
         *cursor_changed = 0;
+
+    if (!edit_mod_down()) {
+        if (event->type == SDL_MOUSEBUTTONUP && event->button.button == SDL_BUTTON_LEFT &&
+            drag_kind != DRAG_NONE)
+            abort_drag();
+        return;
+    }
 
     if (event->type == SDL_KEYDOWN &&
         (event->key.keysym.scancode == SDL_SCANCODE_DELETE ||
@@ -969,6 +1010,7 @@ void acetate_event(const SDL_Event *event, int *cursor_changed)
                 selected = idx;
             drag_kind = DRAG_MOVE;
             drag_island = selected;
+            drag_snapshot = islands[selected];
             drag_anchor_x = cx - islands[selected].x;
             drag_anchor_y = cy - islands[selected].y;
             dirty = 1;

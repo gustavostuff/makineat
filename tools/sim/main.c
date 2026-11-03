@@ -2,6 +2,7 @@
 #include "cart.h"
 #include "entity.h"
 #include "flush.h"
+#include "chips/max7219.h"
 #include "persist.h"
 #include "sound.h"
 #include "clocks.h"
@@ -38,6 +39,11 @@
 #define VRAM_CELL LED
 #define VRAM_PX (VRAM_N * VRAM_CELL)
 #define VRAM_GAP 12
+#define EEP_BLINK_FRAMES 60
+#define EEP_BLINK_TOGGLE 4 /* ~8 Hz at 60 FPS */
+/* Bottom-right playfield LED (1-based row/column 16). */
+#define EEP_BLINK_X 15
+#define EEP_BLINK_Y 15
 
 static SDL_Texture *load_tex(SDL_Renderer *renderer, const char *file)
 {
@@ -90,7 +96,7 @@ static void control_rects(int sx, int sy, SDL_Rect *stick, SDL_Rect *button)
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
                  SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed,
-                 unsigned ui_frame)
+                 unsigned ui_frame, int eep_reset_lit)
 {
     int x;
     int y;
@@ -111,8 +117,12 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
                 LED,
             };
 
+            int on = board_led_on(board, x, y);
+
+            if (eep_reset_lit && x == EEP_BLINK_X && y == EEP_BLINK_Y)
+                on = 1;
             acetate_draw_led_tint(renderer, led_on, led_off, x, y, cell.x, cell.y, cell.w,
-                                  cell.h, board_led_on(board, x, y));
+                                  cell.h, on);
         }
     }
 
@@ -350,6 +360,16 @@ static void wait_next_frame(Uint64 *next_frame, Uint64 freq, Uint64 period)
         *next_frame = now;
 }
 
+static void sim_start_cart(Board *board)
+{
+    persist_bind(cart_eeprom());
+    score_load();
+    cart_reset();
+    drivers_init();
+    drivers_flush();
+    board_advance(board, MAX7219_WAKE_NS);
+}
+
 static int open_cart(void)
 {
     char *base;
@@ -384,6 +404,8 @@ int main(void)
     SevenSegDisplay status_disp;
     int running = 1;
     int loaded;
+    int eep_blink_left = 0;
+    int eep_blink_lit = 0;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -410,13 +432,7 @@ int main(void)
     sound_bind(&board);
     input_reset();
     if (loaded) {
-        persist_bind(cart_eeprom());
-        if (cart_name() == NULL || strcmp(cart_name(), "space-shooter") != 0)
-            score_load();
-        cart_reset();
-        drivers_init();
-        drivers_flush();
-        board_advance(&board, MAX7219_WAKE_NS);
+        sim_start_cart(&board);
         if (board_fault(&board) != 0) {
             SDL_Log("display bring-up saw a timing fault");
             TTF_Quit();
@@ -507,7 +523,7 @@ int main(void)
     TTF_Font *font = open_font();
 
     SDL_SetRenderTarget(renderer, canvas);
-    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0, 0);
+    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0, 0, 0);
     present_canvas(renderer, canvas);
     vram = open_vram(window, &vram_renderer);
     if (vram != NULL) {
@@ -520,8 +536,6 @@ int main(void)
         draw_vram(vram_renderer, vram_led_on, vram_led_off);
     }
     SDL_ShowWindow(window);
-    if (vram != NULL)
-        SDL_ShowWindow(vram);
     SDL_RaiseWindow(window);
     present_canvas(renderer, canvas);
     place_vram(window, vram);
@@ -637,8 +651,8 @@ int main(void)
                     acetate_update_hover(cx, cy);
             }
             if (event.type == SDL_KEYDOWN && !event.key.repeat &&
-                event.key.keysym.scancode == SDL_SCANCODE_V &&
-                (event.key.keysym.mod & (KMOD_CTRL | KMOD_ALT)) == 0 &&
+                event.key.keysym.scancode == SDL_SCANCODE_D &&
+                (event.key.keysym.mod & KMOD_CTRL) != 0 &&
                 vram != NULL) {
                 if (SDL_GetWindowFlags(vram) & SDL_WINDOW_SHOWN)
                     SDL_HideWindow(vram);
@@ -647,6 +661,13 @@ int main(void)
                     SDL_ShowWindow(vram);
                     SDL_RaiseWindow(window);
                 }
+            }
+            if (event.type == SDL_KEYDOWN && !event.key.repeat &&
+                event.key.keysym.scancode == SDL_SCANCODE_F12 && loaded) {
+                persist_reset();
+                score_clear_saved();
+                score_load();
+                eep_blink_left = EEP_BLINK_FRAMES;
             }
             if (event.type == SDL_KEYDOWN &&
                 (event.key.keysym.mod & KMOD_CTRL) &&
@@ -675,16 +696,28 @@ int main(void)
                    board_sense(&board, AVR_PD4) == SIG_L,
                    board_sense(&board, AVR_PD5) == SIG_L,
                    &in);
-        if (loaded) {
-            cart_tick(&in);
-            drivers_flush();
+        if (eep_blink_left > 0) {
+            int elapsed = EEP_BLINK_FRAMES - eep_blink_left;
+
+            eep_blink_lit = ((elapsed / EEP_BLINK_TOGGLE) % 2) == 0;
+            eep_blink_left--;
+            if (eep_blink_left == 0) {
+                eep_blink_lit = 0;
+                sim_start_cart(&board);
+            }
+        } else {
+            eep_blink_lit = 0;
+            if (loaded) {
+                cart_tick(&in);
+                drivers_flush();
+            }
+            board_advance(&board, TICK_NS);
         }
-        board_advance(&board, TICK_NS);
         acetate_drag_tick();
 
         SDL_SetRenderTarget(renderer, canvas);
         draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board,
-             sx, sy, pressed, ui_frame);
+             sx, sy, pressed, ui_frame, eep_blink_lit);
         if (fps_tex != NULL) {
             SDL_Rect dst = {
                 CANVAS_W - fps_w - 2,
