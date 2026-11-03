@@ -140,19 +140,34 @@ static void bounce_case(const uint8_t before[FIELD][FIELD],
     expect_grid(after, msg);
 }
 
-static void test_open(void)
+static void start_play(void)
 {
     input_reset();
     pong_reset();
+    pong_begin_play(0);
+}
+
+static void feed_buttons(int p1, int p2)
+{
+    Input in;
+
+    input_tick(0, 0, 0, 0, p1, &in);
+    input_tick_p2(0, 0, 0, 0, p2, &in);
+    pong_tick(&in);
+}
+
+static void test_open(void)
+{
+    start_play();
     expect(col_top(0) == 6 && col_top(15) == 6, "both paddles start centered");
     expect(status_get_digit(7) == 0 && status_get_digit(3) == 0,
            "scores start at zero on both sides");
+    expect(!pong_in_demo(), "begin play leaves the title screen");
 }
 
 static void test_p1_moves(void)
 {
-    input_reset();
-    pong_reset();
+    start_play();
     feed_p1(1, 0, 0);
     feed_p1(1, 0, 0);
     expect(col_top(0) == 5, "player one moves the left paddle");
@@ -161,8 +176,7 @@ static void test_p1_moves(void)
 
 static void test_p2_moves(void)
 {
-    input_reset();
-    pong_reset();
+    start_play();
     feed_p2(0, 1, 0);
     feed_p2(0, 1, 0);
     expect(col_top(15) == 7, "player two moves the right paddle");
@@ -217,9 +231,96 @@ static void test_score_pause_resets(void)
     for (i = 0; i < 60; i++)
         step_idle();
     expect(col_top(0) == 6 && col_top(15) == 6, "paddles return to center after the pause");
+    expect(pixel_get(1, 7) != 0, "the conceded player holds the ball");
+    feed_p2(0, 1, 0);
+    feed_p2(0, 1, 0);
+    expect(pixel_get(1, 7) != 0, "the other paddle cannot launch the serve");
+    expect(col_top(15) == 7, "player two can still line up while waiting");
     feed_p1(1, 0, 0);
     feed_p1(1, 0, 0);
-    expect(col_top(0) == 5, "play resumes after a paddle move");
+    expect(col_top(0) == 5, "play resumes after the holder moves");
+    expect(pixel_get(1, 7) == 0, "the holder's move sends the ball");
+}
+
+#define SEG_A 0x40
+#define SEG_G 0x01
+#define SEG_D 0x08
+
+static void test_title_sine(void)
+{
+    int i;
+
+    input_reset();
+    pong_reset();
+    expect(pong_in_demo(), "reset opens on the title screen");
+    expect(status_decode() == 0, "title digits are raw segments");
+    expect(status_get_digit(0) == SEG_A && status_get_digit(1) == SEG_A,
+           "the sine starts with two A segments");
+    expect(status_get_digit(2) == SEG_G && status_get_digit(3) == SEG_G,
+           "then two G segments");
+    expect(status_get_digit(4) == SEG_D && status_get_digit(5) == SEG_D,
+           "then two D segments");
+    expect(status_get_digit(6) == SEG_G && status_get_digit(7) == SEG_G,
+           "then two G segments back up");
+    for (i = 0; i < 60 && status_get_digit(1) == SEG_A; i++)
+        step_idle();
+    expect(status_get_digit(0) == SEG_A && status_get_digit(1) == SEG_G,
+           "the sine scrolls across the eight digits");
+}
+
+static void test_title_button_serves(void)
+{
+    int py;
+
+    input_reset();
+    pong_reset();
+    feed_buttons(1, 0);
+    feed_buttons(1, 0);
+    py = col_top(0);
+    expect(!pong_in_demo(), "player one button leaves the title");
+    expect(status_decode() == 0xFF, "play restores Code-B digits");
+    expect(pixel_get(1, (uint8_t)(py + 1)) != 0, "the ball sits on player one's paddle");
+
+    input_reset();
+    pong_reset();
+    feed_buttons(0, 1);
+    feed_buttons(0, 1);
+    py = col_top(15);
+    expect(!pong_in_demo(), "player two button leaves the title");
+    expect(pixel_get(14, (uint8_t)(py + 1)) != 0, "the ball sits on player two's paddle");
+}
+
+static void test_title_serve(void)
+{
+    int i;
+
+    pong_seed(1);
+    input_reset();
+    pong_reset();
+    expect(pixel_get(1, 7) != 0, "demo opens with the ball on player one");
+    for (i = 0; i < 28; i++)
+        step_idle();
+    expect(col_top(0) == 6 && pixel_get(1, 7) != 0,
+           "the demo serve waits half a second");
+    for (i = 0; i < 8; i++)
+        step_idle();
+    expect(col_top(0) != 6, "player one then moves and launches");
+}
+
+static void test_title_npcs_play(void)
+{
+    int i;
+    int moved = 0;
+
+    pong_seed(1);
+    input_reset();
+    pong_reset();
+    for (i = 0; i < 180; i++)
+        step_idle();
+    if (col_top(0) != 6 || col_top(15) != 6)
+        moved = 1;
+    expect(pong_in_demo(), "npcs keep the title screen running");
+    expect(moved, "npc paddles move through the real game");
 }
 
 int main(void)
@@ -231,5 +332,9 @@ int main(void)
     test_period();
     test_bounces();
     test_score_pause_resets();
+    test_title_sine();
+    test_title_button_serves();
+    test_title_serve();
+    test_title_npcs_play();
     return report_end();
 }

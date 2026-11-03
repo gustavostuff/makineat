@@ -12,9 +12,9 @@ CART ?= space-shooter
 CART_DIR = ../../../games/$(CART)
 
 ifeq ($(CART),pong)
-GAME_SRCS = $(CART_DIR)/pong.c
+GAME_SRCS = $(CART_DIR)/pong.c $(CART_DIR)/title/title.c
 else ifeq ($(CART),paddle)
-GAME_SRCS = ../../../games/pong/pong.c
+GAME_SRCS = ../../../games/pong/pong.c ../../../games/pong/title/title.c
 else ifeq ($(CART),space-shooter)
 GAME_SRCS = $(CART_DIR)/game.c \
             $(CART_DIR)/entity/player.c \

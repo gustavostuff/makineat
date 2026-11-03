@@ -5,6 +5,7 @@
 #include "over.h"
 #include "sound.h"
 #include "status.h"
+#include "title/title.h"
 
 #include <stdint.h>
 #if !defined(__AVR__)
@@ -27,7 +28,7 @@
 #define SCORE_BLINK_HALF 8 /* ~4 on/off cycles in one second at 60 Hz */
 
 #ifndef PONG_DEBUG_SLOW_BALL
-#define PONG_DEBUG_SLOW_BALL 1
+#define PONG_DEBUG_SLOW_BALL 0
 #endif
 
 static const Shape pad_shape = SHAPE4(0, 0, "1", "1", "1", "1");
@@ -43,9 +44,14 @@ static int lpace;
 static int rpace;
 static int age;
 static int live;
+static int server;
+static int last_scorer;
 static int score_pause;
 static int score_blink_phase;
+static int demo;
 static uint32_t rng;
+
+static void stir(void);
 
 int pong_period(int ticks)
 {
@@ -84,11 +90,38 @@ static int score_blink_lit(void)
     return (score_blink_phase / SCORE_BLINK_HALF) % 2 == 0;
 }
 
+int pong_pad_y(int player)
+{
+    Entity *pad = entity_get(player == 2 ? pad_r : pad_l);
+
+    return pad == NULL ? (FIELD - PAD_H) / 2 : pad->y;
+}
+
+int pong_ball_y(void)
+{
+    Entity *ball = entity_get(ball_id);
+
+    return ball == NULL ? FIELD / 2 : ball->y;
+}
+
+int pong_awaiting_serve(void)
+{
+    return !live && score_pause == 0;
+}
+
+#if !defined(__AVR__)
+int pong_in_demo(void)
+{
+    return demo;
+}
+#endif
+
 static void draw(void)
 {
     Entity *ball;
 
-    status_sync();
+    if (!demo)
+        status_sync();
     world_draw();
     if (score_pause > 0) {
         ball = entity_get(ball_id);
@@ -176,18 +209,15 @@ static void center_paddles(Entity *l, Entity *r)
     rpace = 0;
 }
 
-static void serve_ball(Entity *ball)
+static void stick_serve(Entity *l, Entity *r, Entity *ball)
 {
-    uint32_t bits = rng >> 30;
-
-    ball->x = (int8_t)(FIELD / 2);
-    ball->y = (int8_t)(FIELD / 2);
-    ball->vx = (bits & 1u) ? 1 : -1;
-    ball->vy = (bits & 2u) ? 1 : -1;
-    ball->pace = pong_period(age) - 1;
-    if (ball->pace < 0)
-        ball->pace = 0;
-    live = 0;
+    if (server == 2) {
+        ball->x = (int8_t)PLAY_R;
+        ball->y = (int8_t)(r->y + 1);
+    } else {
+        ball->x = (int8_t)PLAY_L;
+        ball->y = (int8_t)(l->y + 1);
+    }
 }
 
 /*
@@ -271,11 +301,37 @@ static void spawn_actors(void)
                             ENTITY_INACTIVE | ENTITY_CAN_COLLIDE);
 }
 
-void pong_reset(void)
+static void serve_from_paddle(int player)
 {
-    Entity *l;
-    Entity *r;
+    Entity *l = entity_get(pad_l);
+    Entity *r = entity_get(pad_r);
+    Entity *ball = entity_get(ball_id);
+    uint32_t bits;
 
+    if (l == NULL || r == NULL || ball == NULL)
+        return;
+    stir();
+    bits = rng >> 30;
+    live = 0;
+    server = player == 2 ? 2 : 1;
+    ball->vy = (bits & 2u) ? 1 : -1;
+    ball->pace = pong_period(age) - 1;
+    if (ball->pace < 0)
+        ball->pace = 0;
+    if (player == 2) {
+        ball->x = (int8_t)PLAY_R;
+        ball->y = (int8_t)(r->y + 1);
+        ball->vx = -1;
+    } else {
+        ball->x = (int8_t)PLAY_L;
+        ball->y = (int8_t)(l->y + 1);
+        ball->vx = 1;
+    }
+}
+
+void pong_begin_play(int player)
+{
+    demo = 0;
     over = 0;
     over_clear();
     score_pause = 0;
@@ -285,31 +341,59 @@ void pong_reset(void)
     lpace = 0;
     rpace = 0;
     age = 0;
+    live = 0;
     status_clear();
-    spawn_actors();
-    l = entity_get(pad_l);
-    r = entity_get(pad_r);
-    center_paddles(l, r);
-    serve_ball(entity_get(ball_id));
+    if (player != 1 && player != 2) {
+        center_paddles(entity_get(pad_l), entity_get(pad_r));
+        player = 1;
+    }
+    serve_from_paddle(player);
     draw();
 }
 
-static void finish_score_pause(Entity *l, Entity *r, Entity *ball)
+void pong_reset(void)
+{
+    over = 0;
+    over_clear();
+    score_pause = 0;
+    score_blink_phase = 0;
+    p1_score = 0;
+    p2_score = 0;
+    lpace = 0;
+    rpace = 0;
+    age = 0;
+    live = 0;
+    demo = 1;
+    status_clear();
+    spawn_actors();
+    center_paddles(entity_get(pad_l), entity_get(pad_r));
+    serve_from_paddle(1);
+    status_set_decode(0);
+    title_reset();
+    draw();
+}
+
+static void finish_score_pause(Entity *l, Entity *r)
 {
     score_pause = 0;
     score_blink_phase = 0;
-    if (p1_score >= WIN_SCORE || p2_score >= WIN_SCORE) {
+    if (!demo && (p1_score >= WIN_SCORE || p2_score >= WIN_SCORE)) {
         over = 1;
         over_start_pong(p1_score >= WIN_SCORE ? 1 : 2);
         return;
     }
     center_paddles(l, r);
-    serve_ball(ball);
+    if (demo) {
+        age = 0;
+        serve_from_paddle(1);
+    } else
+        serve_from_paddle(last_scorer == 1 ? 2 : 1);
     draw();
 }
 
 static void begin_score_pause(int scorer, Entity *ball)
 {
+    last_scorer = scorer;
     if (scorer == 1)
         p1_score++;
     else
@@ -322,23 +406,19 @@ static void begin_score_pause(int scorer, Entity *ball)
     draw();
 }
 
-void pong_tick(const Input *in)
+void pong_play_tick(const Input *in)
 {
     Entity *l;
     Entity *r;
     Entity *ball;
     int ldir = 0;
     int rdir = 0;
-    int moved;
+    int l_moved;
+    int r_moved;
+    int launched;
     int levery;
     int revery;
     int scorer;
-
-    if (over) {
-        if (over_tick(in))
-            pong_reset();
-        return;
-    }
 
     l = entity_get(pad_l);
     r = entity_get(pad_r);
@@ -350,7 +430,7 @@ void pong_tick(const Input *in)
         score_pause--;
         score_blink_phase++;
         if (score_pause == 0)
-            finish_score_pause(l, r, ball);
+            finish_score_pause(l, r);
         else
             draw();
         return;
@@ -368,11 +448,13 @@ void pong_tick(const Input *in)
 
     levery = in->button ? PAD_FAST : PAD_SLOW;
     revery = in->p2_button ? PAD_FAST : PAD_SLOW;
-    moved = step_pad(l, ldir, &lpace, levery);
-    moved |= step_pad(r, rdir, &rpace, revery);
+    l_moved = step_pad(l, ldir, &lpace, levery);
+    r_moved = step_pad(r, rdir, &rpace, revery);
 
     if (!live) {
-        if (!moved) {
+        stick_serve(l, r, ball);
+        launched = server == 2 ? r_moved : l_moved;
+        if (!launched) {
             draw();
             return;
         }
@@ -391,6 +473,22 @@ void pong_tick(const Input *in)
         }
     }
     draw();
+}
+
+void pong_tick(const Input *in)
+{
+    if (demo) {
+        title_tick(in);
+        return;
+    }
+    if (over) {
+        int who = in->button_pressed ? 1 : 2;
+
+        if (over_tick(in))
+            pong_begin_play(who);
+        return;
+    }
+    pong_play_tick(in);
 }
 
 #if !defined(__AVR__)
@@ -413,6 +511,8 @@ void pong_place_ball(int x, int y, int vx, int vy)
 
     if (ball == NULL)
         return;
+    demo = 0;
+    status_set_decode(0xFF);
     score_pause = 0;
     score_blink_phase = 0;
     age = RAMP * BALL_SLOW;

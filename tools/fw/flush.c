@@ -74,7 +74,7 @@ void drivers_init(void)
     const uint8_t *status = status_digits();
 
     send_mixed(0x0F, 0x00, 0x00);
-    send_mixed(0x09, 0x00, 0xFF);
+    send_mixed(0x09, 0x00, status_decode());
     send_mixed(0x0A, 0x0F, 0x0F);
     send_mixed(0x0B, 0x07, 0x07);
     for (d = 0; d < 8; d++)
@@ -87,6 +87,7 @@ void drivers_flush(void)
     int d;
     const uint8_t *status = status_digits();
 
+    send_mixed(0x09, 0x00, status_decode());
     for (d = 0; d < 8; d++) {
         unsigned word[CHAIN];
         int b;

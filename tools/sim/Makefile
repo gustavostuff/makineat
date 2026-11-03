@@ -18,7 +18,7 @@ SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/player.c \
           ../../games/space-shooter/entity/bullet.c \
           ../../games/space-shooter/entity/rock.c
-PONG = ../../games/pong/pong.c
+PONG = ../../games/pong/pong.c ../../games/pong/title/title.c
 ARKALED = ../../games/arkaled/arkaled.c
 TEXT_TEST = ../../games/text-test/text_test.c
 COLLIDE = ../fw/collide.c
