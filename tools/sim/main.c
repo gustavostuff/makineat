@@ -221,6 +221,26 @@ static void place_vram(SDL_Window *parent, SDL_Window *vram)
     SDL_SetWindowPosition(vram, x + w + VRAM_GAP, y);
 }
 
+static void toggle_fullscreen(SDL_Window *window, SDL_Window *vram, int *fullscreen, int *win_w,
+                              int *win_h)
+{
+    if (window == NULL || fullscreen == NULL || win_w == NULL || win_h == NULL)
+        return;
+    if (*fullscreen) {
+        SDL_SetWindowFullscreen(window, 0);
+        SDL_SetWindowSize(window, *win_w, *win_h);
+        SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        *fullscreen = 0;
+    } else {
+        SDL_GetWindowSize(window, win_w, win_h);
+        if (SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
+            SDL_Log("fullscreen failed: %s", SDL_GetError());
+        else
+            *fullscreen = 1;
+    }
+    place_vram(window, vram);
+}
+
 static SDL_Window *open_vram(SDL_Window *parent, SDL_Renderer **out)
 {
     SDL_Window *vram;
@@ -424,6 +444,10 @@ int main(void)
     int loaded;
     int eep_blink_left = 0;
     int eep_blink_lit = 0;
+    int sim_paused = 0;
+    int sim_fullscreen = 0;
+    int win_w = CANVAS_W * SCALE;
+    int win_h = CANVAS_H * SCALE;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init failed: %s", SDL_GetError());
@@ -665,6 +689,14 @@ int main(void)
             if (event.type == SDL_KEYDOWN &&
                 event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
                 running = 0;
+            if (event.type == SDL_KEYDOWN && !event.key.repeat &&
+                event.key.keysym.scancode == SDL_SCANCODE_P &&
+                (event.key.keysym.mod & KMOD_CTRL) == 0)
+                sim_paused = !sim_paused;
+            if (event.type == SDL_KEYDOWN && !event.key.repeat &&
+                event.key.keysym.scancode == SDL_SCANCODE_F &&
+                (event.key.keysym.mod & KMOD_CTRL) != 0)
+                toggle_fullscreen(window, vram, &sim_fullscreen, &win_w, &win_h);
             {
                 int cur = 0;
                 acetate_event(&event, &cur);
@@ -703,8 +735,10 @@ int main(void)
                     scale = 3;
                 if (event.key.keysym.scancode == SDL_SCANCODE_4)
                     scale = 4;
-                if (scale != 0) {
-                    SDL_SetWindowSize(window, CANVAS_W * scale, CANVAS_H * scale);
+                if (scale != 0 && !sim_fullscreen) {
+                    win_w = CANVAS_W * scale;
+                    win_h = CANVAS_H * scale;
+                    SDL_SetWindowSize(window, win_w, win_h);
                     place_vram(window, vram);
                 }
             }
@@ -726,22 +760,24 @@ int main(void)
 
             input_tick_p2(p2_up, p2_down, p2_left, p2_right, p2_button, &in);
         }
-        if (eep_blink_left > 0) {
-            int elapsed = EEP_BLINK_FRAMES - eep_blink_left;
+        if (!sim_paused) {
+            if (eep_blink_left > 0) {
+                int elapsed = EEP_BLINK_FRAMES - eep_blink_left;
 
-            eep_blink_lit = ((elapsed / EEP_BLINK_TOGGLE) % 2) == 0;
-            eep_blink_left--;
-            if (eep_blink_left == 0) {
+                eep_blink_lit = ((elapsed / EEP_BLINK_TOGGLE) % 2) == 0;
+                eep_blink_left--;
+                if (eep_blink_left == 0) {
+                    eep_blink_lit = 0;
+                    sim_start_cart(&board);
+                }
+            } else {
                 eep_blink_lit = 0;
-                sim_start_cart(&board);
+                if (loaded) {
+                    cart_tick(&in);
+                    drivers_flush();
+                }
+                board_advance(&board, TICK_NS);
             }
-        } else {
-            eep_blink_lit = 0;
-            if (loaded) {
-                cart_tick(&in);
-                drivers_flush();
-            }
-            board_advance(&board, TICK_NS);
         }
         acetate_drag_tick();
 

@@ -367,5 +367,5 @@ void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *rende
 
     if (seven_seg_below_field_origin(disp, field_x, field_y, field_px, grid_margin, &x, &y) != 0)
         return;
-    seven_seg_draw(disp, renderer, x, y, canvas_w, canvas_h);
+    seven_seg_draw(disp, renderer, x + SEVEN_SEG_LAYER_X_OFFSET, y, canvas_w, canvas_h);
 }

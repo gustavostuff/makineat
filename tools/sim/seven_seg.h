@@ -10,6 +10,8 @@ typedef struct Max7219 Max7219;
 #define SEVEN_SEG_DIGITS 8
 /* Gap between the 16×16 LED matrix edge and the digit row (horizontal inset / vertical). */
 #define SEVEN_SEG_GRID_MARGIN 4
+/* PNG layers sit this many pixels right of the logical row origin (acetate uses origin). */
+#define SEVEN_SEG_LAYER_X_OFFSET 2
 
 /* Segment bits (A through G, then decimal point). */
 #define SEVEN_SEG_A (1u << 0)
