@@ -371,6 +371,7 @@ void pong_reset(void)
     status_set_decode(0);
     title_reset();
     draw();
+    title_paint();
 }
 
 static void finish_score_pause(Entity *l, Entity *r)

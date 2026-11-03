@@ -5,5 +5,6 @@
 
 void title_reset(void);
 void title_tick(const Input *real);
+void title_paint(void);
 
 #endif

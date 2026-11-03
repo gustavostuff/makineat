@@ -31,15 +31,20 @@ static void feed_p2(int up, int down, int button)
     pong_tick(&in);
 }
 
-static int col_top(int x)
+static int col_top_from(int x, int y0)
 {
     int y;
 
-    for (y = 0; y < FIELD; y++) {
+    for (y = y0; y < FIELD; y++) {
         if (pixel_get((uint8_t)x, (uint8_t)y))
             return y;
     }
     return -1;
+}
+
+static int col_top(int x)
+{
+    return col_top_from(x, 0);
 }
 
 static void step_idle(void)
@@ -243,10 +248,39 @@ static void test_score_pause_resets(void)
 }
 
 #define SEG_A 0x40
-#define SEG_G 0x01
+#define SEG_B 0x20
+#define SEG_C 0x10
 #define SEG_D 0x08
+#define SEG_E 0x04
+#define SEG_F 0x02
+#define SEG_G 0x01
+#define DIGIT_P (SEG_A | SEG_B | SEG_E | SEG_F | SEG_G)
+#define DIGIT_O (SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F)
+#define DIGIT_N (SEG_C | SEG_E | SEG_G)
+#define DIGIT_G6 (SEG_A | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G)
 
-static void test_title_sine(void)
+static int digits_pong_at(int off)
+{
+    int i;
+
+    for (i = 0; i < 8; i++) {
+        uint8_t want = 0;
+
+        if (i == off)
+            want = DIGIT_P;
+        else if (i == off + 1)
+            want = DIGIT_O;
+        else if (i == off + 2)
+            want = DIGIT_N;
+        else if (i == off + 3)
+            want = DIGIT_G6;
+        if (status_get_digit((uint8_t)i) != want)
+            return 0;
+    }
+    return 1;
+}
+
+static void test_title_digits(void)
 {
     int i;
 
@@ -254,18 +288,13 @@ static void test_title_sine(void)
     pong_reset();
     expect(pong_in_demo(), "reset opens on the title screen");
     expect(status_decode() == 0, "title digits are raw segments");
-    expect(status_get_digit(0) == SEG_A && status_get_digit(1) == SEG_A,
-           "the sine starts with two A segments");
-    expect(status_get_digit(2) == SEG_G && status_get_digit(3) == SEG_G,
-           "then two G segments");
-    expect(status_get_digit(4) == SEG_D && status_get_digit(5) == SEG_D,
-           "then two D segments");
-    expect(status_get_digit(6) == SEG_G && status_get_digit(7) == SEG_G,
-           "then two G segments back up");
-    for (i = 0; i < 60 && status_get_digit(1) == SEG_A; i++)
+    expect(digits_pong_at(0), "PONG starts on the left four digits");
+    for (i = 0; i < 60; i++)
         step_idle();
-    expect(status_get_digit(0) == SEG_A && status_get_digit(1) == SEG_G,
-           "the sine scrolls across the eight digits");
+    expect(digits_pong_at(0), "PONG pauses before it scrolls");
+    for (i = 0; i < 15; i++)
+        step_idle();
+    expect(digits_pong_at(1), "PONG then steps right at 4 FPS");
 }
 
 static void test_title_button_serves(void)
@@ -297,14 +326,15 @@ static void test_title_serve(void)
     pong_seed(1);
     input_reset();
     pong_reset();
-    expect(pixel_get(1, 7) != 0, "demo opens with the ball on player one");
+    expect(pong_ball_y() == 7 && pong_pad_y(1) == 6,
+           "demo opens with the ball on player one");
     for (i = 0; i < 28; i++)
         step_idle();
-    expect(col_top(0) == 6 && pixel_get(1, 7) != 0,
+    expect(pong_pad_y(1) == 6 && pong_ball_y() == 7,
            "the demo serve waits half a second");
     for (i = 0; i < 8; i++)
         step_idle();
-    expect(col_top(0) != 6, "player one then moves and launches");
+    expect(pong_pad_y(1) != 6, "player one then moves and launches");
 }
 
 static void test_title_npcs_play(void)
@@ -317,7 +347,7 @@ static void test_title_npcs_play(void)
     pong_reset();
     for (i = 0; i < 180; i++)
         step_idle();
-    if (col_top(0) != 6 || col_top(15) != 6)
+    if (pong_pad_y(1) != 6 || pong_pad_y(2) != 6)
         moved = 1;
     expect(pong_in_demo(), "npcs keep the title screen running");
     expect(moved, "npc paddles move through the real game");
@@ -332,7 +362,7 @@ int main(void)
     test_period();
     test_bounces();
     test_score_pause_resets();
-    test_title_sine();
+    test_title_digits();
     test_title_button_serves();
     test_title_serve();
     test_title_npcs_play();
