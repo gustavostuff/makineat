@@ -91,7 +91,7 @@ To light a pixel at coordinate **(Row $r$, Col $c$)**:
 
 Format below: `(+Anode Pin / -Cathode Pin)`
 
-| | **Col 0** (+Pin 3) | **Col 1** (+Pin A) | **Col 2** (+Pin B) | **Col 3** (+Pin 6) | **Col 4** (+Pin D) | **Col 5** (+Pin 5) | **Col 6** (+Pin 1) | **Col 7** (+Pin 0) |
+| Row | **Col 0** (+Pin 3) | **Col 1** (+Pin A) | **Col 2** (+Pin B) | **Col 3** (+Pin 6) | **Col 4** (+Pin D) | **Col 5** (+Pin 5) | **Col 6** (+Pin 1) | **Col 7** (+Pin 0) |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Row 0** (-Pin 7) | `+3 / -7` | `+A / -7` | `+B / -7` | `+6 / -7` | `+D / -7` | `+5 / -7` | `+1 / -7` | `+0 / -7` |
 | **Row 1** (-Pin 2) | `+3 / -2` | `+A / -2` | `+B / -2` | `+6 / -2` | `+D / -2` | `+5 / -2` | `+1 / -2` | `+0 / -2` |

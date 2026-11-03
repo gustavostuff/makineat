@@ -9,7 +9,7 @@ Once the base 16x16 LED matrix arcade hardware is proven and verified, several h
 
 ## 2. 7-Segment Status Display Subsystem
 
-A fifth MAX7219 driver (U7) cascaded from matrix driver U4 provides up to eight generic 7-segment numeric digits. Driver U7, its passives, and the two 2x4 connectors (J7 for segments and J9 for digits) are already in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). Remaining work is the separate digit daughterboard, cartridge firmware chain depth (`CHAIN` is still 4 in `tools/fw/flush.c`), status API code, and simulator support.
+A fifth MAX7219 driver (U7) cascaded from matrix driver U4 provides up to eight generic 7-segment numeric digits. Driver U7, its passives, and the two 2x4 connectors (J7 for segments and J9 for digits) are in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). Firmware flushes five drivers (`CHAIN 5`), exposes the status RAM API in `tools/fw/status.c`, and the simulator includes U7 on the chain. Remaining work is the separate digit daughterboard KiCad layout and physical assembly.
 
 * **Daughterboard PCB**: The two 4-digit SMD modules solder to a dedicated display daughterboard PCB. No KiCad project exists for that board yet. The daughterboard will likely adopt an L-shaped outline, positioning two 2x4 male headers on its left side while extending the display section beneath the main 16x16 matrix.
 * **Main Board Placement**: U7 and the mating display headers (J7 for segments, J9 for digits) sit on the left side of the main system PCB layout.

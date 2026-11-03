@@ -1,6 +1,6 @@
 # MakiNeat - Status Digits
 
-Status: U7, J7, and J9 are in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). The digit daughterboard has no KiCad PCB yet. Firmware still uses `CHAIN 4` and the simulator models four matrix drivers only.  
+Status: U7, J7, and J9 are in the main board SKiDL netlist (`tools/kicad/main-pcb/skidl/makineat.py`). The digit daughterboard has no KiCad PCB yet. Firmware uses `CHAIN 5` and the simulator models matrix drivers U1 through U4 plus U7 on the SPI chain.  
 Scope: A fifth MAX7219 (U7) extends the display chain to drive up to eight 7-segment digits for credits, lives, score, level, timer, or other numeric information. All eight digit lines route to two 2x4 pin headers (J7 for segments, J9 for digits) on the main PCB.
 
 ## 1. Goal
@@ -137,13 +137,15 @@ Matrix drivers U1 through U4 maintain raw segment bitmask mode (Decode Mode 0x00
 ### 3.3 Status Display API
 
 ```c
-void status_credits(uint8_t value);
-void status_lives(uint8_t value);
-void status_set_digit(uint8_t digit, uint8_t code);
-void status_set_pair(uint8_t pair, uint8_t value);
+void status_clear(void);
+void status_set_digit(uint8_t digit, uint8_t value);
+uint8_t status_get_digit(uint8_t digit);
+void status_set_decode(uint8_t mask);
+uint8_t status_decode(void);
+const uint8_t *status_digits(void);
 ```
 
-These functions update an internal RAM buffer. During the regular frame flush, `drivers_flush()` packs the status buffer into Code-B data bytes for transmission in the fifth word slot.
+These entry points update an internal RAM buffer. During the regular frame flush, `drivers_flush()` packs the status buffer into Code-B data bytes for transmission in the fifth word slot.
 
 Games that omit status calls leave digits blank.
 
@@ -167,7 +169,7 @@ Most parts are standard through-hole components, while the display modules are c
 |---|---|---|
 | 1 | MAX7219 DIP-24 | Through-hole display driver IC U7 (lives on left side of main PCB) |
 | 2 | 4-digit SMD 7-segment display (White) | Passive common-cathode SMD module (soldered to L-shaped daughterboard) |
-| 1 | ISET resistor (R7, 28 kΩ) | Through-hole horizontal axial resistor |
+| 1 | ISET resistor (R7, 28 kohm) | Through-hole horizontal axial resistor |
 | 1 | 100 nF ceramic capacitor (C7) | Through-hole decoupling capacitor |
 | 1 | 10 uF electrolytic capacitor (C17) | Through-hole bulk power rail capacitor |
 | 2 | 2x4 male pin headers (J7, J9) | Display daughterboard interface to main PCB (`PinHeader_2x04_P2.54mm_Vertical`) |

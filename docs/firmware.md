@@ -41,7 +41,7 @@ Games can use `tools/fw/entity.c` for sprite movement and collisions, supporting
 
 ## Carts
 
-Each cart implements `void game_tick(const Input *in)`. Test carts configured in `cart_placed.json` are `space-shooter`, `pong`, and `arkaled`.
+Each cart implements `void game_tick(const Input *in)`. Carts recognized in `cart_placed.json` include `space-shooter`, `pong`, `arkaled`, and `text-test`.
 - Build cartridge firmware with `make -C tools/fw/avr` or `make -C tools/fw/avr CART=pong`.
 - Build system audio firmware with `make -C tools/fw/audio`.
 
@@ -67,4 +67,4 @@ pymcuprog write -d avr128db28 -t uart -u /dev/ttyACM0 --verify -f tools/fw/audio
 
 ## Simulator
 
-`./sim.sh` builds and launches `tools/sim/makineat-ui`. The netlist model connects simulated cartridge pins to U1 through U4, EVENT, and J5. U7 and the status digit path are not modeled yet. Host simulation runs at 60 Hz with 12 MHz and 20 MHz timing constants defined in `tools/sim/clocks.h`.
+`./sim.sh` builds and launches `tools/sim/makineat-ui`. The netlist model connects the cartridge to matrix drivers U1 through U4, status driver U7, EVENT, and J5. Status digits render from the simulated U7 chain. Host simulation runs at 60 Hz with 12 MHz and 20 MHz timing constants in `tools/sim/clocks.h`. Per-cart acetate overlay tinting is described in [overlays.md](overlays.md).
