@@ -335,17 +335,16 @@ void seven_seg_draw(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, 
     }
 }
 
-void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *renderer,
-                                int field_x, int field_y, int field_px, int grid_margin,
-                                int canvas_w, int canvas_h)
+int seven_seg_below_field_origin(const SevenSegDisplay *disp, int field_x, int field_y,
+                                 int field_px, int grid_margin, int *out_x, int *out_y)
 {
     int row_w;
+    int avail;
     int x;
     int y;
-    int avail;
 
-    if (disp == NULL || disp->digit_w <= 0)
-        return;
+    if (disp == NULL || disp->digit_w <= 0 || out_x == NULL || out_y == NULL)
+        return -1;
 
     row_w = seven_seg_row_width(disp);
     y = field_y + field_px + grid_margin;
@@ -354,6 +353,19 @@ void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *rende
         x = field_x + grid_margin + (avail - row_w) / 2;
     else
         x = field_x + (field_px - row_w) / 2;
+    *out_x = x;
+    *out_y = y;
+    return 0;
+}
 
+void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *renderer,
+                                int field_x, int field_y, int field_px, int grid_margin,
+                                int canvas_w, int canvas_h)
+{
+    int x;
+    int y;
+
+    if (seven_seg_below_field_origin(disp, field_x, field_y, field_px, grid_margin, &x, &y) != 0)
+        return;
     seven_seg_draw(disp, renderer, x, y, canvas_w, canvas_h);
 }

@@ -96,7 +96,7 @@ static void control_rects(int sx, int sy, SDL_Rect *stick, SDL_Rect *button)
 static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_off,
                  SDL_Texture *stick_tex, SDL_Texture *button_tex,
                  SevenSegDisplay *status, const Board *board, int sx, int sy, int pressed,
-                 unsigned ui_frame, int eep_reset_lit)
+                 int eep_reset_lit)
 {
     int x;
     int y;
@@ -142,8 +142,7 @@ static void draw(SDL_Renderer *renderer, SDL_Texture *led_on, SDL_Texture *led_o
         SDL_SetTextureColorMod(button_tex, 255, 255, 255);
     SDL_RenderCopy(renderer, button_tex, NULL, &button);
 
-    acetate_draw_overlay(renderer, ui_frame);
-    acetate_draw_swatch(renderer);
+    acetate_draw_overlay(renderer);
 }
 
 /* The canvas is 1:1 with the art. One integer scale of that whole picture
@@ -542,7 +541,7 @@ int main(void)
     TTF_Font *font = open_font();
 
     SDL_SetRenderTarget(renderer, canvas);
-    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0, 0, 0);
+    draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board, 0, 0, 0, 0);
     present_canvas(renderer, canvas);
     vram = open_vram(window, &vram_renderer);
     if (vram != NULL) {
@@ -563,7 +562,6 @@ int main(void)
     Uint64 frame_period = freq / TICK_HZ;
     Uint64 next_frame = 0;
     Uint64 last_frame = 0;
-    unsigned ui_frame = 0;
     SDL_Texture *fps_tex = NULL;
     int fps_show = -1;
     int fps_w = 0;
@@ -572,6 +570,16 @@ int main(void)
     acetate_init();
     acetate_set_window(window);
     acetate_set_renderer(renderer);
+    acetate_set_field(FIELD_X, FIELD_Y, LED, LED_PITCH, GRID);
+    {
+        int dx;
+        int dy;
+
+        if (seven_seg_below_field_origin(&status_disp, FIELD_X, FIELD_Y, FIELD_PX,
+                                         SEVEN_SEG_GRID_MARGIN, &dx, &dy) == 0)
+            acetate_set_digits(dx, dy, status_disp.digit_w, status_disp.digit_h,
+                               SEVEN_SEG_DIGITS);
+    }
     if (cart_name() != NULL)
         acetate_set_cart(cart_name());
     else
@@ -610,12 +618,10 @@ int main(void)
                     SDL_DestroyTexture(fps_tex);
                     fps_tex = next;
                     fps_show = fps;
-                    acetate_set_clock_hit(CANVAS_W - fps_w - 2, 2, fps_w, fps_h);
                 }
             }
         }
         last_frame = now;
-        ui_frame++;
 
         keys = SDL_GetKeyboardState(NULL);
         if (loaded && cart_two_stick()) {
@@ -639,13 +645,6 @@ int main(void)
             sx = -1;
         if (right && !left)
             sx = 1;
-        {
-            SDL_Rect stick_hit;
-            SDL_Rect button_hit;
-
-            control_rects(sx, sy, &stick_hit, &button_hit);
-            acetate_set_control_hits(&stick_hit, &button_hit);
-        }
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT)
@@ -669,12 +668,6 @@ int main(void)
             {
                 int cur = 0;
                 acetate_event(&event, &cur);
-            }
-            if (event.type == SDL_MOUSEMOTION) {
-                int cx;
-                int cy;
-                if (acetate_window_to_canvas(event.motion.x, event.motion.y, &cx, &cy))
-                    acetate_update_hover(cx, cy);
             }
             if (event.type == SDL_KEYDOWN && !event.key.repeat &&
                 event.key.keysym.scancode == SDL_SCANCODE_D &&
@@ -754,7 +747,7 @@ int main(void)
 
         SDL_SetRenderTarget(renderer, canvas);
         draw(renderer, led_on, led_off, stick_tex, button_tex, &status_disp, &board,
-             sx, sy, pressed, ui_frame, eep_blink_lit);
+             sx, sy, pressed, eep_blink_lit);
         if (fps_tex != NULL) {
             SDL_Rect dst = {
                 CANVAS_W - fps_w - 2,

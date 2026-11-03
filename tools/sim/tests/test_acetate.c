@@ -2,127 +2,179 @@
 
 #include "tests/report.h"
 
-#define TEST_CANVAS_W 128
-#define TEST_MAX_Y 141
+#include <stdio.h>
+#include <string.h>
+
+#define FX 8
+#define FY 8
+#define LED 6
+#define PITCH 7
+#define GRID 16
 
 static void expect(int cond, const char *msg)
 {
     report_check(cond, msg);
 }
 
-static void test_min_size(void)
+static void test_field_px(void)
 {
-    AcetateRect small = {0, 0, 3, 4, 1};
-    AcetateRect ok = {0, 0, 4, 4, 1};
-
-    expect(!acetate_geom_size_ok(&small, ACETATE_GEOM_MIN_ISLAND),
-           "3x4 island fails minimum size");
-    expect(acetate_geom_size_ok(&ok, ACETATE_GEOM_MIN_ISLAND), "4x4 island meets minimum size");
+    expect(acetate_geom_field_px(LED, PITCH, GRID) == 111, "16 LEDs of 6 with 1px gaps span 111");
 }
 
-static void test_max_y_clamp_bounds(void)
+static void test_led_rect_includes_margin(void)
 {
-    AcetateRect r = {0, 122, 128, 30, 4};
+    int x;
+    int y;
+    int w;
+    int h;
 
-    acetate_geom_clamp_bounds(&r, TEST_CANVAS_W, TEST_MAX_Y);
-    expect(r.y + r.h == TEST_MAX_Y, "bounds clamp trims height to max Y");
-    expect(r.h == TEST_MAX_Y - 122, "green band height capped at max Y");
+    acetate_geom_led_rect(FX, FY, LED, PITCH, GRID, 0, 0, &x, &y, &w, &h);
+    expect(x == FX && y == FY && w == PITCH && h == PITCH, "first LED owns 6x6 plus 1px margin");
+    acetate_geom_led_rect(FX, FY, LED, PITCH, GRID, 15, 15, &x, &y, &w, &h);
+    expect(w == LED && h == LED, "last LED has no trailing margin");
+    expect(x == FX + 15 * PITCH && y == FY + 15 * PITCH, "last LED origin is at pitch * 15");
 }
 
-static void test_move_keeps_size_at_max_y(void)
+static void test_led_at_sprite_and_gap(void)
 {
-    AcetateRect r = {0, 100, 40, 20, 1};
-    int h_before = r.h;
+    int col = -1;
+    int row = -1;
 
-    acetate_geom_clamp_move(&r, TEST_CANVAS_W, TEST_MAX_Y);
-    expect(r.h == h_before, "move clamp does not shrink height at bottom edge");
-    expect(r.y + r.h <= TEST_MAX_Y, "move clamp slides island below max Y");
+    expect(acetate_geom_led_at(FX, FY, LED, PITCH, GRID, FX, FY, &col, &row),
+           "top-left LED sprite hits");
+    expect(col == 0 && row == 0, "top-left is LED 0,0");
+    expect(acetate_geom_led_at(FX, FY, LED, PITCH, GRID, FX + 6, FY, &col, &row),
+           "1px gap after first LED still belongs to it");
+    expect(col == 0 && row == 0, "gap maps to LED 0,0");
+    expect(acetate_geom_led_at(FX, FY, LED, PITCH, GRID, FX + PITCH, FY, &col, &row),
+           "next pitch starts LED 1");
+    expect(col == 1 && row == 0, "second column is LED 1,0");
 }
 
-static void test_color_at_topmost(void)
+static void test_led_at_last_and_miss(void)
 {
-    AcetateRect stack[2] = {
-        {0, 0, 10, 10, 1},
-        {5, 5, 10, 10, 4},
-    };
+    int col = -1;
+    int row = -1;
+    int last = FX + 15 * PITCH;
 
-    expect(acetate_geom_color_at(stack, 2, 7, 7) == 4, "topmost island color wins in overlap");
-    expect(acetate_geom_color_at(stack, 2, 1, 1) == 1, "non-overlap uses lower island");
-    expect(acetate_geom_color_at(stack, 2, 50, 50) == 0, "outside islands is clear");
+    expect(acetate_geom_led_at(FX, FY, LED, PITCH, GRID, last + 5, FY, &col, &row),
+           "last LED includes its 6px sprite");
+    expect(col == 15 && row == 0, "last column is LED 15");
+    expect(!acetate_geom_led_at(FX, FY, LED, PITCH, GRID, last + 6, FY, &col, &row),
+           "one pixel past last LED misses");
+    expect(!acetate_geom_led_at(FX, FY, LED, PITCH, GRID, FX - 1, FY, &col, &row),
+           "left of field misses");
 }
 
-static void test_color_at_skips_clear(void)
+static void test_digit_at_whole_glyph(void)
 {
-    AcetateRect stack[2] = {
-        {0, 0, 20, 20, 0},
-        {0, 0, 20, 20, 3},
-    };
+    int origin_x = 15;
+    int origin_y = 123;
+    int dw = 14;
+    int dh = 18;
 
-    expect(acetate_geom_color_at(stack, 2, 5, 5) == 3, "transparent island is skipped for tint");
+    expect(acetate_geom_digit_at(origin_x, origin_y, dw, dh, 8, origin_x, origin_y) == 0,
+           "first pixel of digit 0");
+    expect(acetate_geom_digit_at(origin_x, origin_y, dw, dh, 8, origin_x + dw - 1,
+                                origin_y + dh - 1) == 0,
+           "last pixel of digit 0 still paints that digit");
+    expect(acetate_geom_digit_at(origin_x, origin_y, dw, dh, 8, origin_x + dw, origin_y) == 1,
+           "next glyph is digit 1");
+    expect(acetate_geom_digit_at(origin_x, origin_y, dw, dh, 8, origin_x, origin_y - 1) == -1,
+           "above digits misses");
 }
 
-static void test_send_to_front(void)
+static void test_color_at_led_and_digit(void)
 {
-    AcetateRect stack[2] = {
-        {0, 0, 10, 10, 1},
-        {5, 5, 10, 10, 4},
-    };
-    int selected = 0;
-    int hover = 0;
+    uint8_t led[GRID][GRID];
+    uint8_t digit[8];
 
-    acetate_geom_send_to_front(stack, 2, 0, &selected, &hover);
-    expect(acetate_geom_color_at(stack, 2, 7, 7) == 1, "send_to_front promotes moved island");
-    expect(selected == 1, "selected index tracks send_to_front");
-    expect(hover == 1, "hover index tracks send_to_front");
+    memset(led, 0, sizeof led);
+    memset(digit, 0, sizeof digit);
+    led[0][1] = 4;
+    digit[2] = 6;
+    expect(acetate_geom_color_at(led, digit, FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, FX + PITCH,
+                                 FY) == 4,
+           "color_at reads painted LED");
+    expect(acetate_geom_color_at(led, digit, FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, 15 + 2 * 14,
+                                 123) == 6,
+           "color_at reads painted digit");
+    expect(acetate_geom_color_at(led, digit, FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, 0, 0) == 0,
+           "unpainted canvas is clear");
 }
 
-static void test_parse_island(void)
+static void test_parse_layout(void)
 {
-    AcetateRect r;
-    const char *obj = "{\"x\":10,\"y\":20,\"w\":30,\"h\":40,\"c\":5}";
+    uint8_t led[GRID][GRID];
+    uint8_t digit[8];
+    int active = 0;
+    char led_s[GRID * GRID + 1];
+    char json[512];
 
-    expect(acetate_geom_parse_island(obj, &r) == 0, "parse island JSON object");
-    expect(r.x == 10 && r.y == 20 && r.w == 30 && r.h == 40 && r.color == 5,
-           "parsed fields match JSON");
-    expect(acetate_geom_parse_island("{\"x\":bad}", &r) != 0, "reject malformed island JSON");
+    memset(led_s, '0', GRID * GRID);
+    led_s[0] = '4';
+    led_s[GRID * GRID] = '\0';
+    snprintf(json, sizeof json, "{\"active\":3,\"led\":\"%s\",\"digit\":\"16000000\"}", led_s);
+    expect(acetate_geom_parse_layout(json, led, digit, &active) == 0, "parse cell layout JSON");
+    expect(active == 3, "parsed active color");
+    expect(led[0][0] == 4, "first LED color from led string");
+    expect(digit[0] == 1 && digit[1] == 6, "digit colors from digit string");
+    expect(acetate_geom_parse_layout("{\"islands\":[]}", led, digit, &active) != 0,
+           "reject old island JSON");
 }
 
-static void test_normalize_negative_size(void)
+static void test_fill_overlap_rectangle(void)
 {
-    AcetateRect r = {10, 10, -5, -8, 2};
+    uint8_t led[GRID][GRID];
+    uint8_t digit[8];
+    int x;
+    int y;
+    int w;
+    int h;
+    int ux;
+    int uy;
+    int uw;
+    int uh;
 
-    acetate_geom_normalize(&r);
-    expect(r.x == 5 && r.y == 2 && r.w == 5 && r.h == 8, "normalize flips negative width and height");
+    memset(led, 0, sizeof led);
+    memset(digit, 0, sizeof digit);
+    acetate_geom_led_rect(FX, FY, LED, PITCH, GRID, 1, 2, &x, &y, &w, &h);
+    acetate_geom_led_rect(FX, FY, LED, PITCH, GRID, 3, 4, &ux, &uy, &uw, &uh);
+    expect(acetate_geom_fill_overlap(led, digit, FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, x, y,
+                                     (ux + uw) - x, (uy + uh) - y, 2) == 1,
+           "fill overlap paints a LED rectangle");
+    expect(led[2][1] == 2 && led[4][3] == 2 && led[3][2] == 2, "interior LEDs of the box are painted");
+    expect(led[2][0] == 0 && led[1][1] == 0, "LEDs outside the box stay clear");
+    expect(acetate_geom_union_overlap(FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, x, y,
+                                      (ux + uw) - x, (uy + uh) - y, &ux, &uy, &uw, &uh),
+           "union covers the painted LED block");
 }
 
-static void test_control_rect_hit(void)
+static void test_fill_overlap_digit(void)
 {
-    expect(acetate_geom_point_in_rect(16, 152, 16, 152, 32, 32), "stick rect contains interior point");
-    expect(!acetate_geom_point_in_rect(0, 0, 16, 152, 32, 32), "stick rect excludes far point");
-}
+    uint8_t led[GRID][GRID];
+    uint8_t digit[8];
 
-static void test_load_filter_small_island(void)
-{
-    AcetateRect r;
-
-    expect(acetate_geom_parse_island("{\"x\":0,\"y\":0,\"w\":1,\"h\":1,\"c\":1}", &r) == 0,
-           "parse tiny island for load filter");
-    expect(!acetate_geom_size_ok(&r, ACETATE_GEOM_MIN_ISLAND),
-           "load rejects island below minimum size");
+    memset(led, 0, sizeof led);
+    memset(digit, 0, sizeof digit);
+    expect(acetate_geom_fill_overlap(led, digit, FX, FY, LED, PITCH, GRID, 15, 123, 14, 18, 8, 15,
+                                     123, 14 * 3, 18, 6) == 1,
+           "fill overlap paints whole digits in the box");
+    expect(digit[0] == 6 && digit[1] == 6 && digit[2] == 6, "first three digits are painted");
+    expect(digit[3] == 0, "digit outside the box stays clear");
 }
 
 int main(void)
 {
     report_begin("acetate");
-    test_min_size();
-    test_max_y_clamp_bounds();
-    test_move_keeps_size_at_max_y();
-    test_color_at_topmost();
-    test_color_at_skips_clear();
-    test_send_to_front();
-    test_parse_island();
-    test_normalize_negative_size();
-    test_control_rect_hit();
-    test_load_filter_small_island();
+    test_field_px();
+    test_led_rect_includes_margin();
+    test_led_at_sprite_and_gap();
+    test_led_at_last_and_miss();
+    test_digit_at_whole_glyph();
+    test_color_at_led_and_digit();
+    test_parse_layout();
+    test_fill_overlap_rectangle();
+    test_fill_overlap_digit();
     return report_end();
 }

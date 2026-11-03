@@ -1,124 +1,296 @@
 #include "acetate_geom.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-void acetate_geom_normalize(AcetateRect *r)
+int acetate_geom_field_px(int led, int pitch, int grid)
 {
-    if (r->w < 0) {
-        r->x += r->w;
-        r->w = -r->w;
-    }
-    if (r->h < 0) {
-        r->y += r->h;
-        r->h = -r->h;
-    }
-    if (r->w < 1)
-        r->w = 1;
-    if (r->h < 1)
-        r->h = 1;
+    if (grid < 1)
+        return 0;
+    if (grid == 1)
+        return led > 0 ? led : 0;
+    if (pitch < 1)
+        pitch = led;
+    return (grid - 1) * pitch + led;
 }
 
-void acetate_geom_clamp_move(AcetateRect *r, int canvas_w, int max_y)
+void acetate_geom_led_rect(int field_x, int field_y, int led, int pitch, int grid, int col,
+                           int row, int *x, int *y, int *w, int *h)
 {
-    int w = r->w;
-    int h = r->h;
+    int cell_w;
+    int cell_h;
 
-    if (w > canvas_w)
-        w = canvas_w;
-    if (h > max_y)
-        h = max_y;
-    r->w = w;
-    r->h = h;
-    if (r->x < 0)
-        r->x = 0;
-    if (r->y < 0)
-        r->y = 0;
-    if (r->x + r->w > canvas_w)
-        r->x = canvas_w - r->w;
-    if (r->y + r->h > max_y)
-        r->y = max_y - r->h;
+    if (pitch < led)
+        pitch = led;
+    cell_w = (col < grid - 1) ? pitch : led;
+    cell_h = (row < grid - 1) ? pitch : led;
+    if (x != NULL)
+        *x = field_x + col * pitch;
+    if (y != NULL)
+        *y = field_y + row * pitch;
+    if (w != NULL)
+        *w = cell_w;
+    if (h != NULL)
+        *h = cell_h;
 }
 
-void acetate_geom_clamp_bounds(AcetateRect *r, int canvas_w, int max_y)
+int acetate_geom_led_at(int field_x, int field_y, int led, int pitch, int grid, int x, int y,
+                        int *col, int *row)
 {
-    if (r->x < 0) {
-        r->w += r->x;
-        r->x = 0;
-    }
-    if (r->y < 0) {
-        r->h += r->y;
-        r->y = 0;
-    }
-    if (r->x + r->w > canvas_w)
-        r->w = canvas_w - r->x;
-    if (r->y + r->h > max_y)
-        r->h = max_y - r->y;
-    if (r->w < 1)
-        r->w = 1;
-    if (r->h < 1)
-        r->h = 1;
+    int dx;
+    int dy;
+    int span;
+    int c;
+    int r;
+
+    if (grid < 1 || led < 1)
+        return 0;
+    if (pitch < 1)
+        pitch = led;
+    if (x < field_x || y < field_y)
+        return 0;
+    dx = x - field_x;
+    dy = y - field_y;
+    span = acetate_geom_field_px(led, pitch, grid);
+    if (dx >= span || dy >= span)
+        return 0;
+    c = dx / pitch;
+    r = dy / pitch;
+    if (c >= grid)
+        c = grid - 1;
+    if (r >= grid)
+        r = grid - 1;
+    if (col != NULL)
+        *col = c;
+    if (row != NULL)
+        *row = r;
+    return 1;
 }
 
-int acetate_geom_size_ok(const AcetateRect *r, int min_size)
+void acetate_geom_digit_rect(int origin_x, int origin_y, int digit_w, int digit_h, int index,
+                             int *x, int *y, int *w, int *h)
 {
-    return r->w >= min_size && r->h >= min_size;
+    if (x != NULL)
+        *x = origin_x + index * digit_w;
+    if (y != NULL)
+        *y = origin_y;
+    if (w != NULL)
+        *w = digit_w;
+    if (h != NULL)
+        *h = digit_h;
 }
 
-int acetate_geom_point_in(const AcetateRect *r, int x, int y)
+int acetate_geom_digit_at(int origin_x, int origin_y, int digit_w, int digit_h, int n, int x,
+                          int y)
 {
-    return x >= r->x && x < r->x + r->w && y >= r->y && y < r->y + r->h;
+    int dx;
+
+    if (n < 1 || digit_w < 1 || digit_h < 1)
+        return -1;
+    if (x < origin_x || y < origin_y || y >= origin_y + digit_h)
+        return -1;
+    dx = x - origin_x;
+    if (dx < 0 || dx >= n * digit_w)
+        return -1;
+    return dx / digit_w;
 }
 
-int acetate_geom_point_in_rect(int x, int y, int rx, int ry, int rw, int rh)
+int acetate_geom_color_at(const uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                          const uint8_t digit[ACETATE_GEOM_DIGITS], int field_x, int field_y,
+                          int led_px, int pitch, int grid, int digit_x, int digit_y, int digit_w,
+                          int digit_h, int digit_n, int x, int y)
 {
-    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-}
+    int col;
+    int row;
+    int d;
 
-int acetate_geom_color_at(const AcetateRect *list, int n, int x, int y)
-{
-    int i;
-
-    for (i = n - 1; i >= 0; i--) {
-        if (list[i].color == 0)
-            continue;
-        if (acetate_geom_point_in(&list[i], x, y))
-            return (int)list[i].color;
+    if (led != NULL && acetate_geom_led_at(field_x, field_y, led_px, pitch, grid, x, y, &col, &row))
+        return (int)led[row][col];
+    if (digit != NULL) {
+        d = acetate_geom_digit_at(digit_x, digit_y, digit_w, digit_h, digit_n, x, y);
+        if (d >= 0)
+            return (int)digit[d];
     }
     return 0;
 }
 
-void acetate_geom_send_to_front(AcetateRect *list, int n, int index, int *selected, int *hover)
+static int parse_quoted(const char *json, const char *key, char *out, int cap)
 {
-    AcetateRect tmp;
+    const char *p;
+    char needle[32];
+    int i;
 
-    if (index < 0 || index >= n || index == n - 1)
-        return;
-    tmp = list[index];
-    memmove(&list[index], &list[index + 1], (size_t)(n - index - 1) * sizeof(AcetateRect));
-    list[n - 1] = tmp;
-    if (selected != NULL && *selected == index)
-        *selected = n - 1;
-    if (hover != NULL && *hover == index)
-        *hover = n - 1;
+    snprintf(needle, sizeof needle, "\"%s\"", key);
+    p = strstr(json, needle);
+    if (p == NULL)
+        return -1;
+    p = strchr(p + strlen(needle), '"');
+    if (p == NULL)
+        return -1;
+    p++;
+    for (i = 0; i < cap; i++) {
+        if (p[i] == '\0' || p[i] == '"')
+            return -1;
+        out[i] = p[i];
+    }
+    return 0;
 }
 
-int acetate_geom_parse_island(const char *json_obj, AcetateRect *out)
+int acetate_geom_rects_overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)
 {
+    if (aw < 1 || ah < 1 || bw < 1 || bh < 1)
+        return 0;
+    return ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah;
+}
+
+static int visit_overlap(int field_x, int field_y, int led_px, int pitch, int grid, int digit_x,
+                         int digit_y, int digit_w, int digit_h, int digit_n, int rx, int ry, int rw,
+                         int rh, uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                         uint8_t digit[ACETATE_GEOM_DIGITS], uint8_t color, int paint, int *ox,
+                         int *oy, int *ow, int *oh)
+{
+    int col;
+    int row;
+    int i;
     int x;
     int y;
     int w;
     int h;
-    int c;
+    int hit = 0;
+    int minx = 0;
+    int miny = 0;
+    int maxx = 0;
+    int maxy = 0;
+    int changed = 0;
 
-    if (out == NULL || json_obj == NULL)
+    if (grid > ACETATE_GEOM_GRID)
+        grid = ACETATE_GEOM_GRID;
+    if (digit_n > ACETATE_GEOM_DIGITS)
+        digit_n = ACETATE_GEOM_DIGITS;
+
+    for (row = 0; row < grid; row++) {
+        for (col = 0; col < grid; col++) {
+            acetate_geom_led_rect(field_x, field_y, led_px, pitch, grid, col, row, &x, &y, &w, &h);
+            if (!acetate_geom_rects_overlap(rx, ry, rw, rh, x, y, w, h))
+                continue;
+            if (!hit) {
+                minx = x;
+                miny = y;
+                maxx = x + w;
+                maxy = y + h;
+                hit = 1;
+            } else {
+                if (x < minx)
+                    minx = x;
+                if (y < miny)
+                    miny = y;
+                if (x + w > maxx)
+                    maxx = x + w;
+                if (y + h > maxy)
+                    maxy = y + h;
+            }
+            if (paint && led != NULL && led[row][col] != color) {
+                led[row][col] = color;
+                changed = 1;
+            }
+        }
+    }
+    for (i = 0; i < digit_n; i++) {
+        acetate_geom_digit_rect(digit_x, digit_y, digit_w, digit_h, i, &x, &y, &w, &h);
+        if (!acetate_geom_rects_overlap(rx, ry, rw, rh, x, y, w, h))
+            continue;
+        if (!hit) {
+            minx = x;
+            miny = y;
+            maxx = x + w;
+            maxy = y + h;
+            hit = 1;
+        } else {
+            if (x < minx)
+                minx = x;
+            if (y < miny)
+                miny = y;
+            if (x + w > maxx)
+                maxx = x + w;
+            if (y + h > maxy)
+                maxy = y + h;
+        }
+        if (paint && digit != NULL && digit[i] != color) {
+            digit[i] = color;
+            changed = 1;
+        }
+    }
+    if (hit && ox != NULL && oy != NULL && ow != NULL && oh != NULL) {
+        *ox = minx;
+        *oy = miny;
+        *ow = maxx - minx;
+        *oh = maxy - miny;
+    }
+    return paint ? changed : hit;
+}
+
+int acetate_geom_fill_overlap(uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                              uint8_t digit[ACETATE_GEOM_DIGITS], int field_x, int field_y,
+                              int led_px, int pitch, int grid, int digit_x, int digit_y,
+                              int digit_w, int digit_h, int digit_n, int rx, int ry, int rw, int rh,
+                              uint8_t color)
+{
+    return visit_overlap(field_x, field_y, led_px, pitch, grid, digit_x, digit_y, digit_w, digit_h,
+                         digit_n, rx, ry, rw, rh, led, digit, color, 1, NULL, NULL, NULL, NULL);
+}
+
+int acetate_geom_union_overlap(int field_x, int field_y, int led_px, int pitch, int grid,
+                               int digit_x, int digit_y, int digit_w, int digit_h, int digit_n,
+                               int rx, int ry, int rw, int rh, int *ox, int *oy, int *ow, int *oh)
+{
+    return visit_overlap(field_x, field_y, led_px, pitch, grid, digit_x, digit_y, digit_w, digit_h,
+                         digit_n, rx, ry, rw, rh, NULL, NULL, 0, 0, ox, oy, ow, oh);
+}
+
+int acetate_geom_parse_layout(const char *json, uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                              uint8_t digit[ACETATE_GEOM_DIGITS], int *active)
+{
+    char led_s[ACETATE_GEOM_GRID * ACETATE_GEOM_GRID];
+    char digit_s[ACETATE_GEOM_DIGITS];
+    const char *p;
+    int i;
+    int v;
+
+    if (led != NULL)
+        memset(led, 0, ACETATE_GEOM_GRID * ACETATE_GEOM_GRID);
+    if (digit != NULL)
+        memset(digit, 0, ACETATE_GEOM_DIGITS);
+    if (active != NULL)
+        *active = 1;
+    if (json == NULL)
         return -1;
-    if (sscanf(json_obj, "{\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d,\"c\":%d}", &x, &y, &w, &h, &c) != 5)
+    p = strstr(json, "\"active\"");
+    if (p != NULL && active != NULL) {
+        p = strchr(p, ':');
+        if (p != NULL) {
+            v = atoi(p + 1);
+            if (v >= 0)
+                *active = v;
+        }
+    }
+    if (parse_quoted(json, "led", led_s, (int)sizeof led_s) != 0)
         return -1;
-    out->x = x;
-    out->y = y;
-    out->w = w;
-    out->h = h;
-    out->color = (uint8_t)c;
+    if (parse_quoted(json, "digit", digit_s, (int)sizeof digit_s) != 0)
+        return -1;
+    if (led != NULL) {
+        for (i = 0; i < ACETATE_GEOM_GRID * ACETATE_GEOM_GRID; i++) {
+            if (led_s[i] < '0' || led_s[i] > '7')
+                return -1;
+            led[i / ACETATE_GEOM_GRID][i % ACETATE_GEOM_GRID] = (uint8_t)(led_s[i] - '0');
+        }
+    }
+    if (digit != NULL) {
+        for (i = 0; i < ACETATE_GEOM_DIGITS; i++) {
+            if (digit_s[i] < '0' || digit_s[i] > '7')
+                return -1;
+            digit[i] = (uint8_t)(digit_s[i] - '0');
+        }
+    }
     return 0;
 }

@@ -3,29 +3,45 @@
 
 #include <stdint.h>
 
-#define ACETATE_GEOM_MIN_ISLAND 4
+#define ACETATE_GEOM_GRID 16
+#define ACETATE_GEOM_DIGITS 8
 
-typedef struct AcetateRect {
-    int x;
-    int y;
-    int w;
-    int h;
-    uint8_t color;
-} AcetateRect;
+int acetate_geom_field_px(int led, int pitch, int grid);
 
-void acetate_geom_normalize(AcetateRect *r);
-void acetate_geom_clamp_move(AcetateRect *r, int canvas_w, int max_y);
-void acetate_geom_clamp_bounds(AcetateRect *r, int canvas_w, int max_y);
-int acetate_geom_size_ok(const AcetateRect *r, int min_size);
+void acetate_geom_led_rect(int field_x, int field_y, int led, int pitch, int grid, int col,
+                           int row, int *x, int *y, int *w, int *h);
 
-int acetate_geom_point_in(const AcetateRect *r, int x, int y);
-int acetate_geom_point_in_rect(int x, int y, int rx, int ry, int rw, int rh);
+/* Returns 1 and writes col/row when (x,y) hits a cell (LED plus trailing pitch margin). */
+int acetate_geom_led_at(int field_x, int field_y, int led, int pitch, int grid, int x, int y,
+                        int *col, int *row);
 
-/* Last array entry is topmost; color 0 is transparent. */
-int acetate_geom_color_at(const AcetateRect *list, int n, int x, int y);
+void acetate_geom_digit_rect(int origin_x, int origin_y, int digit_w, int digit_h, int index,
+                             int *x, int *y, int *w, int *h);
 
-void acetate_geom_send_to_front(AcetateRect *list, int n, int index, int *selected, int *hover);
+/* Returns digit index, or -1. */
+int acetate_geom_digit_at(int origin_x, int origin_y, int digit_w, int digit_h, int n, int x,
+                          int y);
 
-int acetate_geom_parse_island(const char *json_obj, AcetateRect *out);
+int acetate_geom_color_at(const uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                          const uint8_t digit[ACETATE_GEOM_DIGITS], int field_x, int field_y,
+                          int led_px, int pitch, int grid, int digit_x, int digit_y, int digit_w,
+                          int digit_h, int digit_n, int x, int y);
+
+int acetate_geom_parse_layout(const char *json, uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                              uint8_t digit[ACETATE_GEOM_DIGITS], int *active);
+
+int acetate_geom_rects_overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh);
+
+/* Paint every LED/digit whose cell intersects the canvas box. Returns 1 if anything changed. */
+int acetate_geom_fill_overlap(uint8_t led[ACETATE_GEOM_GRID][ACETATE_GEOM_GRID],
+                              uint8_t digit[ACETATE_GEOM_DIGITS], int field_x, int field_y,
+                              int led_px, int pitch, int grid, int digit_x, int digit_y,
+                              int digit_w, int digit_h, int digit_n, int rx, int ry, int rw, int rh,
+                              uint8_t color);
+
+/* Bounding box of cells that intersect the canvas box. Returns 1 if any cell hits. */
+int acetate_geom_union_overlap(int field_x, int field_y, int led_px, int pitch, int grid,
+                               int digit_x, int digit_y, int digit_w, int digit_h, int digit_n,
+                               int rx, int ry, int rw, int rh, int *ox, int *oy, int *ow, int *oh);
 
 #endif

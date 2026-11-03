@@ -57,6 +57,10 @@ int seven_seg_row_width(const SevenSegDisplay *disp);
 void seven_seg_draw(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
                     int canvas_w, int canvas_h);
 
+/* Origin of the abutting digit row centered on the matrix. */
+int seven_seg_below_field_origin(const SevenSegDisplay *disp, int field_x, int field_y,
+                                 int field_px, int grid_margin, int *out_x, int *out_y);
+
 /* Abutting digits, centered on the matrix; grid_margin px from the 16×16 field. */
 void seven_seg_draw_below_field(const SevenSegDisplay *disp, SDL_Renderer *renderer,
                                 int field_x, int field_y, int field_px, int grid_margin,
