@@ -4,8 +4,6 @@
 #include "score.h"
 #include "text.h"
 
-#include <string.h>
-
 /* Rows of the end picture. Bit 0 is the left pixel.
  * The mouth is the only part that changes. */
 static const uint16_t face_top[4] = {0x0810, 0x1248, 0x1008, 0x1008};
@@ -25,52 +23,7 @@ typedef enum {
 static int over_frame;
 static int mark;
 static OverStyle style;
-static int text_scroll;
-static int text_dir;
-static int text_wait;
-static int text_step;
-static const char *shooter_msg;
-
-static void text_scroll_reset(void)
-{
-    text_scroll = 0;
-    text_dir = -1;
-    text_wait = OVER_TEXT_DELAY;
-    text_step = 0;
-}
-
-static void text_scroll_tick(void)
-{
-    int min_x;
-    int len;
-
-    if (shooter_msg == 0)
-        return;
-    if (text_wait > 0) {
-        text_wait--;
-        return;
-    }
-    text_step++;
-    if (text_step < OVER_TEXT_STEP)
-        return;
-    text_step = 0;
-
-    len = (int)strlen(shooter_msg);
-    min_x = 16 - len * TEXT_W;
-    if (min_x > 0)
-        min_x = 0;
-
-    text_scroll += text_dir;
-    if (text_scroll <= min_x) {
-        text_scroll = min_x;
-        text_dir = 1;
-        text_wait = OVER_TEXT_DELAY;
-    } else if (text_scroll >= 0) {
-        text_scroll = 0;
-        text_dir = -1;
-        text_wait = OVER_TEXT_DELAY;
-    }
-}
+static TextScroll lose_scroll;
 
 static void paint(int y, uint16_t bits)
 {
@@ -95,7 +48,7 @@ static void draw_points(void)
         buf[--i] = (char)('0' + (n % 10));
         n /= 10;
     } while (n > 0 && i > 0);
-    text_draw(1, 8, buf + i);
+    text_print(1, 8, buf + i);
 }
 
 static void draw_face(void)
@@ -113,8 +66,8 @@ static void draw_over(void)
 {
     clear();
     if (style == OVER_STYLE_SHOOTER_RECORD) {
-        text_draw(2, 5, "new");
-        text_draw(-4, 10, "record");
+        text_print(2, 5, "new");
+        text_print(-4, 10, "record");
         return;
     }
     if (style == OVER_STYLE_SHOOTER_WIN) {
@@ -123,8 +76,7 @@ static void draw_over(void)
     }
     if (style == OVER_STYLE_SHOOTER_LOSE) {
         draw_face();
-        if (shooter_msg != 0)
-            text_draw(text_scroll, 9, shooter_msg);
+        text_scroll_paint(&lose_scroll);
         return;
     }
     draw_face();
@@ -136,15 +88,13 @@ void over_clear(void)
     over_frame = 0;
     mark = 0;
     style = OVER_STYLE_DEFAULT;
-    text_scroll_reset();
-    shooter_msg = 0;
+    text_scroll_stop(&lose_scroll);
 }
 
 void over_start_mark(int judge)
 {
     style = OVER_STYLE_DEFAULT;
-    shooter_msg = 0;
-    text_scroll_reset();
+    text_scroll_stop(&lose_scroll);
     if (judge > 0)
         mark = 1;
     else if (judge < 0)
@@ -159,8 +109,7 @@ void over_start_shooter(int player, int rocks)
 {
     int cmp = score_judge();
 
-    shooter_msg = 0;
-    text_scroll_reset();
+    text_scroll_stop(&lose_scroll);
     if (cmp > 0) {
         style = OVER_STYLE_SHOOTER_RECORD;
         mark = 0;
@@ -170,7 +119,8 @@ void over_start_shooter(int player, int rocks)
     } else {
         style = OVER_STYLE_SHOOTER_LOSE;
         mark = -1;
-        shooter_msg = "better luck next time";
+        lose_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        text_scroll_start(&lose_scroll, 0, 9, "better luck next time");
     }
     over_frame = 0;
     draw_over();
@@ -197,7 +147,7 @@ int over_tick(const Input *in)
 {
     over_frame++;
     if (style == OVER_STYLE_SHOOTER_LOSE)
-        text_scroll_tick();
+        text_scroll_advance(&lose_scroll);
     draw_over();
     return in->button_pressed ? 1 : 0;
 }

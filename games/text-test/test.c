@@ -22,66 +22,75 @@ static void test_initial_state(void)
     input_reset();
     text_test_reset();
 
-    expect(text_test_scroll_x() == 0, "starts at column 0");
-    expect(text_test_scroll_y() == 6, "starts centered vertically at row 6");
+    expect(text_test_demo_index() == 0, "starts on the print demo");
+    expect(text_test_scroll_x() == 0, "print demo keeps scroll at zero");
+    expect(text_test_scroll_y() == 7, "body text starts on row 7");
 }
 
-static void test_idle_no_scroll(void)
+static void test_print_idle(void)
 {
     int i;
 
     input_reset();
     text_test_reset();
-
-    /* 60 ticks without input should not scroll at all */
     for (i = 0; i < 60; i++)
         feed(0, 0, 0, 0, 0);
-    expect(text_test_scroll_x() == 0, "text stays stationary when stick is centered");
+    expect(text_test_scroll_x() == 0, "print demo stays still without input");
 }
 
-static void test_stick_left_scroll(void)
+static void test_demo_switch(void)
+{
+    input_reset();
+    text_test_reset();
+
+    feed(0, 0, 0, 1, 0);
+    feed(0, 0, 0, 1, 0);
+    expect(text_test_demo_index() == 1, "stick right selects bounce scroll");
+
+    feed(0, 0, 1, 0, 0);
+    feed(0, 0, 1, 0, 0);
+    expect(text_test_demo_index() == 0, "stick left returns to print");
+
+    feed(0, 0, 0, 1, 0);
+    feed(0, 0, 0, 1, 0);
+    expect(text_test_demo_index() == 1, "bounce scroll is selected again");
+}
+
+static void test_bounce_scroll_moves(void)
+{
+    int i;
+    int x0;
+
+    input_reset();
+    text_test_reset();
+    feed(0, 0, 0, 1, 0);
+    feed(0, 0, 0, 1, 0);
+    x0 = text_test_scroll_x();
+    for (i = 0; i < 120; i++)
+        feed(0, 0, 0, 0, 0);
+    expect(text_test_scroll_x() < x0, "bounce scroll moves the string left");
+}
+
+static void test_button_restarts_demo(void)
 {
     int i;
 
     input_reset();
     text_test_reset();
+    feed(0, 0, 0, 1, 0);
+    feed(0, 0, 0, 1, 0);
+    for (i = 0; i < 120; i++)
+        feed(0, 0, 0, 0, 0);
+    expect(text_test_scroll_x() < 0, "bounce scroll moved before reset");
 
-    /* Hold stick left for 60 ticks: steps exactly 15 pixels at 15 FPS (accounting for 2-tick debounce) */
-    /* 2 ticks to debounce, then 58 ticks with period 4 -> 14 or 15 steps */
-    for (i = 0; i < 60; i++)
-        feed(0, 0, 1, 0, 0);
-
-    expect(text_test_scroll_x() <= -14 && text_test_scroll_x() >= -15,
-           "holding stick left scrolls left at 15 FPS");
+    feed(0, 0, 0, 0, 1);
+    feed(0, 0, 0, 0, 1);
+    expect(text_test_scroll_x() == 0, "button restarts the active scroll demo");
 }
 
-static void test_controls(void)
+static void test_all_demos_exist(void)
 {
-    input_reset();
-    text_test_reset();
-
-    /* Test Stick Up / Down */
-    int initial_y = text_test_scroll_y();
-    feed(1, 0, 0, 0, 0);
-    feed(1, 0, 0, 0, 0);
-    expect(text_test_scroll_y() == initial_y - 1, "stick up moves row up");
-    feed(0, 0, 0, 0, 0);
-    feed(0, 0, 0, 0, 0); /* release */
-    feed(0, 1, 0, 0, 0);
-    feed(0, 1, 0, 0, 0); /* press down */
-    expect(text_test_scroll_y() == initial_y, "stick down moves row down");
-
-    /* Scroll some pixels with stick left, then press button to reset */
-    int i;
-    for (i = 0; i < 20; i++)
-        feed(0, 0, 1, 0, 0);
-    expect(text_test_scroll_x() < 0, "scrolled left with stick");
-
-    /* Button press resets to start */
-    feed(0, 0, 0, 0, 1);
-    feed(0, 0, 0, 0, 1);
-    expect(text_test_scroll_x() == 0, "button resets scroll to start");
-    expect(text_test_scroll_y() == 6, "button resets row to center");
+    expect(text_test_demo_count() == 5, "five text flows are available");
 }
 
 static void test_font_coverage(void)
@@ -95,20 +104,28 @@ static void test_font_coverage(void)
 
     for (i = 0; msg[i] != '\0'; i++) {
         char c = msg[i];
+
         if (c >= 'A' && c <= 'Z')
             has_letter[c - 'A'] = 1;
         if (c >= '0' && c <= '9')
             has_digit[c - '0'] = 1;
-        if (c == '.') has_dot = 1;
-        if (c == ',') has_comma = 1;
-        if (c == ':') has_colon = 1;
-        if (c == ';') has_semi = 1;
-        if (c == '-') has_dash = 1;
-        if (c == '+') has_plus = 1;
-        if (c == '=') has_equals = 1;
-        if (c == '/') has_slash = 1;
+        if (c == '.')
+            has_dot = 1;
+        if (c == ',')
+            has_comma = 1;
+        if (c == ':')
+            has_colon = 1;
+        if (c == ';')
+            has_semi = 1;
+        if (c == '-')
+            has_dash = 1;
+        if (c == '+')
+            has_plus = 1;
+        if (c == '=')
+            has_equals = 1;
+        if (c == '/')
+            has_slash = 1;
 
-        /* Verify every character in the message has a non-NULL glyph */
         expect(text_glyph(c) != 0, "glyph exists for message character");
     }
 
@@ -132,9 +149,11 @@ int main(void)
 {
     report_begin("text-test");
     test_initial_state();
-    test_idle_no_scroll();
-    test_stick_left_scroll();
-    test_controls();
+    test_print_idle();
+    test_demo_switch();
+    test_bounce_scroll_moves();
+    test_button_restarts_demo();
+    test_all_demos_exist();
     test_font_coverage();
     return report_end();
 }

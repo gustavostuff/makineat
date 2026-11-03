@@ -10,9 +10,6 @@
  * over_tick returns 1 on a button press.
  */
 
-#define OVER_TEXT_DELAY 60 /* still time at start and at each bounce turn */
-#define OVER_TEXT_STEP 8   /* scroll one column every N frames while moving */
-
 void over_clear(void);
 void over_start(void);
 /* judge is 1 win, 0 tie, -1 lose (same as score_judge). */

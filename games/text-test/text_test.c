@@ -5,41 +5,163 @@
 
 #include <string.h>
 
-#define SCROLL_PERIOD 4 /* 60Hz / 4 = 15 FPS */
+#define TITLE_Y 2
+#define BODY_Y 7
+#define FOOTER_Y 11
+
+/* Last five playfield rows (bit 0 is the left column). */
+static const uint16_t footer_rows[5] = {
+    0x2004u,
+    0x4002u,
+    0x8001u,
+    0x4002u,
+    0x2004u,
+};
+
+static const char sample[] = "this is a test text";
 
 static const char message[] =
     "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG - 0123456789 - . , : ; - + = / ";
 
-static int scroll_x;
-static int scroll_y;
-static int tick_count;
-static int msg_len;
-static int msg_width;
+typedef enum {
+    DEMO_PRINT,
+    DEMO_SCROLL_BOUNCE,
+    DEMO_SCROLL_RESET,
+    DEMO_SCROLL_VIEW8,
+    DEMO_SCROLL_FAST,
+    DEMO_COUNT
+} DemoKind;
+
+typedef struct {
+    const char *title;
+    DemoKind kind;
+} Demo;
+
+static const Demo demos[DEMO_COUNT] = {
+    {"PRINT", DEMO_PRINT},
+    {"BOUNCE", DEMO_SCROLL_BOUNCE},
+    {"RESET", DEMO_SCROLL_RESET},
+    {"VIEW 8", DEMO_SCROLL_VIEW8},
+    {"FAST", DEMO_SCROLL_FAST},
+};
+
+static int demo_index;
+static TextScroll title_scroll;
+static TextScroll body_scroll;
+
+static void title_scroll_begin(void)
+{
+    text_scroll_stop(&title_scroll);
+    memset(&title_scroll, 0, sizeof title_scroll);
+    title_scroll.repeat = TEXT_SCROLL_BOUNCE;
+    text_scroll_start(&title_scroll, 0, TITLE_Y, demos[demo_index].title);
+}
+
+static void body_scroll_stop(void)
+{
+    text_scroll_stop(&body_scroll);
+}
+
+static void demo_begin(void)
+{
+    DemoKind kind = demos[demo_index].kind;
+
+    title_scroll_begin();
+    body_scroll_stop();
+    memset(&body_scroll, 0, sizeof body_scroll);
+
+    switch (kind) {
+    case DEMO_PRINT:
+        break;
+    case DEMO_SCROLL_BOUNCE:
+        body_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        text_scroll_start(&body_scroll, 0, BODY_Y, sample);
+        break;
+    case DEMO_SCROLL_RESET:
+        body_scroll.repeat = TEXT_SCROLL_RESET;
+        text_scroll_start(&body_scroll, 0, BODY_Y, sample);
+        break;
+    case DEMO_SCROLL_VIEW8:
+        body_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        body_scroll.viewport_w = 8;
+        text_scroll_start(&body_scroll, 4, BODY_Y, sample);
+        break;
+    case DEMO_SCROLL_FAST:
+        body_scroll.repeat = TEXT_SCROLL_BOUNCE;
+        body_scroll.speed_fps = 60;
+        text_scroll_start(&body_scroll, 0, BODY_Y, sample);
+        break;
+    default:
+        break;
+    }
+}
+
+static void footer_draw(void)
+{
+    int row;
+    int y;
+
+    for (row = 0; row < 5; row++) {
+        uint16_t bits = footer_rows[row];
+        int x;
+
+        y = FOOTER_Y + row;
+        for (x = 0; x < 16; x++) {
+            if ((bits & (uint16_t)(1u << x)) != 0)
+                pixel((uint8_t)x, (uint8_t)y, true);
+        }
+    }
+}
+
+static void frame_draw(void)
+{
+    DemoKind kind = demos[demo_index].kind;
+
+    clear();
+    footer_draw();
+    print_scroll(&title_scroll);
+    switch (kind) {
+    case DEMO_PRINT:
+        text_print(0, BODY_Y, sample);
+        break;
+    case DEMO_SCROLL_BOUNCE:
+    case DEMO_SCROLL_RESET:
+    case DEMO_SCROLL_VIEW8:
+    case DEMO_SCROLL_FAST:
+        print_scroll(&body_scroll);
+        break;
+    default:
+        break;
+    }
+}
 
 void text_test_reset(void)
 {
-    scroll_x = 0;
-    scroll_y = 6; /* Centered vertically on 16-row matrix: rows 6..9 */
-    tick_count = 0;
-    msg_len = (int)strlen(message);
-    msg_width = msg_len * TEXT_W;
-    clear();
-    text_draw(scroll_x, scroll_y, message);
+    demo_index = 0;
+    demo_begin();
+    frame_draw();
+}
+
+int text_test_demo_index(void)
+{
+    return demo_index;
+}
+
+int text_test_demo_count(void)
+{
+    return DEMO_COUNT;
 }
 
 int text_test_scroll_x(void)
 {
-    return scroll_x;
+    if (demos[demo_index].kind == DEMO_PRINT)
+        return 0;
+    return body_scroll.scroll_x;
 }
 
 int text_test_scroll_y(void)
 {
-    return scroll_y;
-}
-
-int text_test_is_paused(void)
-{
-    return 0;
+    return BODY_Y;
 }
 
 const char *text_test_message(void)
@@ -49,49 +171,21 @@ const char *text_test_message(void)
 
 void text_test_tick(const Input *in)
 {
-    if (msg_width == 0) {
-        msg_len = (int)strlen(message);
-        msg_width = msg_len * TEXT_W;
+    if (in == 0) {
+        frame_draw();
+        return;
     }
 
-    if (in != 0) {
-        if (in->button_pressed) {
-            scroll_x = 0;
-            scroll_y = 6;
-            tick_count = 0;
-        }
+    if (in->button_pressed)
+        demo_begin();
 
-        if (in->up_pressed) {
-            if (scroll_y > 0)
-                scroll_y--;
-        }
-        if (in->down_pressed) {
-            if (scroll_y < 16 - TEXT_H)
-                scroll_y++;
-        }
-
-        if (in->left && !in->right) {
-            tick_count++;
-            if ((tick_count % SCROLL_PERIOD) == 0)
-                scroll_x--;
-        } else if (in->right && !in->left) {
-            tick_count++;
-            if ((tick_count % SCROLL_PERIOD) == 0)
-                scroll_x++;
-        } else {
-            tick_count = 0;
-        }
+    if (in->left_pressed) {
+        demo_index = (demo_index + DEMO_COUNT - 1) % DEMO_COUNT;
+        demo_begin();
+    } else if (in->right_pressed) {
+        demo_index = (demo_index + 1) % DEMO_COUNT;
+        demo_begin();
     }
 
-    if (scroll_x <= -msg_width)
-        scroll_x += msg_width;
-    else if (scroll_x > 0)
-        scroll_x -= msg_width;
-
-    clear();
-    text_draw(scroll_x, scroll_y, message);
-    if (scroll_x + msg_width < 16)
-        text_draw(scroll_x + msg_width, scroll_y, message);
-    if (scroll_x > 0)
-        text_draw(scroll_x - msg_width, scroll_y, message);
+    frame_draw();
 }
