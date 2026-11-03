@@ -5,6 +5,7 @@
 #include "entity/player.h"
 #include "entity/rock.h"
 #include "over.h"
+#include "rand.h"
 #include "score.h"
 #include "sound.h"
 #include "status.h"
@@ -42,6 +43,7 @@ static void game_over_judge(void)
 
 void game_reset(void)
 {
+    rand_reseed();
     over = 0;
     over_clear();
     score_reset();
@@ -56,6 +58,7 @@ void game_reset(void)
 
 void game_tick(const Input *in)
 {
+    rand_feed(in);
     if (over) {
         if (over_tick(in))
             game_reset();

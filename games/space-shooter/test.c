@@ -177,7 +177,9 @@ static void test_both_sizes(void)
 {
     input_reset();
     game_reset();
-    advance(119);
+    rock_add(1, 3, 2, 16, 0, 30);
+    rock_add(1, -1, 3, 16, 0, 30);
+    feed(0, 0, 0, 0, 0);
     expect(pixel_get(1, 3) && pixel_get(2, 3) && pixel_get(1, 4),
            "a spawned 2x2 rock is on screen");
     expect(!pixel_get(0, 3) && !pixel_get(3, 3), "that rock is two columns wide");

@@ -831,7 +831,7 @@ static int edit_mod_down(void)
 {
     const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
-    return keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL];
+    return keys[SDL_SCANCODE_LCTRL];
 }
 
 static void abort_drag(void)

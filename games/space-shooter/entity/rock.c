@@ -3,6 +3,7 @@
 #include "bullet.h"
 #include "entity.h"
 #include "player.h"
+#include "rand.h"
 #include "score.h"
 #include "sound.h"
 
@@ -37,7 +38,6 @@ typedef struct Rock {
 static Rock rock[ROCK_MAX];
 static int spawn_wait;
 static int age;
-static uint16_t rng;
 static int rock_score;
 
 int rock_fall_period(int base, int age_ticks)
@@ -61,8 +61,7 @@ static const Shape *shape_of(int size)
 
 static uint16_t next_rand(void)
 {
-    rng = (uint16_t)(rng * 25173u + 13849u);
-    return rng;
+    return (uint16_t)rand_next();
 }
 
 void rock_reset(void)
@@ -76,7 +75,6 @@ void rock_reset(void)
     }
     spawn_wait = 12;
     age = 0;
-    rng = 1;
     rock_score = 0;
 }
 

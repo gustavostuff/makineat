@@ -367,6 +367,13 @@ static int cart_is_pong(void)
     return name != NULL && strcmp(name, "pong") == 0;
 }
 
+static int cart_two_stick(void)
+{
+    const char *name = cart_name();
+
+    return name != NULL && (strcmp(name, "pong") == 0 || strcmp(name, "arkaled") == 0);
+}
+
 static void sim_start_cart(Board *board)
 {
     if (cart_is_pong()) {
@@ -611,7 +618,7 @@ int main(void)
         ui_frame++;
 
         keys = SDL_GetKeyboardState(NULL);
-        if (loaded && cart_name() != NULL && strcmp(cart_name(), "pong") == 0) {
+        if (loaded && cart_two_stick()) {
             up = keys[SDL_SCANCODE_W] ? 1 : 0;
             down = keys[SDL_SCANCODE_S] ? 1 : 0;
             left = keys[SDL_SCANCODE_A] ? 1 : 0;
@@ -717,12 +724,14 @@ int main(void)
                    board_sense(&board, AVR_PD4) == SIG_L,
                    board_sense(&board, AVR_PD5) == SIG_L,
                    &in);
-        if (loaded && cart_name() != NULL && strcmp(cart_name(), "pong") == 0) {
+        if (loaded && cart_two_stick()) {
             int p2_up = keys[SDL_SCANCODE_UP] ? 1 : 0;
             int p2_down = keys[SDL_SCANCODE_DOWN] ? 1 : 0;
-            int p2_button = (keys[SDL_SCANCODE_RSHIFT] || keys[SDL_SCANCODE_RETURN]) ? 1 : 0;
+            int p2_left = keys[SDL_SCANCODE_LEFT] ? 1 : 0;
+            int p2_right = keys[SDL_SCANCODE_RIGHT] ? 1 : 0;
+            int p2_button = (keys[SDL_SCANCODE_RCTRL] || keys[SDL_SCANCODE_RSHIFT]) ? 1 : 0;
 
-            input_tick_p2(p2_up, p2_down, 0, 0, p2_button, &in);
+            input_tick_p2(p2_up, p2_down, p2_left, p2_right, p2_button, &in);
         }
         if (eep_blink_left > 0) {
             int elapsed = EEP_BLINK_FRAMES - eep_blink_left;

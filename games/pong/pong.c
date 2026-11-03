@@ -3,14 +3,12 @@
 #include "entity.h"
 #include "frame.h"
 #include "over.h"
+#include "rand.h"
 #include "sound.h"
 #include "status.h"
 #include "title/title.h"
 
 #include <stdint.h>
-#if !defined(__AVR__)
-#include <time.h>
-#endif
 
 #define FIELD 16
 #define PAD_H 4
@@ -49,9 +47,6 @@ static int last_scorer;
 static int score_pause;
 static int score_blink_phase;
 static int demo;
-static uint32_t rng;
-
-static void stir(void);
 
 int pong_period(int ticks)
 {
@@ -132,21 +127,7 @@ static void draw(void)
 
 void pong_seed(unsigned n)
 {
-    rng = n == 0 ? 1u : (uint32_t)n;
-}
-
-static void stir(void)
-{
-    if (rng == 0) {
-#if defined(__AVR__)
-        rng = 0xA5A5u;
-#else
-        rng = (uint32_t)time(NULL);
-        if (rng == 0)
-            rng = 1u;
-#endif
-    }
-    rng = rng * 1664525u + 1013904223u;
+    rand_seed(n == 0 ? 1u : (uint32_t)n);
 }
 
 static int on_pad(int py, int pad_y)
@@ -310,8 +291,7 @@ static void serve_from_paddle(int player)
 
     if (l == NULL || r == NULL || ball == NULL)
         return;
-    stir();
-    bits = rng >> 30;
+    bits = rand_next() >> 30;
     live = 0;
     server = player == 2 ? 2 : 1;
     ball->vy = (bits & 2u) ? 1 : -1;
@@ -331,6 +311,7 @@ static void serve_from_paddle(int player)
 
 void pong_begin_play(int player)
 {
+    rand_reseed();
     demo = 0;
     over = 0;
     over_clear();
@@ -353,6 +334,7 @@ void pong_begin_play(int player)
 
 void pong_reset(void)
 {
+    rand_reseed();
     over = 0;
     over_clear();
     score_pause = 0;
@@ -437,7 +419,6 @@ void pong_play_tick(const Input *in)
         return;
     }
 
-    stir();
     if (in->up && !in->down)
         ldir = -1;
     if (in->down && !in->up)
@@ -478,6 +459,7 @@ void pong_play_tick(const Input *in)
 
 void pong_tick(const Input *in)
 {
+    rand_feed(in);
     if (demo) {
         title_tick(in);
         return;

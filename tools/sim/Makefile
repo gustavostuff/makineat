@@ -2,18 +2,22 @@
 #   make -C tools/sim
 #   ./tools/sim/makineat-ui
 #   make -C tools/sim test
-#   make -C tools/sim PONG_DEBUG=1 makineat-ui   # pong ball at 1 FPS
+#   make -C tools/sim PONG_DEBUG=1 makineat-ui      # pong ball at 1 FPS
+#   make -C tools/sim ARKALED_DEBUG=1 makineat-ui   # arkaled ball 0.25 FPS, paddles 1 FPS
 
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-test -I.
 ifeq ($(PONG_DEBUG),1)
 CFLAGS += -DPONG_DEBUG_SLOW_BALL=1
 endif
+ifeq ($(ARKALED_DEBUG),1)
+CFLAGS += -DARKALED_DEBUG_SLOW=1
+endif
 SDL_CFLAGS = $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 LDLIBS = $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
 CORE = engine/signal.c chips/max7219.c chips/matrix8x8.c chips/status_digits.c chips/avr128db28.c board.c ../fw/wire.c
-COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/over.c ../fw/entity.c ../fw/status.c
+COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/over.c ../fw/entity.c ../fw/status.c ../fw/rand.c
 SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/player.c \
           ../../games/space-shooter/entity/bullet.c \
@@ -58,7 +62,7 @@ tests/test_pong: ../../games/pong/test.c ../../games/pong/test_grids.c ../../gam
 	$(CC) $(CFLAGS) -DPONG_DEBUG_SLOW_BALL=0 -o $@ ../../games/pong/test.c ../../games/pong/test_grids.c $(COMMON) $(PONG) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_arkaled: ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -DARKALED_DEBUG_SLOW=0 -o $@ ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_text_test: ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)

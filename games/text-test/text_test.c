@@ -1,6 +1,7 @@
 #include "text_test.h"
 
 #include "frame.h"
+#include "rand.h"
 #include "text.h"
 
 #include <string.h>
@@ -176,6 +177,7 @@ static void frame_draw(void)
 
 void text_test_reset(void)
 {
+    rand_reseed();
     demo_index = 0;
     demo_begin();
     frame_draw();
@@ -210,6 +212,7 @@ const char *text_test_message(void)
 
 void text_test_tick(const Input *in)
 {
+    rand_feed(in);
     if (in == 0) {
         frame_draw();
         return;
