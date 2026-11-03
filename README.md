@@ -41,17 +41,11 @@ Cartridge PCB, 44x37 mm:
 
 <img src="img/sim/sim.png" alt="Simulator" />
 
-`tools/sim` is a netlist simulation of the system. The simulator compiles the cartridge's C game code natively on the host to drive the hardware model. This same C code can be directly flashed to the AVR on the cartridge.
+`tools/sim` is a netlist simulation of the system. The simulator compiles the cartridge's C game code natively on the host to drive the hardware model. This same C code can be directly flashed to the AVR on the cartridge. Acetate overlays can be built in real time and are saved per game.
 
 SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net classes in the main-board `*.kicad_pro` files. See [design](docs/design.md) and [firmware](docs/firmware.md).
 
 `./sim.sh` opens the UI. The active cart is named in `cart_placed.json`.
-
-## Screen overlay
-
-Physical translucent sheets, placed in front of the white matrix LEDs and status digits, make multi-colored graphics.
-
-<img src="img/acetate_examples/Full_overlay_example.png" alt="Full overlay example" />
 
 ## Docs
 
