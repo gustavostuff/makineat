@@ -78,6 +78,30 @@ The MAX7219 multiplexes its eight rows using an autonomous internal oscillator a
 | DS3 | 0 to 7 | 8 to 15 | Third |
 | DS4 | 8 to 15 | 8 to 15 | Fourth |
 
+## Power budget
+
+The main board expects a regulated **5 V** supply at J4. The bulk capacitor C10 (470 uF) sits at the entry to absorb display scan pulses and amplifier peaks. Off-board parts such as the barrel jack, fuse, and panel switch remain TBD.
+
+R1 through R4 and R7 set MAX7219 segment current through **28 kohm** ISET resistors on U1 through U4 and U7. Layout and net classes assume a digit cathode pin can sink **eight lit segments at once**, about **160 mA** peak on that pin (see [pcb-considerations.md](pcb-considerations.md)). That corresponds to roughly **20 mA** peak per lit segment for copper and return-path planning. Actual segment current follows the MAX7219 reference network and the intensity register. Firmware defaults to full intensity (0x0F) on the matrix drivers at init (see [firmware.md](firmware.md)).
+
+Each MAX7219 multiplexes eight rows or digits with about **1/8** duty cycle. A fully lit 8x8 block therefore draws a time-average supply current near **8 times** the peak segment current, about **160 mA** average per matrix driver when every pixel is ON. U7 behaves the same way when all eight status digits show every segment (for example all digit 8 patterns with decimal points), adding on the order of **150 to 160 mA** average.
+
+The table below is a **design estimate** for a display stress case: all **256** playfield LEDs ON, all **eight** 7-segment digits with every bar lit, matrix intensity at default full scale, and typical logic running. Hardware has not been measured at this load yet.
+
+| Load | Approx. average at 5 V | Notes |
+| --- | --- | --- |
+| U1 to U4 (full 16x16 field) | ~640 mA | Four matrix drivers, fully ON |
+| U7 (all segments on all digits) | ~150 to 160 mA | Eight-digit scan, Code-B or raw segments |
+| Display subtotal | ~800 mA | Dominated by LED current through V+ on the five drivers |
+| Cart AVR, U5, U6 idle, driver I_CC | ~50 to 100 mA | Excludes loud LM386 output |
+| **Typical stress total** | **~0.85 to 1.0 A** | Rounded planning figure at the 5 V rail |
+
+Instantaneous digit-line peaks near **160 mA** per driver can overlap in time across U1 to U4 and U7, so brief **5 V** current pulses in the **0.8 to 1.0 A** range are plausible even when the time-average stays near the table.
+
+A **5 V** adapter rated for at least **1 A** covers the display-heavy stress case plus logic. **1.5 A** leaves margin for LM386 drive, cable drop, and supply tolerance. Typical game frames with partial pixels and blank digits draw less. Lower intensity registers or a future global brightness control reduce display current further.
+
+The cartridge receives **+5 V** from J3 contact B10 and shares the same rail for the game AVR while the display chain runs on the main board.
+
 ## Cart edge (J3)
 
 The electrical and mechanical interface is defined by 2.54 mm pitch on both the main-board through-hole pattern and the cartridge gold fingers (ten contacts per edge, 5.08 mm between the two rows). Any socket and cart edge that match that geometry can mate. The design is not tied to a single manufacturer part number.
