@@ -6,13 +6,13 @@ The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `too
 
 | Board | KiCad tree | Layout state |
 | --- | --- | --- |
-| Main system | `tools/kicad/main-pcb/` (`makineat_v_05.kicad_pcb` is the active layout) | Copper routing is in place but not final. EMI margins, test points, noise review, and similar polish remain. Not fabricated or tested in hardware. |
+| Main system | `tools/kicad/main-pcb/` (`makineat_v_05.kicad_pcb` is the active layout) | Copper routing is in place but not final. Ground pour via stitching (5 mm grid) is on the active layout. Test points, status LEDs, remaining EMI margins, and noise review are outstanding. See [test-points-and-status-leds.md](test-points-and-status-leds.md). Not fabricated or tested in hardware. |
 | Cartridge | `tools/kicad/cart-pcb/` | Layout matches the SKiDL netlist and appears ready for fabrication review. Not fabricated or tested in hardware. |
 | Status digit daughterboard | [status-digits.md](status-digits.md) | No KiCad project or PCB file yet. |
 
 ## Main system board
 
-The main system board is a 100x100 mm 2-layer board with ground pours on both sides. Parts are through-hole on a 2.54 mm grid. The game AVR is on the cartridge PCB. Six M3 (3.2 mm) mounting holes (H1 to H6) secure the corners and top edge.
+The main system board is a 100x100 mm 2-layer board with ground pours on both sides. Stitched vias tie the front and back pours on a roughly 5 mm stagger grid over the ground fill (layout detail on `makineat_v_05.kicad_pcb`, not in SKiDL). Parts are through-hole on a 2.54 mm grid. The game AVR is on the cartridge PCB. Six M3 (3.2 mm) mounting holes (H1 to H6) secure the corners and top edge.
 
 Cables for rear-mounted connectors leave the board from behind the cabinet face. Front-mounted connectors sit along the top edge of the main PCB toward the player. The planned cabinet accepts cartridges perpendicular to the main PCB through a front or side card-edge slot. J3 is a straight card-edge socket on that mating plane. J7 and J9 mate the status digit daughterboard on the front. The 16x16 display field occupies the central and lower area of the front.
 
@@ -141,6 +141,7 @@ From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. **RC
 
 * Global brightness (Bright button with tap-to-increment and hold-plus-stick adjustment, system AVR writing MAX7219 intensity) and extra system wiring for that feature.
 * Status display daughterboard PCB layout (see [status-digits.md](status-digits.md)). Driver U7 and mating headers J7 and J9 are on the main PCB netlist.
+* Test points and status LEDs on the main board (see [test-points-and-status-leds.md](test-points-and-status-leds.md)).
 * The playfield is the 256 LEDs from the four matrices only.
 
 ## Future plans

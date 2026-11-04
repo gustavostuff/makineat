@@ -4,6 +4,20 @@ Note: This doc is a routing reference during PCB layout. It will be removed once
 
 Layout and routing rules for the main system PCB (`makineat_v_05.kicad_pcb`) and the cartridge PCB focus on noise isolation between high-current pulsed matrix lines, fast digital clocks, sensitive high-impedance analog audio paths, and timing-critical pulse trains.
 
+## Ground pour via stitching (main PCB)
+
+The active main layout ties **F.Cu** and **B.Cu** ground pours with a stitched via grid (ViaStitcher-style fill: about **5 mm** horizontal and vertical pitch, stagger pattern, clearance **0** to the zone). Goals:
+
+- Lower plane impedance between the matrix driver cluster and the audio corner so digit return pulses see a short path across layers.
+- Reduce slotting in the pour from signal tracks that cut one side only, especially under SPI and `EVENT` corridors.
+- Give probe and clip grounds (future test points in [test-points-and-status-leds.md](test-points-and-status-leds.md)) a nearby via to the opposite pour.
+
+Rules of thumb when editing pours after stitching:
+
+- Do not remove stitching vias to make room for test pads without re-running fill on both layers.
+- Keep the audio edge (U5, U6) over continuous pour with stitching at least as dense as the matrix half of the board.
+- Matrix `RCOL`/`LCOL` and SPI still follow the isolation rules below; stitching supplements routing, it does not replace ground separation from analog inputs.
+
 ## Main PCB
 
 ### Audio analog versus display SPI and matrix lines

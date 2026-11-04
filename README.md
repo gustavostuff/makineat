@@ -23,7 +23,7 @@ Software is under the MIT License. The hardware design is under the CERN Open Ha
 
 ## PCBs
 
-Copper tracing is mostly done but not polished (EMI, test points, noise, etc). The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
+Copper tracing is mostly done but not polished (test points, status LEDs, remaining EMI margins, noise review). The main layout includes ground pour via stitching on `makineat_v_05.kicad_pcb`. The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
 
 Main system PCB, 100x100 mm:
 
@@ -57,7 +57,8 @@ The image below is an **AI-generated** concept idea of how the build _might_ loo
 
 - [Design](docs/design.md) is the system netlist, cart edge, display chain, audio wiring, and PCB layout status.
 - [Firmware](docs/firmware.md) is the game loop, inputs, sound, SDK, and simulator.
-- [PCB routing considerations](docs/pcb-considerations.md) is noise isolation and trace pairing rules for the main and cart layouts.
+- [PCB routing considerations](docs/pcb-considerations.md) is noise isolation, ground via stitching, and trace pairing rules for the main and cart layouts.
+- [Test points and status LEDs](docs/test-points-and-status-leds.md) is the planned main-board bring-up pads and indicator colors (not on PCB yet).
 - [Overlays](docs/overlays.md) covers physical sheets, simulator tinting, and edit controls.
 - [Future plans](docs/future-plans.md) is the hardware and firmware enhancement roadmap.
 - [Status digits](docs/status-digits.md) is the fifth MAX7219 driver, J7/J9 interfaces, and the planned digit daughterboard.
