@@ -26,7 +26,7 @@
 #define SCORE_BLINK_HALF 8 /* ~4 on/off cycles in one second at 60 Hz */
 
 #ifndef PONG_DEBUG_SLOW_BALL
-#define PONG_DEBUG_SLOW_BALL 0
+#define PONG_DEBUG_SLOW_BALL 1
 #endif
 
 static const Shape pad_shape = SHAPE4(0, 0, "1", "1", "1", "1");
@@ -47,6 +47,7 @@ static int last_scorer;
 static int score_pause;
 static int score_blink_phase;
 static int demo;
+static int hold_english_side; /* -1 left, 1 right: one Y nudge this approach */
 
 int pong_period(int ticks)
 {
@@ -135,6 +136,48 @@ static int on_pad(int py, int pad_y)
     return py >= pad_y && py < pad_y + PAD_H;
 }
 
+static int clamp_y(int y)
+{
+    if (y < 0)
+        return 0;
+    if (y >= FIELD)
+        return FIELD - 1;
+    return y;
+}
+
+static int hug_left(Entity *ball, Entity *l)
+{
+    return ball->vx < 0 && ball->x == PLAY_L && on_pad(ball->y, l->y);
+}
+
+static int hug_right(Entity *ball, Entity *r)
+{
+    return ball->vx > 0 && ball->x == PLAY_R && on_pad(ball->y, r->y);
+}
+
+static void clear_hold_english(int hl, int hr)
+{
+    if (!hl && hold_english_side == -1)
+        hold_english_side = 0;
+    if (!hr && hold_english_side == 1)
+        hold_english_side = 0;
+}
+
+/*
+ * While the ball waits between slow steps on the play column, a moving
+ * paddle may nudge Y once and force the bounce step this tick.
+ */
+static void hold_english(Entity *ball, int side, int pad_step, int *pace, int every)
+{
+    if (pad_step == 0 || every <= 1 || *pace <= 0 || *pace >= every)
+        return;
+    if (hold_english_side == side)
+        return;
+    ball->y = (int8_t)clamp_y(ball->y + pad_step);
+    hold_english_side = side;
+    *pace = every - 1;
+}
+
 /*
  * Corner bounce only when the ball arrives onto the facing end:
  * down onto the top pixel, or up onto the bottom pixel.
@@ -220,7 +263,8 @@ static int right_pad_block(Entity *r, Entity *ball, int nx, int ny)
     return on_pad(ball->y, r->y) || on_pad(ny, r->y);
 }
 
-static void bounce_off_pad(Entity *ball, int *nx, int *ny, int pad_y, int xmin, int xmax)
+static void bounce_off_pad(Entity *ball, int *nx, int *ny, int pad_y, int xmin, int xmax,
+                           int pad_step)
 {
     int corner = pad_corner(ball->y, *ny, pad_y, ball->vy);
 
@@ -238,15 +282,21 @@ static void bounce_off_pad(Entity *ball, int *nx, int *ny, int pad_y, int xmin, 
             *ny = ball->y + ball->vy;
         }
     }
+    if (pad_step != 0) {
+        *ny = clamp_y(*ny + pad_step);
+        ball->y = (int8_t)*ny;
+    }
     sound(SOUND_POP);
 }
 
-static int ball_step(Entity *l, Entity *r, Entity *ball)
+static int ball_step(Entity *l, Entity *r, Entity *ball, int l_step, int r_step)
 {
     int nx = ball->x + ball->vx;
     int ty = ball->y + ball->vy;
     int ny;
     int scorer = 0;
+    int left_eng;
+    int right_eng;
 
     ny = ty;
     if (ny < 0 || ny >= FIELD) {
@@ -255,13 +305,16 @@ static int ball_step(Entity *l, Entity *r, Entity *ball)
         sound(SOUND_POP);
     }
 
+    left_eng = hold_english_side == -1 ? 0 : l_step;
+    right_eng = hold_english_side == 1 ? 0 : r_step;
+
     if (left_pad_block(l, ball, nx, ny))
-        bounce_off_pad(ball, &nx, &ny, l->y, PLAY_L, PLAY_R);
+        bounce_off_pad(ball, &nx, &ny, l->y, PLAY_L, PLAY_R, left_eng);
     else if (ball->vx < 0 && nx <= GOAL_L) {
         nx = GOAL_L;
         scorer = 2;
     } else if (right_pad_block(r, ball, nx, ny))
-        bounce_off_pad(ball, &nx, &ny, r->y, PLAY_L, PLAY_R);
+        bounce_off_pad(ball, &nx, &ny, r->y, PLAY_L, PLAY_R, right_eng);
     else if (ball->vx > 0 && nx >= GOAL_R) {
         nx = GOAL_R;
         scorer = 1;
@@ -321,6 +374,7 @@ void pong_begin_play(int player)
     p2_score = 0;
     lpace = 0;
     rpace = 0;
+    hold_english_side = 0;
     age = 0;
     live = 0;
     status_clear();
@@ -343,6 +397,7 @@ void pong_reset(void)
     p2_score = 0;
     lpace = 0;
     rpace = 0;
+    hold_english_side = 0;
     age = 0;
     live = 0;
     demo = 1;
@@ -398,6 +453,8 @@ void pong_play_tick(const Input *in)
     int rdir = 0;
     int l_moved;
     int r_moved;
+    int l_step;
+    int r_step;
     int launched;
     int levery;
     int revery;
@@ -432,6 +489,14 @@ void pong_play_tick(const Input *in)
     revery = in->p2_button ? PAD_FAST : PAD_SLOW;
     l_moved = step_pad(l, ldir, &lpace, levery);
     r_moved = step_pad(r, rdir, &rpace, revery);
+    if (l_moved)
+        l_step = ldir;
+    else
+        l_step = 0;
+    if (r_moved)
+        r_step = rdir;
+    else
+        r_step = 0;
 
     if (!live) {
         stick_serve(l, r, ball);
@@ -445,10 +510,20 @@ void pong_play_tick(const Input *in)
 
     age++;
     ball->every = (uint8_t)pong_period(age);
+    if (live) {
+        int hl = hug_left(ball, l);
+        int hr = hug_right(ball, r);
+
+        clear_hold_english(hl, hr);
+        if (hl)
+            hold_english(ball, -1, l_step, &ball->pace, (int)ball->every);
+        if (hr)
+            hold_english(ball, 1, r_step, &ball->pace, (int)ball->every);
+    }
     ball->pace++;
     if (ball->pace >= ball->every) {
         ball->pace = 0;
-        scorer = ball_step(l, r, ball);
+        scorer = ball_step(l, r, ball, l_step, r_step);
         if (scorer != 0) {
             begin_score_pause(scorer, ball);
             return;
@@ -490,6 +565,11 @@ void pong_place_paddles(int ly, int ry)
 
 void pong_place_ball(int x, int y, int vx, int vy)
 {
+    pong_place_ball_timed(x, y, vx, vy, 1, 0);
+}
+
+void pong_place_ball_timed(int x, int y, int vx, int vy, int every, int pace)
+{
     Entity *ball = entity_get(ball_id);
 
     if (ball == NULL)
@@ -498,13 +578,20 @@ void pong_place_ball(int x, int y, int vx, int vy)
     status_set_decode(0xFF);
     score_pause = 0;
     score_blink_phase = 0;
+    hold_english_side = 0;
     age = RAMP * BALL_SLOW;
     ball->x = (int8_t)x;
     ball->y = (int8_t)y;
     ball->vx = (int8_t)vx;
     ball->vy = (int8_t)vy;
-    ball->every = 1;
-    ball->pace = 0;
+    if (every < 1)
+        every = 1;
+    if (pace < 0)
+        pace = 0;
+    if (pace >= every)
+        pace = every - 1;
+    ball->every = (uint8_t)every;
+    ball->pace = (uint8_t)pace;
     live = 1;
 }
 #endif

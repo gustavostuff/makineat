@@ -7,6 +7,7 @@
 #include "tests/report.h"
 
 #include <stdio.h>
+#include <string.h>
 
 static void expect(int cond, const char *msg)
 {
@@ -194,6 +195,59 @@ static void test_period(void)
     expect(pong_period(3600) == 1, "the ball reaches one tick per step");
 }
 
+static int ball_x(void)
+{
+    int x;
+    int y;
+
+    for (y = 0; y < FIELD; y++) {
+        for (x = 1; x < 15; x++) {
+            if (pixel_get((uint8_t)x, (uint8_t)y))
+                return x;
+        }
+    }
+    return -1;
+}
+
+static void play_p1(int up, int down, int button)
+{
+    Input in;
+
+    memset(&in, 0, sizeof in);
+    in.up = up != 0;
+    in.down = down != 0;
+    in.button = button != 0;
+    pong_play_tick(&in);
+}
+
+static void test_paddle_english(void)
+{
+    setup_scene(PAD_CENTER_BALL_L_FACE, -1, -1);
+    play_p1(0, 0, 0);
+    expect(ball_x() == 2 && pong_ball_y() == 6,
+           "a still paddle leaves the face bounce unchanged");
+    expect(col_top(0) == 6, "the paddle stays put without input");
+
+    setup_scene(PAD_CENTER_BALL_L_FACE, -1, -1);
+    play_p1(1, 0, 1);
+    expect(ball_x() == 2 && pong_ball_y() == 5,
+           "an upward paddle step nudges the ball one row on bounce");
+    expect(col_top(0) == 5, "the paddle moved up with the hit");
+
+    setup_scene(PAD_CENTER_BALL_L_FACE, -1, -1);
+    play_p1(0, 1, 1);
+    expect(ball_x() == 2 && pong_ball_y() == 7,
+           "a downward paddle step nudges the ball down on bounce");
+
+    input_reset();
+    pong_reset();
+    pong_place_paddles(6, 6);
+    pong_place_ball_timed(1, 7, -1, 0, 60, 30);
+    play_p1(1, 0, 1);
+    expect(ball_x() == 2 && pong_ball_y() == 6,
+           "slow hold english forces the bounce and shifts Y once");
+}
+
 static void test_bounces(void)
 {
     bounce_case(PAD_CENTER_BALL_L_APPROACH, AFTER_L_APPROACH, -1, -1,
@@ -360,6 +414,7 @@ int main(void)
     test_p1_moves();
     test_p2_moves();
     test_period();
+    test_paddle_english();
     test_bounces();
     test_score_pause_resets();
     test_title_digits();

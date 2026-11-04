@@ -10,6 +10,9 @@
  * The ball ramps up to 60 FPS. First to 100 on the status digits wins.
  * Play is columns 1..14; 0 and 15 are paddles. A point is scored only when
  * the ball reaches column 0 or 15 off the paddle. A face hit flips vx.
+ * If the paddle moved on that hit, the ball shifts one row with it
+ * (once per approach). A slow ball waiting on column 1 or 14 gets that
+ * nudge and an immediate bounce step.
  * Arriving down onto the top pixel or up onto the bottom pixel is a
  * corner hit and flips both vx and vy. After a point the ball blinks
  * on the goal cell for one second, then paddles reset and the ball sits
@@ -32,6 +35,7 @@ void pong_begin_play(int player);
 
 #if !defined(__AVR__)
 void pong_place_ball(int x, int y, int vx, int vy);
+void pong_place_ball_timed(int x, int y, int vx, int vy, int every, int pace);
 void pong_place_paddles(int ly, int ry);
 int pong_in_demo(void);
 #endif
