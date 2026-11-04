@@ -4,6 +4,8 @@
 #include "score.h"
 #include "text.h"
 
+#include <string.h>
+
 /* Rows of the end picture. Bit 0 is the left pixel.
  * The mouth is the only part that changes. */
 static const uint16_t face_top[4] = {0x0810, 0x1248, 0x1008, 0x1008};
@@ -25,7 +27,18 @@ static int over_frame;
 static int mark;
 static OverStyle style;
 static int pong_winner;
-static TextScroll lose_scroll;
+static TextScroll shooter_scroll;
+
+#define SHOOTER_MSG_Y_CENTER 6
+#define SHOOTER_MSG_Y_BELOW_FACE 9
+
+static void shooter_scroll_begin(const char *msg, int y)
+{
+    text_scroll_stop(&shooter_scroll);
+    memset(&shooter_scroll, 0, sizeof shooter_scroll);
+    shooter_scroll.repeat = TEXT_SCROLL_BOUNCE;
+    text_scroll_start(&shooter_scroll, 0, y, msg);
+}
 
 static void paint(int y, uint16_t bits)
 {
@@ -68,8 +81,7 @@ static void draw_over(void)
 {
     clear();
     if (style == OVER_STYLE_SHOOTER_RECORD) {
-        text_print(2, 5, "new");
-        text_print(-4, 10, "record");
+        text_scroll_paint(&shooter_scroll);
         return;
     }
     if (style == OVER_STYLE_SHOOTER_WIN) {
@@ -78,7 +90,7 @@ static void draw_over(void)
     }
     if (style == OVER_STYLE_SHOOTER_LOSE) {
         draw_face();
-        text_scroll_paint(&lose_scroll);
+        text_scroll_paint(&shooter_scroll);
         return;
     }
     if (style == OVER_STYLE_PONG_WIN) {
@@ -95,13 +107,13 @@ void over_clear(void)
     over_frame = 0;
     mark = 0;
     style = OVER_STYLE_DEFAULT;
-    text_scroll_stop(&lose_scroll);
+    text_scroll_stop(&shooter_scroll);
 }
 
 void over_start_mark(int judge)
 {
     style = OVER_STYLE_DEFAULT;
-    text_scroll_stop(&lose_scroll);
+    text_scroll_stop(&shooter_scroll);
     if (judge > 0)
         mark = 1;
     else if (judge < 0)
@@ -116,18 +128,18 @@ void over_start_shooter(int player, int rocks)
 {
     int cmp = score_judge();
 
-    text_scroll_stop(&lose_scroll);
+    text_scroll_stop(&shooter_scroll);
     if (cmp > 0) {
         style = OVER_STYLE_SHOOTER_RECORD;
         mark = 0;
+        shooter_scroll_begin("new record", SHOOTER_MSG_Y_CENTER);
     } else if (player > rocks) {
         style = OVER_STYLE_SHOOTER_WIN;
         mark = 1;
     } else {
         style = OVER_STYLE_SHOOTER_LOSE;
         mark = -1;
-        lose_scroll.repeat = TEXT_SCROLL_BOUNCE;
-        text_scroll_start(&lose_scroll, 0, 9, "better luck next time");
+        shooter_scroll_begin("better luck next time", SHOOTER_MSG_Y_BELOW_FACE);
     }
     over_frame = 0;
     draw_over();
@@ -161,8 +173,8 @@ void over_paint(void)
 int over_tick(const Input *in)
 {
     over_frame++;
-    if (style == OVER_STYLE_SHOOTER_LOSE)
-        text_scroll_advance(&lose_scroll);
+    if (style == OVER_STYLE_SHOOTER_RECORD || style == OVER_STYLE_SHOOTER_LOSE)
+        text_scroll_advance(&shooter_scroll);
     draw_over();
     if (style == OVER_STYLE_PONG_WIN)
         return in->button_pressed || in->p2_button_pressed ? 1 : 0;

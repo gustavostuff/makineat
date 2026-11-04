@@ -258,8 +258,8 @@ static void test_crash(void)
     score_add(3);
     over_start_shooter(3, 0);
     expect(!smile() && !frown(), "a new record skips the face");
-    expect(pixel_get(2, 5) && pixel_get(0, 10),
-           "a new record shows new record on the matrix");
+    expect(pixel_get(2, 6) && pixel_get(9, 8),
+           "a new record bounce-scrolls new record on one line");
 
     input_reset();
     saved_high(10);

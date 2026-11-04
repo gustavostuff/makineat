@@ -10,13 +10,11 @@
 #define BODY_Y 7
 #define FOOTER_Y 11
 
-/* Last five playfield rows (bit 0 is the left column). */
-static const uint16_t footer_rows[5] = {
-    0x2004u,
+/* Left/right nav arrows on the last playfield rows (bit 0 is the left column). */
+static const uint16_t footer_rows[3] = {
     0x4002u,
     0x8001u,
     0x4002u,
-    0x2004u,
 };
 
 static const char sample[] = "this is a test text";
@@ -112,18 +110,14 @@ static void demo_begin(void)
     }
 }
 
-static void noise_draw(void)
+static void bg_fill(void)
 {
     int x;
     int y;
 
     for (y = 5; y <= 11; y++) {
-        for (x = 0; x < 16; x++) {
-            uint8_t n = (uint8_t)((x * 7) ^ (y * 13) ^ (x * y));
-
-            if (n & 1u)
-                pixel((uint8_t)x, (uint8_t)y, true);
-        }
+        for (x = 0; x < 16; x++)
+            pixel((uint8_t)x, (uint8_t)y, true);
     }
 }
 
@@ -132,11 +126,11 @@ static void footer_draw(void)
     int row;
     int y;
 
-    for (row = 0; row < 5; row++) {
+    for (row = 0; row < 3; row++) {
         uint16_t bits = footer_rows[row];
         int x;
 
-        y = FOOTER_Y + row;
+        y = FOOTER_Y + 1 + row;
         for (x = 0; x < 16; x++) {
             if ((bits & (uint16_t)(1u << x)) != 0)
                 pixel((uint8_t)x, (uint8_t)y, true);
@@ -150,7 +144,7 @@ static void frame_draw(void)
 
     clear();
     if (kind == DEMO_OUTLINE || kind == DEMO_BLINK)
-        noise_draw();
+        bg_fill();
     else
         footer_draw();
     print_scroll(&title_scroll);
