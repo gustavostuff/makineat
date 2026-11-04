@@ -1,4 +1,4 @@
-<img src="img/logos/logo_v_06_scaled.png" alt="Logo V6" />
+<img src="img/logos/logo_v_07.svg" alt="Logo V7" />
 
 MakiNeat is a cartridge-based portable tabletop arcade. The name comes from _maquinita_, a Mexican word for arcade machines (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field. Graphics are 1-bit (LEDs are either ON or OFF).
 
