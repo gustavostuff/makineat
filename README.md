@@ -47,6 +47,12 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 `./sim.sh` opens the UI. The active cart is named in `cart_placed.json`.
 
+## Design
+
+The image below is a **AI-generated** concept idea of how the build _might_ look when assembled. It's not final but it will be used as guidance for the actual design.
+
+<img src="img/references/AI_concept_v_04.jpeg" alt="AI concept" />
+
 ## Docs
 
 - [Design](docs/design.md) is the system netlist, cart edge, display chain, audio wiring, and PCB layout status.
