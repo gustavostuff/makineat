@@ -6,20 +6,7 @@ On a similar spirit as the Magnavox Odyssey and the Vectrex, MakiNeat uses color
 
 An AVR128DB28 on a cartridge runs the game and holds the picture (the cartridge is both the system brain and the game data). Four MAX7219 drivers refresh the screen grid.
 
-## Goals
-
 Simple graphics + simple input can still be fun. A stick (and sometimes a button) is all that's needed. Together with cartridges, colored overlays, and a sturdy design, that is the spirit of MakiNeat.
-
-- The build is DIY friendly and straight forward.
-- Parts are mostly through-hole, on a 2.54 mm grid.
-- Parts are cheap, the main system board is a two-layer 100x100 mm board (~5 USD + shipping).
-  
-- The cartridge is an even smaller PCB.
-- The screen is four white 8x8 LED matrices (normally less than 1 USD each).
-- Chips and LED matrices can sit in sockets.
-- Power is any generic/regulated 5 V adapter.
-
-Software is under the MIT License. The hardware design is under the CERN Open Hardware Licence Version 2, Strongly Reciprocal.
 
 ## PCBs
 
