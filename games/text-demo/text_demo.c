@@ -1,4 +1,4 @@
-#include "text_test.h"
+#include "text_demo.h"
 
 #include "frame.h"
 #include "rand.h"
@@ -169,7 +169,7 @@ static void frame_draw(void)
     }
 }
 
-void text_test_reset(void)
+void text_demo_reset(void)
 {
     rand_reseed();
     demo_index = 0;
@@ -177,34 +177,34 @@ void text_test_reset(void)
     frame_draw();
 }
 
-int text_test_demo_index(void)
+int text_demo_demo_index(void)
 {
     return demo_index;
 }
 
-int text_test_demo_count(void)
+int text_demo_demo_count(void)
 {
     return DEMO_COUNT;
 }
 
-int text_test_scroll_x(void)
+int text_demo_scroll_x(void)
 {
     if (demos[demo_index].kind == DEMO_PRINT)
         return 0;
     return body_scroll.scroll_x;
 }
 
-int text_test_scroll_y(void)
+int text_demo_scroll_y(void)
 {
     return BODY_Y;
 }
 
-const char *text_test_message(void)
+const char *text_demo_message(void)
 {
     return message;
 }
 
-void text_test_tick(const Input *in)
+void text_demo_tick(const Input *in)
 {
     rand_feed(in);
     if (in == 0) {

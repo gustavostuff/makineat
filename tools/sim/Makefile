@@ -6,7 +6,7 @@
 #   make -C tools/sim ARKALED_DEBUG=1 makineat-ui   # arkaled ball 0.25 FPS, paddles 1 FPS
 
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-test -I.
+CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-demo -I.
 ifeq ($(PONG_DEBUG),1)
 CFLAGS += -DPONG_DEBUG_SLOW_BALL=1
 endif
@@ -24,18 +24,18 @@ SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/rock.c
 PONG = ../../games/pong/pong.c ../../games/pong/title/title.c
 ARKALED = ../../games/arkaled/arkaled.c
-TEXT_TEST = ../../games/text-test/text_test.c
+TEXT_DEMO = ../../games/text-demo/text_demo.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
 TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_board tests/test_game \
-            tests/test_pong tests/test_arkaled tests/test_text_test tests/test_cart tests/test_synth tests/test_acetate
+            tests/test_pong tests/test_arkaled tests/test_text_demo tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
 UI_HDRS = acetate.h seven_seg.h board.h cart.h host.h
 
-makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(UI_HDRS)
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/synth.c $(LDLIBS)
+makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(COLLIDE) ../fw/synth.c $(UI_HDRS)
+	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(COLLIDE) ../fw/synth.c $(LDLIBS)
 
 tests/test_max7219: tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
@@ -64,11 +64,11 @@ tests/test_pong: ../../games/pong/test.c ../../games/pong/test_grids.c ../../gam
 tests/test_arkaled: ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -DARKALED_DEBUG_SLOW=0 -o $@ ../../games/arkaled/test.c $(COMMON) $(ARKALED) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
-tests/test_text_test: ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ ../../games/text-test/test.c $(COMMON) $(TEXT_TEST) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+tests/test_text_demo: ../../games/text-demo/test.c $(COMMON) $(TEXT_DEMO) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ ../../games/text-demo/test.c $(COMMON) $(TEXT_DEMO) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
-tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_TEST) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(COLLIDE) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_synth: tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
@@ -85,7 +85,7 @@ test: $(TEST_BINS)
 	./tests/test_game
 	./tests/test_pong
 	./tests/test_arkaled
-	./tests/test_text_test
+	./tests/test_text_demo
 	./tests/test_cart
 	./tests/test_board
 	./tests/test_synth

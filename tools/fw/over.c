@@ -29,8 +29,10 @@ static OverStyle style;
 static int pong_winner;
 static TextScroll shooter_scroll;
 
-#define SHOOTER_MSG_Y_CENTER 6
-#define SHOOTER_MSG_Y_BELOW_FACE 9
+#define SHOOTER_MSG_Y_CENTER 7
+#define SHOOTER_MSG_Y_BELOW_FACE 10
+/* Game tick runs at 60 Hz (see docs/firmware.md). */
+#define OVER_SHOOTER_MIN_FRAMES 72
 
 static void shooter_scroll_begin(const char *msg, int y)
 {
@@ -81,6 +83,7 @@ static void draw_over(void)
 {
     clear();
     if (style == OVER_STYLE_SHOOTER_RECORD) {
+        draw_face();
         text_scroll_paint(&shooter_scroll);
         return;
     }
@@ -131,7 +134,7 @@ void over_start_shooter(int player, int rocks)
     text_scroll_stop(&shooter_scroll);
     if (cmp > 0) {
         style = OVER_STYLE_SHOOTER_RECORD;
-        mark = 0;
+        mark = 1;
         shooter_scroll_begin("new record", SHOOTER_MSG_Y_CENTER);
     } else if (player > rocks) {
         style = OVER_STYLE_SHOOTER_WIN;
@@ -170,13 +173,27 @@ void over_paint(void)
     draw_over();
 }
 
+static int shooter_over(void)
+{
+    return style == OVER_STYLE_SHOOTER_RECORD || style == OVER_STYLE_SHOOTER_WIN ||
+           style == OVER_STYLE_SHOOTER_LOSE;
+}
+
 int over_tick(const Input *in)
 {
+    int pressed;
+
     over_frame++;
     if (style == OVER_STYLE_SHOOTER_RECORD || style == OVER_STYLE_SHOOTER_LOSE)
         text_scroll_advance(&shooter_scroll);
     draw_over();
     if (style == OVER_STYLE_PONG_WIN)
-        return in->button_pressed || in->p2_button_pressed ? 1 : 0;
-    return in->button_pressed ? 1 : 0;
+        pressed = in->button_pressed || in->p2_button_pressed;
+    else
+        pressed = in->button_pressed;
+    if (!pressed)
+        return 0;
+    if (shooter_over() && over_frame < OVER_SHOOTER_MIN_FRAMES)
+        return 0;
+    return 1;
 }

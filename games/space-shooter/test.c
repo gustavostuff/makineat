@@ -223,11 +223,17 @@ static void test_crash(void)
     die();
     expect(frown(), "zero player against one rock score is a loss");
     expect(pixel_get(4, 0) && !pixel_get(1, 7), "the face is on screen");
-    expect(pixel_get(9, 9) || pixel_get(10, 9),
+    expect(pixel_get(9, 10) || pixel_get(10, 10),
            "a loss shows the better luck message on the matrix");
     expect(!pixel_get(1, 8) && !pixel_get(2, 8),
            "the round score stays off the matrix");
 
+    feed(0, 0, 0, 0, 1);
+    feed(0, 0, 0, 0, 1);
+    expect(frown(), "the button cannot skip the game over hold");
+    for (i = 0; i < 70; i++)
+        feed(0, 0, 0, 0, 0);
+    expect(frown(), "the face stays for 1.2 seconds");
     for (i = 0; i < 500; i++)
         feed(0, 0, 0, 0, 0);
     expect(frown(), "the end picture waits for the button");
@@ -257,8 +263,8 @@ static void test_crash(void)
     score_reset();
     score_add(3);
     over_start_shooter(3, 0);
-    expect(!smile() && !frown(), "a new record skips the face");
-    expect(pixel_get(2, 6) && pixel_get(9, 8),
+    expect(smile(), "a new record shows the smile");
+    expect(pixel_get(2, 7) && pixel_get(9, 9),
            "a new record bounce-scrolls new record on one line");
 
     input_reset();

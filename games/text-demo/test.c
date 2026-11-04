@@ -1,4 +1,4 @@
-#include "text_test.h"
+#include "text_demo.h"
 
 #include "frame.h"
 #include "input.h"
@@ -17,17 +17,17 @@ static void feed(int up, int down, int left, int right, int button)
     Input in;
 
     input_tick(up, down, left, right, button, &in);
-    text_test_tick(&in);
+    text_demo_tick(&in);
 }
 
 static void test_initial_state(void)
 {
     input_reset();
-    text_test_reset();
+    text_demo_reset();
 
-    expect(text_test_demo_index() == 0, "starts on the print demo");
-    expect(text_test_scroll_x() == 0, "print demo keeps scroll at zero");
-    expect(text_test_scroll_y() == 7, "body text starts on row 7");
+    expect(text_demo_demo_index() == 0, "starts on the print demo");
+    expect(text_demo_scroll_x() == 0, "print demo keeps scroll at zero");
+    expect(text_demo_scroll_y() == 7, "body text starts on row 7");
 }
 
 static void test_print_idle(void)
@@ -35,28 +35,28 @@ static void test_print_idle(void)
     int i;
 
     input_reset();
-    text_test_reset();
+    text_demo_reset();
     for (i = 0; i < 60; i++)
         feed(0, 0, 0, 0, 0);
-    expect(text_test_scroll_x() == 0, "print demo stays still without input");
+    expect(text_demo_scroll_x() == 0, "print demo stays still without input");
 }
 
 static void test_demo_switch(void)
 {
     input_reset();
-    text_test_reset();
+    text_demo_reset();
 
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
-    expect(text_test_demo_index() == 1, "stick right selects bounce scroll");
+    expect(text_demo_demo_index() == 1, "stick right selects bounce scroll");
 
     feed(0, 0, 1, 0, 0);
     feed(0, 0, 1, 0, 0);
-    expect(text_test_demo_index() == 0, "stick left returns to print");
+    expect(text_demo_demo_index() == 0, "stick left returns to print");
 
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
-    expect(text_test_demo_index() == 1, "bounce scroll is selected again");
+    expect(text_demo_demo_index() == 1, "bounce scroll is selected again");
 }
 
 static void test_bounce_scroll_moves(void)
@@ -65,13 +65,13 @@ static void test_bounce_scroll_moves(void)
     int x0;
 
     input_reset();
-    text_test_reset();
+    text_demo_reset();
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
-    x0 = text_test_scroll_x();
+    x0 = text_demo_scroll_x();
     for (i = 0; i < 120; i++)
         feed(0, 0, 0, 0, 0);
-    expect(text_test_scroll_x() < x0, "bounce scroll moves the string left");
+    expect(text_demo_scroll_x() < x0, "bounce scroll moves the string left");
 }
 
 static void test_button_restarts_demo(void)
@@ -79,28 +79,28 @@ static void test_button_restarts_demo(void)
     int i;
 
     input_reset();
-    text_test_reset();
+    text_demo_reset();
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
     for (i = 0; i < 120; i++)
         feed(0, 0, 0, 0, 0);
-    expect(text_test_scroll_x() < 0, "bounce scroll moved before reset");
+    expect(text_demo_scroll_x() < 0, "bounce scroll moved before reset");
 
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
-    expect(text_test_scroll_x() == 0, "button restarts the active scroll demo");
+    expect(text_demo_scroll_x() == 0, "button restarts the active scroll demo");
 }
 
 static void test_all_demos_exist(void)
 {
-    expect(text_test_demo_count() == 7, "seven text flows are available");
+    expect(text_demo_demo_count() == 7, "seven text flows are available");
 }
 
 static void select_demo(int index)
 {
     input_reset();
-    text_test_reset();
-    while (text_test_demo_index() != index) {
+    text_demo_reset();
+    while (text_demo_demo_index() != index) {
         feed(0, 0, 0, 1, 0);
         feed(0, 0, 0, 1, 0);
         feed(0, 0, 0, 0, 0);
@@ -114,11 +114,11 @@ static void test_outline_scrolls(void)
     int x0;
 
     select_demo(5);
-    expect(text_test_demo_index() == 5, "outline demo is selected");
-    x0 = text_test_scroll_x();
+    expect(text_demo_demo_index() == 5, "outline demo is selected");
+    x0 = text_demo_scroll_x();
     for (i = 0; i < 120; i++)
         feed(0, 0, 0, 0, 0);
-    expect(text_test_scroll_x() < x0, "outline demo scrolls the sample text");
+    expect(text_demo_scroll_x() < x0, "outline demo scrolls the sample text");
 }
 
 static void fill_on(void)
@@ -169,7 +169,7 @@ static void test_outline_blink(void)
 
 static void test_font_coverage(void)
 {
-    const char *msg = text_test_message();
+    const char *msg = text_demo_message();
     int has_letter[26] = {0};
     int has_digit[10] = {0};
     int has_dot = 0, has_comma = 0, has_colon = 0, has_semi = 0;
@@ -221,7 +221,7 @@ static void test_font_coverage(void)
 
 int main(void)
 {
-    report_begin("text-test");
+    report_begin("text-demo");
     test_initial_state();
     test_print_idle();
     test_demo_switch();

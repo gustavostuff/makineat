@@ -7,7 +7,8 @@
  * The end picture shared by every cart. Paddle shows a face and the score.
  * Space shooter uses over_start_shooter instead.
  * over_start draws the end picture until the button starts the next round.
- * over_tick returns 1 on a button press.
+ * over_tick returns 1 on a button press. Space-shooter outcomes keep the
+ * screen up for at least 1.2 s before a press is accepted.
  */
 
 void over_clear(void);

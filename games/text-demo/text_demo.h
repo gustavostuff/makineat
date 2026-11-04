@@ -1,5 +1,5 @@
-#ifndef TEXT_TEST_H
-#define TEXT_TEST_H
+#ifndef TEXT_DEMO_H
+#define TEXT_DEMO_H
 
 #include "input.h"
 
@@ -13,12 +13,12 @@
  * Button: restart the current demo
  */
 
-void text_test_reset(void);
-void text_test_tick(const Input *in);
-int text_test_demo_index(void);
-int text_test_demo_count(void);
-int text_test_scroll_x(void);
-int text_test_scroll_y(void);
-const char *text_test_message(void);
+void text_demo_reset(void);
+void text_demo_tick(const Input *in);
+int text_demo_demo_index(void);
+int text_demo_demo_count(void);
+int text_demo_scroll_x(void);
+int text_demo_scroll_y(void);
+const char *text_demo_message(void);
 
 #endif
