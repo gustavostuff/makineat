@@ -3,6 +3,7 @@
 #include "arkaled.h"
 #include "game.h"
 #include "pong.h"
+#include "snake.h"
 #include "text_demo.h"
 
 #include <stdio.h>
@@ -46,6 +47,8 @@ static const char *known(const char *name)
         return "arkaled";
     if (strcmp(name, "text-demo") == 0)
         return "text-demo";
+    if (strcmp(name, "snake") == 0)
+        return "snake";
     return NULL;
 }
 
@@ -94,6 +97,8 @@ static void select_name(const char *name)
         which = 3;
     else if (strcmp(name, "text-demo") == 0)
         which = 4;
+    else if (strcmp(name, "snake") == 0)
+        which = 5;
     else
         which = 0;
 }
@@ -129,6 +134,8 @@ const char *cart_name(void)
         return "arkaled";
     if (which == 4)
         return "text-demo";
+    if (which == 5)
+        return "snake";
     return NULL;
 }
 
@@ -149,6 +156,8 @@ void cart_reset(void)
         arkaled_reset();
     else if (which == 4)
         text_demo_reset();
+    else if (which == 5)
+        snake_reset();
 }
 
 void cart_tick(const Input *in)
@@ -161,4 +170,6 @@ void cart_tick(const Input *in)
         arkaled_tick(in);
     else if (which == 4)
         text_demo_tick(in);
+    else if (which == 5)
+        snake_tick(in);
 }

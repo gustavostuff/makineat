@@ -386,6 +386,14 @@ static int cart_is_pong(void)
     return name != NULL && strcmp(name, "pong") == 0;
 }
 
+static int cart_skips_persist(void)
+{
+    const char *name = cart_name();
+
+    return name != NULL &&
+           (strcmp(name, "pong") == 0 || strcmp(name, "snake") == 0);
+}
+
 static int cart_two_stick(void)
 {
     const char *name = cart_name();
@@ -395,7 +403,7 @@ static int cart_two_stick(void)
 
 static void sim_start_cart(Board *board)
 {
-    if (cart_is_pong()) {
+    if (cart_skips_persist()) {
         persist_detach();
         score_reset();
     } else {
@@ -715,7 +723,7 @@ int main(void)
             }
             if (event.type == SDL_KEYDOWN && !event.key.repeat &&
                 event.key.keysym.scancode == SDL_SCANCODE_F12 && loaded) {
-                if (!cart_is_pong()) {
+                if (!cart_skips_persist()) {
                     persist_reset();
                     score_clear_saved();
                     score_load();

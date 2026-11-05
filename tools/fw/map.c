@@ -38,44 +38,88 @@ void map_toggle(int x, int y)
     map_set(x, y, !map_get(x, y));
 }
 
-void map_rect(int x, int y, int w, int h, int on)
+static uint16_t span_mask(int x, int x1)
 {
-    int row;
     int col;
-    int x1;
-    int y1;
+    uint16_t mask = 0;
 
-    if (w <= 0 || h <= 0)
+    for (col = x; col <= x1; col++)
+        mask |= (uint16_t)(1u << col);
+    return mask;
+}
+
+void map_hline(int x, int y, int w, int on)
+{
+    int x1;
+
+    if (w <= 0)
         return;
     x1 = x + w - 1;
-    y1 = y + h - 1;
-    if (x > FIELD_LAST || y > FIELD_LAST || x1 < 0 || y1 < 0)
+    if (y < 0 || y > FIELD_LAST || x > FIELD_LAST || x1 < 0)
         return;
     if (x < 0)
         x = 0;
-    if (y < 0)
-        y = 0;
     if (x1 > FIELD_LAST)
         x1 = FIELD_LAST;
+    if (x > x1)
+        return;
+    if (on)
+        map_rows[y] |= span_mask(x, x1);
+    else
+        map_rows[y] &= (uint16_t)~span_mask(x, x1);
+}
+
+void map_vline(int x, int y, int h, int on)
+{
+    int y1;
+    int row;
+
+    if (h <= 0)
+        return;
+    y1 = y + h - 1;
+    if (x < 0 || x > FIELD_LAST || y > FIELD_LAST || y1 < 0)
+        return;
+    if (y < 0)
+        y = 0;
     if (y1 > FIELD_LAST)
         y1 = FIELD_LAST;
-    for (row = y; row <= y1; row++) {
-        for (col = x; col <= x1; col++)
-            map_set(col, row, on);
+    for (row = y; row <= y1; row++)
+        map_set(x, row, on);
+}
+
+void map_rect(int x, int y, int w, int h, int on)
+{
+    if (h == 1) {
+        map_hline(x, y, w, on);
+        return;
+    }
+    if (w == 1) {
+        map_vline(x, y, h, on);
+        return;
+    }
+    {
+        int row;
+        int y1 = y + h - 1;
+
+        if (w <= 0 || h <= 0)
+            return;
+        if (x > FIELD_LAST || y > FIELD_LAST || x + w - 1 < 0 || y1 < 0)
+            return;
+        if (y < 0)
+            y = 0;
+        if (y1 > FIELD_LAST)
+            y1 = FIELD_LAST;
+        for (row = y; row <= y1; row++)
+            map_hline(x, row, w, on);
     }
 }
 
 void map_stamp_frame(void)
 {
     int y;
-    int x;
 
-    for (y = 0; y < FIELD_SIZE; y++) {
-        for (x = 0; x < FIELD_SIZE; x++) {
-            if (map_get(x, y))
-                pixel((uint8_t)x, (uint8_t)y, true);
-        }
-    }
+    for (y = 0; y < FIELD_SIZE; y++)
+        frame[y] |= map_rows[y];
 }
 
 int map_solid(int x, int y)

@@ -7,8 +7,9 @@
 
 /*
  * Screen playfield occupancy, columns and rows 0..FIELD_LAST (see frame.h).
- * Same bit layout as frame[]: map_rows[y], bit x is ON.
- * Use for long bodies, walls, and static art without entity slots.
+ * Each row is a 16-bit span mask. Favor map_hline, map_vline, and map_rect
+ * for 1xN and Nx1 blocks. map_stamp_frame ORs every row into frame[] in one
+ * pass (no per-pixel scan). Use for long bodies, walls, and static art.
  */
 
 #define SCENE_MAP 1u
@@ -18,6 +19,8 @@ void map_clear(void);
 int map_get(int x, int y);
 void map_set(int x, int y, int on);
 void map_toggle(int x, int y);
+void map_hline(int x, int y, int w, int on);
+void map_vline(int x, int y, int h, int on);
 void map_rect(int x, int y, int w, int h, int on);
 void map_stamp_frame(void);
 

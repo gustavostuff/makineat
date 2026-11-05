@@ -23,8 +23,10 @@ else ifeq ($(CART),arkaled)
 GAME_SRCS = $(CART_DIR)/arkaled.c ../collide.c
 else ifeq ($(CART),text-demo)
 GAME_SRCS = $(CART_DIR)/text_demo.c
+else ifeq ($(CART),snake)
+GAME_SRCS = $(CART_DIR)/snake.c ../map.c
 else
-$(error CART must be space-shooter, pong, arkaled, or text-demo)
+$(error CART must be space-shooter, pong, arkaled, text-demo, or snake)
 endif
 
 CFLAGS = -std=c11 -Wall -Wextra -Os -mmcu=$(MCU) -DF_CPU=$(CLOCK)UL -I$(CART_DIR) -I..

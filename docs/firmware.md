@@ -75,7 +75,7 @@ Pairwise overlap uses `world_pairs`, `entity_covers`, and `entity_overlaps`. Que
 
 ## Carts
 
-Each cart implements `void game_tick(const Input *in)`. Carts recognized in `cart_placed.json` include `space-shooter`, `pong`, `arkaled`, and `text-demo`.
+Each cart implements `void game_tick(const Input *in)`. Carts recognized in `cart_placed.json` include `space-shooter`, `pong`, `arkaled`, `text-demo`, and `snake`.
 - Build cartridge firmware with `make -C tools/fw/avr` or `make -C tools/fw/avr CART=pong`.
 - Build system audio firmware with `make -C tools/fw/audio`.
 
