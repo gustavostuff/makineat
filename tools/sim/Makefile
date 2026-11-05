@@ -17,7 +17,7 @@ SDL_CFLAGS = $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 LDLIBS = $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
 CORE = engine/signal.c chips/max7219.c chips/matrix8x8.c chips/status_digits.c chips/avr128db28.c board.c ../fw/wire.c
-COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/over.c ../fw/entity.c ../fw/status.c ../fw/rand.c
+COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/text_large.c ../fw/over.c ../fw/entity.c ../fw/status.c ../fw/rand.c
 SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/player.c \
           ../../games/space-shooter/entity/bullet.c \

@@ -4,9 +4,9 @@
 #include "input.h"
 
 /*
- * Reset opens a title: "Snake" scroll-bounces for ten seconds, then
- * "PRESS BUTTON" and "SNAKE" alternate every ten seconds until the action
- * button starts play (status digits stay off on the title). Classic snake on
+ * Reset opens a title in the large 5x6 font: "S n a k e" scroll-bounces,
+ * then alternates with "PRESS BUTTON" after each full bounce cycle until the
+ * action button starts play (status digits stay off on the title). Classic snake on
  * the 16x16 map. Four score food cells stay lit until eaten.
  * One speed pickup blinks at 2 FPS for eight seconds, then 4 FPS for two
  * seconds, then vanishes. The snake starts at 2 FPS; each speed pickup

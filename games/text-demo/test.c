@@ -91,6 +91,49 @@ static void test_button_restarts_demo(void)
     expect(text_demo_scroll_x() == 0, "button restarts the active scroll demo");
 }
 
+static void test_scroll_margins(void)
+{
+    TextScroll ts;
+
+    memset(&ts, 0, sizeof ts);
+    ts.margin_left = 4;
+    ts.margin_right = 4;
+    text_scroll_start(&ts, 0, 0, "A");
+    expect(ts.scroll_x == 0, "scroll starts at the home edge");
+    text_scroll_paint(&ts);
+    expect(!pixel_get(3, 0) && pixel_get(5, 0),
+           "margin_left leaves four clear pixels before the glyph");
+}
+
+static void test_scroll_bounce_done(void)
+{
+    TextScroll ts;
+    int i;
+    int toggled = 0;
+
+    memset(&ts, 0, sizeof ts);
+    ts.repeat = TEXT_SCROLL_BOUNCE;
+    ts.scale = TEXT_SCALE_2;
+    text_scroll_start(&ts, 0, 0, "WIDE");
+    for (i = 0; i < 800; i++) {
+        text_scroll_advance(&ts);
+        if (text_scroll_take_bounce_done(&ts))
+            toggled = 1;
+    }
+    expect(toggled, "bounce scroll signals when a full cycle finishes");
+}
+
+static void test_large_font_glyph(void)
+{
+    const uint8_t *g;
+
+    g = text_large_glyph('S');
+    expect(g != 0 && g[0] == 0x0e, "large font S matches the 5x6 atlas");
+    g = text_large_glyph('n');
+    expect(g != 0 && g[0] == 0x09, "large font maps lowercase to capitals");
+    expect(text_large_glyph('+') == 0, "large font skips unsupported symbols");
+}
+
 static void test_scaled_text(void)
 {
     TextScroll ts;
@@ -249,6 +292,9 @@ int main(void)
     test_print_idle();
     test_demo_switch();
     test_bounce_scroll_moves();
+    test_large_font_glyph();
+    test_scroll_margins();
+    test_scroll_bounce_done();
     test_scaled_text();
     test_button_restarts_demo();
     test_all_demos_exist();

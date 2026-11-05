@@ -9,8 +9,8 @@
 
 #define TICK_HZ 60
 #define STEP_FRAMES (TICK_HZ / 2)
-#define TITLE_INTRO_FRAMES (10 * TICK_HZ)
-#define TITLE_ALT_FRAMES (10 * TICK_HZ)
+#define TITLE_BOUNCE_CYCLE_FRAMES 500
+#define TITLE_PRESS_CYCLE_FRAMES 700
 
 static void expect(int cond, const char *msg)
 {
@@ -94,19 +94,16 @@ static void test_title(void)
     snake_seed(42);
     snake_reset();
     expect(snake_on_title(), "reset opens on the title screen");
-    expect(strcmp(snake_title_message(), "Snake") == 0,
-           "the title starts with Snake scroll-bounce");
+    expect(strcmp(snake_title_message(), "S n a k e") == 0,
+           "the title starts with spaced Snake scroll-bounce");
     for (d = 0; d < 8; d++)
         expect(status_get_digit(d) == 0, "title keeps status digits off");
-    idle(TITLE_INTRO_FRAMES);
+    idle(TITLE_BOUNCE_CYCLE_FRAMES);
     expect(strcmp(snake_title_message(), "PRESS BUTTON") == 0,
-           "after ten seconds the title asks for the button");
-    idle(TITLE_ALT_FRAMES);
-    expect(strcmp(snake_title_message(), "SNAKE") == 0,
-           "ten seconds later the title returns to SNAKE");
-    idle(TITLE_ALT_FRAMES);
-    expect(strcmp(snake_title_message(), "PRESS BUTTON") == 0,
-           "the title alternates PRESS BUTTON and SNAKE");
+           "a finished bounce switches to PRESS BUTTON");
+    idle(TITLE_PRESS_CYCLE_FRAMES);
+    expect(strcmp(snake_title_message(), "S n a k e") == 0,
+           "the next finished bounce returns to spaced Snake");
     for (i = 0; i < 8; i++)
         expect(status_get_digit(i) == 0, "digits stay off while the title runs");
     feed_button();

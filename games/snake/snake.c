@@ -26,9 +26,10 @@
 #define DEATH_BLINK_CYCLES 4
 #define DEATH_BLINK_HALF (TICK_HZ / (DEATH_BLINK_CYCLES * 2))
 #define TURN_QUEUE_MAX 2
-#define TITLE_Y ((FIELD_SIZE - TEXT_H * TEXT_SCALE_2) / 2)
-#define TITLE_INTRO_FRAMES (10 * TICK_HZ)
-#define TITLE_ALT_FRAMES (10 * TICK_HZ)
+#define TITLE_Y ((FIELD_SIZE - TEXT_LARGE_H) / 2)
+#define TITLE_SNAKE "S n a k e"
+#define TITLE_PRESS "PRESS BUTTON"
+#define TITLE_SCROLL_MARGIN 4
 
 typedef enum {
     SNAKE_TITLE,
@@ -60,8 +61,8 @@ static int blink_phase;
 static SnakePhase phase;
 static int death_phase;
 static TextScroll title_scroll;
-static int title_frame;
 static const char *title_msg;
+static int title_alt_press;
 
 static void seed_snake(void);
 
@@ -200,29 +201,17 @@ static void title_scroll_begin(const char *msg)
     text_scroll_stop(&title_scroll);
     memset(&title_scroll, 0, sizeof title_scroll);
     title_scroll.repeat = TEXT_SCROLL_BOUNCE;
-    title_scroll.scale = TEXT_SCALE_2;
+    title_scroll.font = TEXT_FONT_LARGE;
+    title_scroll.margin_left = TITLE_SCROLL_MARGIN;
+    title_scroll.margin_right = TITLE_SCROLL_MARGIN;
+    title_msg = msg;
     text_scroll_start(&title_scroll, 0, TITLE_Y, msg);
 }
 
-static const char *title_message_at(int frame)
+static void title_toggle_message(void)
 {
-    int alt;
-
-    if (frame < TITLE_INTRO_FRAMES)
-        return "Snake";
-    alt = (frame - TITLE_INTRO_FRAMES) / TITLE_ALT_FRAMES;
-    return (alt % 2 == 0) ? "PRESS BUTTON" : "SNAKE";
-}
-
-static void title_sync_message(void)
-{
-    const char *want;
-
-    want = title_message_at(title_frame);
-    if (want == title_msg)
-        return;
-    title_msg = want;
-    title_scroll_begin(title_msg);
+    title_alt_press = !title_alt_press;
+    title_scroll_begin(title_alt_press ? TITLE_PRESS : TITLE_SNAKE);
 }
 
 static void paint_title(void)
@@ -234,10 +223,9 @@ static void paint_title(void)
 static void title_enter(void)
 {
     phase = SNAKE_TITLE;
-    title_frame = 0;
-    title_msg = NULL;
+    title_alt_press = 0;
     status_clear();
-    title_sync_message();
+    title_scroll_begin(TITLE_SNAKE);
     paint_title();
 }
 
@@ -248,13 +236,13 @@ static void begin_play(void)
 
 static void title_tick(const Input *in)
 {
-    title_frame++;
-    title_sync_message();
     if (in->button_pressed) {
         begin_play();
         return;
     }
     paint_title();
+    if (text_scroll_take_bounce_done(&title_scroll))
+        title_toggle_message();
 }
 
 static void seed_snake(void)

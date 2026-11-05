@@ -15,11 +15,16 @@
  *
  * print_scroll advances and draws clipped scrolling text. Configure the
  * TextScroll fields before text_scroll_start, then call print_scroll
- * once per 60 Hz frame. Set TextScroll.scale to TEXT_SCALE_2 for 2×2
- * pixels per font pixel; scroll_x still moves one field pixel per step.
+ * once per 60 Hz frame. Set TextScroll.font to TEXT_FONT_LARGE for the
+ * 5×6 set (see text_large.h). Set TextScroll.scale to TEXT_SCALE_2 for
+ * 2×2 pixels per font pixel on either font; scroll_x still moves one
+ * field pixel per step. margin_left and margin_right add empty field
+ * pixels before the first glyph and after the last (included in bounce travel).
  * print_scroll_outline does the same with a 1px ring; print_scroll_outline_blink
  * also inverts that ring with TextBlink.
  */
+
+#include "text_large.h"
 
 #include <stdint.h>
 
@@ -36,6 +41,11 @@
 #define TEXT_SCALE_2 2
 
 typedef enum {
+    TEXT_FONT_DEFAULT = 0,
+    TEXT_FONT_LARGE,
+} TextFont;
+
+typedef enum {
     TEXT_SCROLL_BOUNCE,
     TEXT_SCROLL_RESET,
 } TextScrollRepeat;
@@ -49,12 +59,17 @@ typedef struct TextScroll {
     int speed_fps;
     int pause_frames;
     TextScrollRepeat repeat;
+    TextFont font;
     int scale;
+    int margin_left;
+    int margin_right;
     int scroll_x;
     int dir;
     int wait;
     int step;
     int pending_reset;
+    int saw_far_edge;
+    int bounce_done;
 } TextScroll;
 
 typedef struct TextBlink {
@@ -82,6 +97,8 @@ void text_print_outline_blink(int x, int y, const char *s, TextBlink *tb);
 
 void text_scroll_start(TextScroll *ts, int x, int y, const char *text);
 void text_scroll_stop(TextScroll *ts);
+/* TEXT_SCROLL_BOUNCE: set when a full out-and-back scroll finishes its home pause. */
+int text_scroll_take_bounce_done(TextScroll *ts);
 void text_scroll_advance(TextScroll *ts);
 void text_scroll_paint(const TextScroll *ts);
 void text_scroll_paint_outline(const TextScroll *ts, int invert);
