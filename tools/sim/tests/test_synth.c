@@ -52,6 +52,7 @@ static void test_catalog(void)
                !synth_on(SYNTH_NOISE),
            "an empty index leaves every channel quiet");
     expect(synth_sample() == 512, "silence sits at midscale");
+    expect(synth_volume_get() == SYNTH_VOLUME_DEFAULT, "volume starts at the default percent");
 
     synth_play(1);
     expect(synth_on(SYNTH_TRIANGLE) && !synth_on(SYNTH_SQUARE) &&

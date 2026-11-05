@@ -14,8 +14,11 @@
 #define SYNTH_NOISE 2
 #define SYNTH_RATE 20000
 #define SYNTH_FRAME (SYNTH_RATE / 60)
+#define SYNTH_VOLUME_DEFAULT 20
 
 void synth_reset(void);
+void synth_volume_set(int percent);
+int synth_volume_get(void);
 void synth_play(uint8_t index);
 uint16_t synth_sample(void);
 int synth_on(int channel);

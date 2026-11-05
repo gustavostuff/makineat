@@ -64,6 +64,7 @@ static const Row boom_row = {SYNTH_NOISE, 0, boom_steps, 4};
 static const Row pop_row = {SYNTH_SQUARE, 0, pop_steps, 2};
 
 static Chan chan[CHANS];
+static int volume_pct = SYNTH_VOLUME_DEFAULT;
 
 static const Row *row_of(uint8_t index)
 {
@@ -172,6 +173,20 @@ static int16_t voice(Chan *c, int kind)
     return out;
 }
 
+void synth_volume_set(int percent)
+{
+    if (percent < 0)
+        percent = 0;
+    if (percent > 100)
+        percent = 100;
+    volume_pct = percent;
+}
+
+int synth_volume_get(void)
+{
+    return volume_pct;
+}
+
 void synth_reset(void)
 {
     int i;
@@ -197,7 +212,7 @@ uint16_t synth_sample(void)
 
     for (i = 0; i < CHANS; i++)
         sum += voice(&chan[i], i);
-    dac = 512 + (sum * 511) / FULL;
+    dac = 512 + (sum * 511 * volume_pct) / (FULL * 100);
     if (dac < 0)
         dac = 0;
     if (dac > 1023)
