@@ -35,9 +35,43 @@ The planned system brightness control uses debounced input on the Bright button 
 
 Games call `sound(index)` with a catalog index 0 through 255. Index 0 is silent. Sound definitions live in `tools/fw/synth.c`. The cartridge transmits index bytes across the EVENT line as eight low pulses (100 us or 200 us wide). The system audio AVR samples EVENT at 40 kHz, decodes the index, and mixes square wave, triangle wave, and pseudo-random noise channels at 20 kHz into the 10-bit DAC output on PD6.
 
-## Entity SDK
+## Game SDK
 
-Games can use `tools/fw/entity.c` for sprite movement and collisions, supporting up to 64 active slots. A 32 by 32 coordinate space wraps the screen with an 8 LED/pixel margin on every side. `world_draw` copies the center 16 by 16 playfield into `frame`. Shapes are up to 4 by 4, packed with `SHAPE1` through `SHAPE4`. Functions `entity_spawn`, `entity_step`, `world_tick`, and `world_pairs` manage motion and collision testing.
+Shared drawing and collision code lives under `tools/fw/`. Pick the tier that fits the cart.
+
+### Frame (`frame.c`)
+
+The scan-out buffer is sixteen rows of sixteen bits in `frame[16]`. `pixel`, `pixel_get`, and `clear` are the basic API. `frame_rect`, `frame_hline`, and `frame_vline` fill clipped rectangles and lines on the screen (columns and rows 0..15).
+
+### Map (`map.c`)
+
+A separate 16 by 16 occupancy bitmap uses the same bit layout as `frame`. Use it for walls, long bodies, and static art without spending entity slots. Entities stay limited to 4 by 4 shapes; a Snake-style body belongs on the map, not as one entity per segment.
+
+- `map_clear`, `map_get`, `map_set`, `map_toggle`, `map_rect`
+- `map_stamp_frame` ORs lit map cells into `frame` without clearing
+- `map_solid` is the same as `map_get` (handy for `collide_step` callbacks)
+- `scene_blocked(x, y, mask)` with `SCENE_MAP` and/or `SCENE_ENTITIES`
+
+Grid games probe the next cell with `map_get` or `scene_blocked` before moving. Bouncing movers (Arkaled) keep using `collide_step` in `collide.c`.
+
+**Draw recipes**
+
+- Entities only: `world_draw();`
+- Map only: `clear(); map_stamp_frame();`
+- Map then entities: `clear(); map_stamp_frame(); world_paint();`
+- Entities then manual tweaks (Arkaled-style blinks): `world_draw();` then `pixel()` overrides
+
+When a cart uses the map on hardware, add `../map.c` to `GAME_SRCS` in `tools/fw/avr/Makefile` (same pattern as `collide.c` for Arkaled).
+
+### Entity (`entity.c`)
+
+Up to 64 sprites in world space -8..23 with an 8-pixel margin around the screen. Shapes are at most 4 by 4, packed with `SHAPE1` through `SHAPE4`. `world_tick` steps every live entity; `world_draw` clears the frame and calls `world_paint`, which stamps the visible window into `frame`. `world_paint` alone composes on top of an existing frame (for example after `map_stamp_frame`).
+
+Pairwise overlap uses `world_pairs`, `entity_covers`, and `entity_overlaps`. Query helpers: `entity_at(x, y)` on screen cells 0..15, `entity_set_pos`, `entity_set_motion`, `entity_set_flags`, and `entity_clear_flags`.
+
+### Collide (`collide.c`)
+
+`collide_step` moves one cell at a time with axis bounce against a `solid` callback. Link this module only on carts that need it.
 
 ## Carts
 

@@ -158,6 +158,42 @@ static void test_pairs(void)
     expect(pair_n == 0, "sprites with neither flag do not pair");
 }
 
+static void test_entity_at(void)
+{
+    int a;
+    int b;
+
+    world_reset();
+    expect(entity_at(0, 0) < 0, "entity_at on an empty field");
+    a = entity_spawn(&dot, 4, 5, 0, 0, 1, 0);
+    b = entity_spawn(&dot, 7, 7, 0, 0, 1, 0);
+    expect(a >= 0 && b >= 0, "spawns for entity_at");
+    expect(entity_at(4, 5) == a && entity_at(7, 7) == b,
+           "entity_at returns the covering slot");
+    expect(entity_at(0, 0) < 0, "entity_at misses empty cells");
+}
+
+static void test_entity_set(void)
+{
+    int id;
+    Entity *e;
+
+    world_reset();
+    id = entity_spawn(&dot, 0, 0, 0, 1, 4, ENTITY_INACTIVE);
+    expect(id >= 0, "spawn for entity_set");
+    entity_set_pos(id, 9, 10);
+    e = entity_get(id);
+    expect(e != NULL && e->x == 9 && e->y == 10, "entity_set_pos");
+    entity_set_motion(id, 1, 0, 1);
+    entity_clear_flags(id, ENTITY_INACTIVE);
+    world_tick();
+    e = entity_get(id);
+    expect(e != NULL && e->x == 10 && e->y == 10, "entity_set_motion and clear_flags");
+    entity_set_flags(id, ENTITY_INACTIVE);
+    e = entity_get(id);
+    expect(e != NULL && (e->flags & ENTITY_INACTIVE) != 0, "entity_set_flags");
+}
+
 static void test_cap(void)
 {
     int i;
@@ -187,6 +223,8 @@ int main(void)
     test_motion();
     test_pairs();
     test_death();
+    test_entity_at();
+    test_entity_set();
     test_cap();
     return report_end();
 }

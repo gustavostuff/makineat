@@ -32,7 +32,7 @@ Cartridge PCB, 44x37 mm:
 
 SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net classes in the main-board `*.kicad_pro` files. See [design](docs/design.md) and [firmware](docs/firmware.md).
 
-`./sim.sh` opens the UI. The active cart is named in `cart_placed.json`.
+`./sim.sh` opens the UI. The active cart is named in `cart_placed.json`. Game SDK tiers (frame, map, entity, collide) are documented in [firmware](docs/firmware.md).
 
 ## Design
 

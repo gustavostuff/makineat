@@ -28,7 +28,7 @@ TEXT_DEMO = ../../games/text-demo/text_demo.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
-TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_board tests/test_game \
+TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_map tests/test_board tests/test_game \
             tests/test_pong tests/test_arkaled tests/test_text_demo tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
@@ -51,6 +51,9 @@ tests/test_avr128db28: tests/test_avr128db28.c chips/avr128db28.c engine/signal.
 
 tests/test_entity: tests/test_entity.c ../fw/entity.c ../fw/frame.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_entity.c ../fw/entity.c ../fw/frame.c $(CHECK)
+
+tests/test_map: tests/test_map.c ../fw/map.c ../fw/entity.c ../fw/frame.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_map.c ../fw/map.c ../fw/entity.c ../fw/frame.c $(CHECK)
 
 tests/test_board: tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
@@ -82,6 +85,7 @@ test: $(TEST_BINS)
 	./tests/test_status_digits
 	./tests/test_avr128db28
 	./tests/test_entity
+	./tests/test_map
 	./tests/test_game
 	./tests/test_pong
 	./tests/test_arkaled

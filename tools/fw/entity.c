@@ -249,7 +249,7 @@ static void stamp(const Entity *e)
     }
 }
 
-void world_draw(void)
+void world_paint(void)
 {
     int i;
     int x;
@@ -260,13 +260,73 @@ void world_draw(void)
         if (slot[i].live)
             stamp(&slot[i].e);
     }
-    clear();
-    for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
+    for (y = 0; y < FIELD_SIZE; y++) {
+        for (x = 0; x < FIELD_SIZE; x++) {
             if (grid_on(x, y))
                 pixel((uint8_t)x, (uint8_t)y, true);
         }
     }
+}
+
+void world_draw(void)
+{
+    clear();
+    world_paint();
+}
+
+int entity_at(int x, int y)
+{
+    int i;
+
+    if (x < 0 || y < 0 || x > FIELD_LAST || y > FIELD_LAST)
+        return -1;
+    for (i = 0; i < ENTITY_MAX; i++) {
+        if (!slot[i].live)
+            continue;
+        if (entity_covers(i, x, y))
+            return i;
+    }
+    return -1;
+}
+
+void entity_set_pos(int id, int x, int y)
+{
+    Entity *e = entity_get(id);
+
+    if (e == NULL)
+        return;
+    e->x = x;
+    e->y = y;
+}
+
+void entity_set_motion(int id, int vx, int vy, int every)
+{
+    Entity *e = entity_get(id);
+
+    if (e == NULL)
+        return;
+    e->vx = vx;
+    e->vy = vy;
+    e->every = every;
+    e->pace = 0;
+}
+
+void entity_set_flags(int id, unsigned flags)
+{
+    Entity *e = entity_get(id);
+
+    if (e == NULL)
+        return;
+    e->flags |= flags;
+}
+
+void entity_clear_flags(int id, unsigned flags)
+{
+    Entity *e = entity_get(id);
+
+    if (e == NULL)
+        return;
+    e->flags &= ~flags;
 }
 
 void world_debug_pixel(int x, int y, int on)

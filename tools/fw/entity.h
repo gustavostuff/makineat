@@ -93,7 +93,16 @@ int entity_covers(int id, int x, int y);
 int entity_overlaps(int a, int b);
 
 void world_tick(void);
+void world_paint(void);
 void world_draw(void);
+
+/* First live entity covering screen cell (x,y) in 0..15, or -1. */
+int entity_at(int x, int y);
+
+void entity_set_pos(int id, int x, int y);
+void entity_set_motion(int id, int vx, int vy, int every);
+void entity_set_flags(int id, unsigned flags);
+void entity_clear_flags(int id, unsigned flags);
 
 /* 1 when that cell of the 32 by 32 grid is lit. x and y run from -8 to 23. */
 int world_lit(int x, int y);
