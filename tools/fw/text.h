@@ -7,15 +7,18 @@
  * A lowercase letter uses the capital glyph. A space is a blank cell.
  *
  * text_print paints one line from column x, row y. Each glyph takes
- * the next four columns. Pixels past the field are ignored.
+ * the next four columns (eight when scale is TEXT_SCALE_2). Pixels past
+ * the field are ignored.
  * text_print_outline first stamps each glyph pixel OFF in the eight
  * neighbor cells, then draws the glyphs ON. Blink inverts those two
  * passes at TEXT_BLINK_FPS_DEFAULT.
  *
  * print_scroll advances and draws clipped scrolling text. Configure the
  * TextScroll fields before text_scroll_start, then call print_scroll
- * once per 60 Hz frame. print_scroll_outline does the same with a 1px
- * ring; print_scroll_outline_blink also inverts that ring with TextBlink.
+ * once per 60 Hz frame. Set TextScroll.scale to TEXT_SCALE_2 for 2×2
+ * pixels per font pixel; scroll_x still moves one field pixel per step.
+ * print_scroll_outline does the same with a 1px ring; print_scroll_outline_blink
+ * also inverts that ring with TextBlink.
  */
 
 #include <stdint.h>
@@ -29,6 +32,8 @@
 #define TEXT_SCROLL_VIEW_W_DEFAULT TEXT_FIELD_W
 #define TEXT_SCROLL_VIEW_H_DEFAULT TEXT_H
 #define TEXT_BLINK_FPS_DEFAULT 2
+#define TEXT_SCALE_1 1
+#define TEXT_SCALE_2 2
 
 typedef enum {
     TEXT_SCROLL_BOUNCE,
@@ -44,6 +49,7 @@ typedef struct TextScroll {
     int speed_fps;
     int pause_frames;
     TextScrollRepeat repeat;
+    int scale;
     int scroll_x;
     int dir;
     int wait;
@@ -61,6 +67,8 @@ const uint8_t *text_glyph(char c);
 
 void text_draw(int x, int y, const char *s);
 void text_print(int x, int y, const char *s);
+void text_draw_scaled(int x, int y, int scale, const char *s);
+void text_print_scaled(int x, int y, int scale, const char *s);
 
 /*
  * Outline punches a 1px OFF ring (8 neighbors) then draws the glyphs ON.

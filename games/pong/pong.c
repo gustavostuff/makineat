@@ -26,7 +26,7 @@
 #define SCORE_BLINK_HALF 8 /* ~4 on/off cycles in one second at 60 Hz */
 
 #ifndef PONG_DEBUG_SLOW_BALL
-#define PONG_DEBUG_SLOW_BALL 1
+#define PONG_DEBUG_SLOW_BALL 0
 #endif
 
 static const Shape pad_shape = SHAPE4(0, 0, "1", "1", "1", "1");

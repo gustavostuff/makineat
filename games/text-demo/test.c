@@ -91,6 +91,29 @@ static void test_button_restarts_demo(void)
     expect(text_demo_scroll_x() == 0, "button restarts the active scroll demo");
 }
 
+static void test_scaled_text(void)
+{
+    TextScroll ts;
+    int x0;
+    int period;
+
+    clear();
+    text_print_scaled(0, 0, TEXT_SCALE_2, "I");
+    expect(pixel_get(0, 0) && pixel_get(1, 0) && pixel_get(0, 1) && pixel_get(1, 1),
+           "2x scale draws a 2x2 block per font pixel");
+
+    memset(&ts, 0, sizeof ts);
+    ts.repeat = TEXT_SCROLL_BOUNCE;
+    ts.scale = TEXT_SCALE_2;
+    text_scroll_start(&ts, 0, 0, "WIDE");
+    ts.wait = 0;
+    period = TEXT_FRAME_HZ / TEXT_SCROLL_SPEED_FPS_DEFAULT;
+    ts.step = period - 1;
+    x0 = ts.scroll_x;
+    text_scroll_advance(&ts);
+    expect(ts.scroll_x == x0 - 1, "2x scroll still advances one pixel per step");
+}
+
 static void test_all_demos_exist(void)
 {
     expect(text_demo_demo_count() == 7, "seven text flows are available");
@@ -226,6 +249,7 @@ int main(void)
     test_print_idle();
     test_demo_switch();
     test_bounce_scroll_moves();
+    test_scaled_text();
     test_button_restarts_demo();
     test_all_demos_exist();
     test_outline_scrolls();

@@ -87,25 +87,46 @@ const uint8_t *text_glyph(char c)
     return 0;
 }
 
-static int text_pixel_w(const char *s)
+static int text_scale_norm(int scale)
+{
+    if (scale <= 1)
+        return TEXT_SCALE_1;
+    if (scale >= TEXT_SCALE_2)
+        return TEXT_SCALE_2;
+    return scale;
+}
+
+static int text_glyph_advance(int scale)
+{
+    return TEXT_W * text_scale_norm(scale);
+}
+
+static int text_glyph_height(int scale)
+{
+    return TEXT_H * text_scale_norm(scale);
+}
+
+static int text_pixel_w(const char *s, int scale)
 {
     int len;
 
     if (s == 0)
         return 0;
     len = (int)strlen(s);
-    return len * TEXT_W;
+    return len * text_glyph_advance(scale);
 }
 
 /* Left, right, up, down, then the four corners. */
 static const int8_t outline_dx[8] = { -1, 1, 0, 0, -1, 1, -1, 1 };
 static const int8_t outline_dy[8] = { 0, 0, -1, 1, -1, -1, 1, 1 };
 
-static void stamp(int x, int y, const uint8_t *rows, bool on)
+static void stamp(int x, int y, const uint8_t *rows, int scale, bool on)
 {
     int row;
     int col;
+    int s;
 
+    scale = text_scale_norm(scale);
     for (row = 0; row < TEXT_H; row++) {
         for (col = 0; col < TEXT_W; col++) {
             int px;
@@ -113,18 +134,25 @@ static void stamp(int x, int y, const uint8_t *rows, bool on)
 
             if ((rows[row] & (uint8_t)(1u << col)) == 0)
                 continue;
-            px = x + col;
-            py = y + row;
-            if (px < 0 || py < 0 || px >= TEXT_FIELD_W || py >= TEXT_FIELD_W)
-                continue;
-            pixel((uint8_t)px, (uint8_t)py, on);
+            px = x + col * scale;
+            py = y + row * scale;
+            for (s = 0; s < scale * scale; s++) {
+                int sx = s % scale;
+                int sy = s / scale;
+                int fx = px + sx;
+                int fy = py + sy;
+
+                if (fx < 0 || fy < 0 || fx >= TEXT_FIELD_W || fy >= TEXT_FIELD_W)
+                    continue;
+                pixel((uint8_t)fx, (uint8_t)fy, on);
+            }
         }
     }
 }
 
-static void blit(int x, int y, const uint8_t *rows)
+static void blit(int x, int y, const uint8_t *rows, int scale)
 {
-    stamp(x, y, rows, true);
+    stamp(x, y, rows, scale, true);
 }
 
 void text_draw_outline(int x, int y, const char *s, int invert)
@@ -148,7 +176,7 @@ void text_draw_outline(int x, int y, const char *s, int invert)
             if (gx >= TEXT_FIELD_W)
                 break;
             if (gx + TEXT_W > 0)
-                stamp(gx + outline_dx[i], y + outline_dy[i], rows, ring);
+                stamp(gx + outline_dx[i], y + outline_dy[i], rows, TEXT_SCALE_1, ring);
             gx += TEXT_W;
         }
     }
@@ -162,7 +190,7 @@ void text_draw_outline(int x, int y, const char *s, int invert)
         if (gx >= TEXT_FIELD_W)
             break;
         if (gx + TEXT_W > 0)
-            stamp(gx, y, rows, fill);
+            stamp(gx, y, rows, TEXT_SCALE_1, fill);
         gx += TEXT_W;
     }
 }
@@ -213,12 +241,14 @@ void text_print_outline_blink(int x, int y, const char *s, TextBlink *tb)
     text_draw_outline(x, y, s, tb != 0 ? tb->invert : 0);
 }
 
-static void stamp_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y, int clip_w,
-                       int clip_h, bool on)
+static void stamp_clip(int x, int y, const uint8_t *rows, int scale, int clip_x, int clip_y,
+                       int clip_w, int clip_h, bool on)
 {
     int row;
     int col;
+    int s;
 
+    scale = text_scale_norm(scale);
     for (row = 0; row < TEXT_H; row++) {
         for (col = 0; col < TEXT_W; col++) {
             int px;
@@ -226,27 +256,39 @@ static void stamp_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y
 
             if ((rows[row] & (uint8_t)(1u << col)) == 0)
                 continue;
-            px = x + col;
-            py = y + row;
-            if (px < clip_x || py < clip_y || px >= clip_x + clip_w || py >= clip_y + clip_h)
-                continue;
-            if (px < 0 || py < 0 || px >= TEXT_FIELD_W || py >= TEXT_FIELD_W)
-                continue;
-            pixel((uint8_t)px, (uint8_t)py, on);
+            px = x + col * scale;
+            py = y + row * scale;
+            for (s = 0; s < scale * scale; s++) {
+                int sx = s % scale;
+                int sy = s / scale;
+                int fx = px + sx;
+                int fy = py + sy;
+
+                if (fx < clip_x || fy < clip_y || fx >= clip_x + clip_w ||
+                    fy >= clip_y + clip_h)
+                    continue;
+                if (fx < 0 || fy < 0 || fx >= TEXT_FIELD_W || fy >= TEXT_FIELD_W)
+                    continue;
+                pixel((uint8_t)fx, (uint8_t)fy, on);
+            }
         }
     }
 }
 
-static void blit_clip(int x, int y, const uint8_t *rows, int clip_x, int clip_y, int clip_w,
-                      int clip_h)
+static void blit_clip(int x, int y, const uint8_t *rows, int scale, int clip_x, int clip_y,
+                      int clip_w, int clip_h)
 {
-    stamp_clip(x, y, rows, clip_x, clip_y, clip_w, clip_h, true);
+    stamp_clip(x, y, rows, scale, clip_x, clip_y, clip_w, clip_h, true);
 }
 
-void text_draw(int x, int y, const char *s)
+void text_draw_scaled(int x, int y, int scale, const char *s)
 {
+    int advance;
+
     if (s == 0)
         return;
+    scale = text_scale_norm(scale);
+    advance = text_glyph_advance(scale);
     for (; *s != '\0'; s++) {
         const uint8_t *rows = text_glyph(*s);
 
@@ -254,10 +296,20 @@ void text_draw(int x, int y, const char *s)
             continue;
         if (x >= TEXT_FIELD_W)
             break;
-        if (x + TEXT_W > 0)
-            blit(x, y, rows);
-        x += TEXT_W;
+        if (x + advance > 0)
+            blit(x, y, rows, scale);
+        x += advance;
     }
+}
+
+void text_print_scaled(int x, int y, int scale, const char *s)
+{
+    text_draw_scaled(x, y, scale, s);
+}
+
+void text_draw(int x, int y, const char *s)
+{
+    text_draw_scaled(x, y, TEXT_SCALE_1, s);
 }
 
 void text_print(int x, int y, const char *s)
@@ -290,11 +342,18 @@ static int scroll_view_w(const TextScroll *ts)
     return TEXT_SCROLL_VIEW_W_DEFAULT;
 }
 
+static int scroll_scale(const TextScroll *ts)
+{
+    if (ts == 0)
+        return TEXT_SCALE_1;
+    return text_scale_norm(ts->scale);
+}
+
 static int scroll_view_h(const TextScroll *ts)
 {
     if (ts->viewport_h > 0)
         return ts->viewport_h;
-    return TEXT_SCROLL_VIEW_H_DEFAULT;
+    return text_glyph_height(scroll_scale(ts));
 }
 
 static void scroll_apply_defaults(TextScroll *ts)
@@ -302,11 +361,13 @@ static void scroll_apply_defaults(TextScroll *ts)
     if (ts->viewport_w <= 0)
         ts->viewport_w = TEXT_SCROLL_VIEW_W_DEFAULT;
     if (ts->viewport_h <= 0)
-        ts->viewport_h = TEXT_SCROLL_VIEW_H_DEFAULT;
+        ts->viewport_h = text_glyph_height(scroll_scale(ts));
     if (ts->speed_fps <= 0)
         ts->speed_fps = TEXT_SCROLL_SPEED_FPS_DEFAULT;
     if (ts->pause_frames <= 0)
         ts->pause_frames = TEXT_SCROLL_PAUSE_DEFAULT;
+    if (ts->scale <= 0)
+        ts->scale = TEXT_SCALE_1;
 }
 
 void text_scroll_start(TextScroll *ts, int x, int y, const char *text)
@@ -361,7 +422,7 @@ static void scroll_advance(TextScroll *ts)
     ts->step = 0;
 
     view_w = scroll_view_w(ts);
-    min_x = view_w - text_pixel_w(ts->text);
+    min_x = view_w - text_pixel_w(ts->text, scroll_scale(ts));
     if (min_x > 0)
         min_x = 0;
 
@@ -385,11 +446,15 @@ static void scroll_paint(const TextScroll *ts)
     int clip_w;
     int clip_h;
     int x;
+    int advance;
+    int scale;
     const char *s;
 
     if (ts == 0 || ts->text == 0)
         return;
 
+    scale = scroll_scale(ts);
+    advance = text_glyph_advance(scale);
     clip_w = scroll_view_w(ts);
     clip_h = scroll_view_h(ts);
     x = ts->x + ts->scroll_x;
@@ -401,9 +466,9 @@ static void scroll_paint(const TextScroll *ts)
             continue;
         if (x >= TEXT_FIELD_W)
             break;
-        if (x + TEXT_W > ts->x)
-            blit_clip(x, ts->y, rows, ts->x, ts->y, clip_w, clip_h);
-        x += TEXT_W;
+        if (x + advance > ts->x)
+            blit_clip(x, ts->y, rows, scale, ts->x, ts->y, clip_w, clip_h);
+        x += advance;
     }
 }
 
@@ -427,6 +492,8 @@ static void scroll_paint_outline(const TextScroll *ts, int invert)
     int ring_h;
     int x;
     int i;
+    int advance;
+    int scale;
     const char *s;
     bool ring = invert != 0;
     bool fill = invert == 0;
@@ -434,6 +501,8 @@ static void scroll_paint_outline(const TextScroll *ts, int invert)
     if (ts == 0 || ts->text == 0)
         return;
 
+    scale = scroll_scale(ts);
+    advance = text_glyph_advance(scale);
     clip_w = scroll_view_w(ts);
     clip_h = scroll_view_h(ts);
     ring_x = ts->x - 1;
@@ -450,10 +519,10 @@ static void scroll_paint_outline(const TextScroll *ts, int invert)
                 continue;
             if (x >= TEXT_FIELD_W + 1)
                 break;
-            if (x + TEXT_W + 1 > ts->x)
-                stamp_clip(x + outline_dx[i], ts->y + outline_dy[i], rows, ring_x, ring_y, ring_w,
-                           ring_h, ring);
-            x += TEXT_W;
+            if (x + advance + 1 > ts->x)
+                stamp_clip(x + outline_dx[i], ts->y + outline_dy[i], rows, scale, ring_x, ring_y,
+                           ring_w, ring_h, ring);
+            x += advance;
         }
     }
 
@@ -465,9 +534,9 @@ static void scroll_paint_outline(const TextScroll *ts, int invert)
             continue;
         if (x >= TEXT_FIELD_W)
             break;
-        if (x + TEXT_W > ts->x)
-            stamp_clip(x, ts->y, rows, ts->x, ts->y, clip_w, clip_h, fill);
-        x += TEXT_W;
+        if (x + advance > ts->x)
+            stamp_clip(x, ts->y, rows, scale, ts->x, ts->y, clip_w, clip_h, fill);
+        x += advance;
     }
 }
 

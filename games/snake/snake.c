@@ -5,15 +5,17 @@
 #include "rand.h"
 #include "sound.h"
 #include "status.h"
+#include "text.h"
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #define TICK_HZ 60
 #define MAX_SNAKE (FIELD_SIZE * FIELD_SIZE)
 #define FOOD_N 4
-#define SPEED_BLINK_SLOW_FPS 4
-#define SPEED_BLINK_FAST_FPS 8
+#define SPEED_BLINK_SLOW_FPS 2
+#define SPEED_BLINK_FAST_FPS 4
 #define SPEED_BLINK_SLOW_HALF (TICK_HZ / (SPEED_BLINK_SLOW_FPS * 2))
 #define SPEED_BLINK_FAST_HALF (TICK_HZ / (SPEED_BLINK_FAST_FPS * 2))
 #define SPEED_PHASE1_FRAMES (8 * TICK_HZ)
@@ -24,8 +26,12 @@
 #define DEATH_BLINK_CYCLES 4
 #define DEATH_BLINK_HALF (TICK_HZ / (DEATH_BLINK_CYCLES * 2))
 #define TURN_QUEUE_MAX 2
+#define TITLE_Y ((FIELD_SIZE - TEXT_H * TEXT_SCALE_2) / 2)
+#define TITLE_INTRO_FRAMES (10 * TICK_HZ)
+#define TITLE_ALT_FRAMES (10 * TICK_HZ)
 
 typedef enum {
+    SNAKE_TITLE,
     SNAKE_PLAY,
     SNAKE_DEATH,
 } SnakePhase;
@@ -53,26 +59,28 @@ static int speed_age;
 static int blink_phase;
 static SnakePhase phase;
 static int death_phase;
+static TextScroll title_scroll;
+static int title_frame;
+static const char *title_msg;
 
-static void status_put8(int value)
+static void seed_snake(void);
+
+static void status_put4(int start, int value)
 {
-    int i;
-    int v;
-
     if (value < 0)
         value = 0;
-    if (value > 99999999)
-        value = 99999999;
-    v = value;
-    for (i = 7; i >= 0; i--) {
-        status_set_digit((uint8_t)i, (uint8_t)(v % 10));
-        v /= 10;
-    }
+    if (value > 9999)
+        value = 9999;
+    status_set_digit((uint8_t)start, (uint8_t)(value / 1000));
+    status_set_digit((uint8_t)(start + 1), (uint8_t)((value / 100) % 10));
+    status_set_digit((uint8_t)(start + 2), (uint8_t)((value / 10) % 10));
+    status_set_digit((uint8_t)(start + 3), (uint8_t)(value % 10));
 }
 
 static void sync_status(void)
 {
-    status_put8(score);
+    status_put4(0, speed_fps);
+    status_put4(4, score);
 }
 
 static int cell_occupied(int x, int y)
@@ -187,6 +195,68 @@ static void map_sync_body(void)
         map_set(seg_x[i], seg_y[i], 1);
 }
 
+static void title_scroll_begin(const char *msg)
+{
+    text_scroll_stop(&title_scroll);
+    memset(&title_scroll, 0, sizeof title_scroll);
+    title_scroll.repeat = TEXT_SCROLL_BOUNCE;
+    title_scroll.scale = TEXT_SCALE_2;
+    text_scroll_start(&title_scroll, 0, TITLE_Y, msg);
+}
+
+static const char *title_message_at(int frame)
+{
+    int alt;
+
+    if (frame < TITLE_INTRO_FRAMES)
+        return "Snake";
+    alt = (frame - TITLE_INTRO_FRAMES) / TITLE_ALT_FRAMES;
+    return (alt % 2 == 0) ? "PRESS BUTTON" : "SNAKE";
+}
+
+static void title_sync_message(void)
+{
+    const char *want;
+
+    want = title_message_at(title_frame);
+    if (want == title_msg)
+        return;
+    title_msg = want;
+    title_scroll_begin(title_msg);
+}
+
+static void paint_title(void)
+{
+    clear();
+    print_scroll(&title_scroll);
+}
+
+static void title_enter(void)
+{
+    phase = SNAKE_TITLE;
+    title_frame = 0;
+    title_msg = NULL;
+    status_clear();
+    title_sync_message();
+    paint_title();
+}
+
+static void begin_play(void)
+{
+    seed_snake();
+}
+
+static void title_tick(const Input *in)
+{
+    title_frame++;
+    title_sync_message();
+    if (in->button_pressed) {
+        begin_play();
+        return;
+    }
+    paint_title();
+}
+
 static void seed_snake(void)
 {
     int start_x = FIELD_SIZE / 2 - 1;
@@ -223,7 +293,7 @@ static void seed_snake(void)
 void snake_reset(void)
 {
     rand_reseed();
-    seed_snake();
+    title_enter();
 }
 
 #if !defined(__AVR__)
@@ -271,6 +341,16 @@ int snake_speed_fps(void)
 }
 
 #if !defined(__AVR__)
+int snake_on_title(void)
+{
+    return phase == SNAKE_TITLE;
+}
+
+const char *snake_title_message(void)
+{
+    return title_msg;
+}
+
 int snake_death_blinking(void)
 {
     return phase == SNAKE_DEATH;
@@ -450,6 +530,16 @@ static void apply_direction(const Input *in)
         queue_turn(0, 1);
 }
 
+static void apply_button(const Input *in)
+{
+    if (!in->button_pressed)
+        return;
+    if (speed_fps <= SNAKE_SPEED_START)
+        return;
+    speed_fps--;
+    sync_status();
+}
+
 static void commit_next_turn(void)
 {
     if (queue_n <= 0)
@@ -481,6 +571,8 @@ static void eat_speed(void)
 {
     if (speed_fps < SNAKE_SPEED_MAX)
         speed_fps++;
+    score++;
+    sync_status();
     speed_live = 0;
     spawn_speed();
     sound(SOUND_POP);
@@ -527,6 +619,10 @@ static void step_snake(void)
 void snake_tick(const Input *in)
 {
     rand_feed(in);
+    if (phase == SNAKE_TITLE) {
+        title_tick(in);
+        return;
+    }
     blink_phase++;
     tick_speed_life();
     if (phase == SNAKE_DEATH) {
@@ -537,6 +633,7 @@ void snake_tick(const Input *in)
         return;
     }
     apply_direction(in);
+    apply_button(in);
     move_accum += speed_fps;
     while (move_accum >= TICK_HZ) {
         move_accum -= TICK_HZ;
