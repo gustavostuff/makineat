@@ -21,6 +21,8 @@ static void test_id(void)
     expect(strcmp(cart_id("{\"cart\": \"arkaled\"}"), "arkaled") == 0, "arkaled is a cart");
     expect(strcmp(cart_id("{\"cart\": \"text-demo\"}"), "text-demo") == 0, "text-demo is a cart");
     expect(strcmp(cart_id("{\"cart\": \"snake\"}"), "snake") == 0, "snake is a cart");
+    expect(strcmp(cart_id("{\"cart\": \"super-led-bros\"}"), "super-led-bros") == 0,
+           "super-led-bros is a cart");
     expect(strcmp(cart_id("{\n  \"cart\": \"space-shooter\"\n}"), "space-shooter") == 0,
            "space-shooter is a cart");
 }

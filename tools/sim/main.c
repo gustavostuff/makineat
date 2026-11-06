@@ -391,7 +391,8 @@ static int cart_skips_persist(void)
     const char *name = cart_name();
 
     return name != NULL &&
-           (strcmp(name, "pong") == 0 || strcmp(name, "snake") == 0);
+           (strcmp(name, "pong") == 0 || strcmp(name, "snake") == 0 ||
+            strcmp(name, "super-led-bros") == 0);
 }
 
 static int cart_two_stick(void)

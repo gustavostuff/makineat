@@ -73,9 +73,22 @@ Pairwise overlap uses `world_pairs`, `entity_covers`, and `entity_overlaps`. Que
 
 `collide_step` moves one cell at a time with axis bounce against a `solid` callback. Link this module only on carts that need it.
 
+### Stage (`stage.c`)
+
+Wide or tall platform levels live outside the 16×16 `map`. Import art with `tools/fw/gen_stage.py`: RGB `(0,0,0)` is empty, pure red `(255,0,0)` is the **one-pixel player spawn** (not solid), any other pixel is solid and drawn. Generated `StageMap` data is checked in like `text_large.c`.
+
+- **Horizontal (implemented):** `stage_bind_h`, `stage_h_scroll_tick` (held stick at **30 FPS**), `stage_h_paint`, `stage_h_solid`
+- **Vertical (stub):** `stage_bind_v` returns `STAGE_ERR_UNSUPPORTED`; `stage_v_*` are placeholders
+
+### Platform (`platform.c`)
+
+1×1 horizontal player: `platform_player_bind`, `platform_player_tick` (walk and jump/fall **15 FPS**, **button** jump when grounded, gravity), `platform_h_paint` (stage + player). Camera follows the player on `StageView`.
+
+Link `../stage.c`, `../platform.c`, and generated stage sources in `tools/fw/avr/Makefile` for platform carts.
+
 ## Carts
 
-Each cart implements `void game_tick(const Input *in)`. Carts recognized in `cart_placed.json` include `space-shooter`, `pong`, `arkaled`, `text-demo`, and `snake`.
+Each cart implements `void game_tick(const Input *in)`. Carts recognized in `cart_placed.json` include `space-shooter`, `pong`, `arkaled`, `text-demo`, `snake`, and `super-led-bros`.
 - Build cartridge firmware with `make -C tools/fw/avr` or `make -C tools/fw/avr CART=pong`.
 - Build system audio firmware with `make -C tools/fw/audio`.
 

@@ -4,6 +4,7 @@
 #include "game.h"
 #include "pong.h"
 #include "snake.h"
+#include "super_led_bros.h"
 #include "text_demo.h"
 
 #include <stdio.h>
@@ -49,6 +50,8 @@ static const char *known(const char *name)
         return "text-demo";
     if (strcmp(name, "snake") == 0)
         return "snake";
+    if (strcmp(name, "super-led-bros") == 0)
+        return "super-led-bros";
     return NULL;
 }
 
@@ -99,6 +102,8 @@ static void select_name(const char *name)
         which = 4;
     else if (strcmp(name, "snake") == 0)
         which = 5;
+    else if (strcmp(name, "super-led-bros") == 0)
+        which = 6;
     else
         which = 0;
 }
@@ -136,6 +141,8 @@ const char *cart_name(void)
         return "text-demo";
     if (which == 5)
         return "snake";
+    if (which == 6)
+        return "super-led-bros";
     return NULL;
 }
 
@@ -158,6 +165,8 @@ void cart_reset(void)
         text_demo_reset();
     else if (which == 5)
         snake_reset();
+    else if (which == 6)
+        super_led_bros_reset();
 }
 
 void cart_tick(const Input *in)
@@ -172,4 +181,6 @@ void cart_tick(const Input *in)
         text_demo_tick(in);
     else if (which == 5)
         snake_tick(in);
+    else if (which == 6)
+        super_led_bros_tick(in);
 }

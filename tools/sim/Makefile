@@ -6,7 +6,7 @@
 #   make -C tools/sim ARKALED_DEBUG=1 makineat-ui   # arkaled ball 0.25 FPS, paddles 1 FPS
 
 CC = gcc
-CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-demo -I../../games/snake -I.
+CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-demo -I../../games/snake -I../../games/super-led-bros -I.
 ifeq ($(PONG_DEBUG),1)
 CFLAGS += -DPONG_DEBUG_SLOW_BALL=1
 endif
@@ -26,17 +26,21 @@ PONG = ../../games/pong/pong.c ../../games/pong/title/title.c
 ARKALED = ../../games/arkaled/arkaled.c
 TEXT_DEMO = ../../games/text-demo/text_demo.c
 SNAKE = ../../games/snake/snake.c
+SUPER_LED_BROS = ../../games/super-led-bros/super_led_bros.c \
+                 ../../games/super-led-bros/stage_01_test.c
+STAGE = ../fw/stage.c
+PLATFORM = ../fw/platform.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
-TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_map tests/test_board tests/test_game \
-            tests/test_pong tests/test_arkaled tests/test_text_demo tests/test_snake tests/test_cart tests/test_synth tests/test_acetate
+TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_map tests/test_stage tests/test_board tests/test_game \
+            tests/test_pong tests/test_arkaled tests/test_text_demo tests/test_snake tests/test_super_led_bros tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
 UI_HDRS = acetate.h seven_seg.h board.h cart.h host.h
 
-makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(COLLIDE) ../fw/map.c ../fw/synth.c $(UI_HDRS)
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(COLLIDE) ../fw/map.c ../fw/synth.c $(LDLIBS)
+makineat-ui: main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) $(COLLIDE) ../fw/map.c ../fw/synth.c $(UI_HDRS)
+	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ main.c seven_seg.c acetate.c acetate_geom.c hal.c persist.c sound.c cart.c $(CORE) $(FW) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) $(COLLIDE) ../fw/map.c ../fw/synth.c $(LDLIBS)
 
 tests/test_max7219: tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK)
@@ -56,6 +60,9 @@ tests/test_entity: tests/test_entity.c ../fw/entity.c ../fw/frame.c $(CHECK)
 tests/test_map: tests/test_map.c ../fw/map.c ../fw/entity.c ../fw/frame.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_map.c ../fw/map.c ../fw/entity.c ../fw/frame.c $(CHECK)
 
+tests/test_stage: tests/test_stage.c $(STAGE) ../fw/frame.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_stage.c $(STAGE) ../fw/frame.c $(CHECK)
+
 tests/test_board: tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
@@ -74,8 +81,11 @@ tests/test_text_demo: ../../games/text-demo/test.c $(COMMON) $(TEXT_DEMO) ../fw/
 tests/test_snake: ../../games/snake/test.c $(COMMON) $(SNAKE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ ../../games/snake/test.c $(COMMON) $(SNAKE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
-tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(COLLIDE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
-	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(COLLIDE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+tests/test_super_led_bros: ../../games/super-led-bros/test.c $(COMMON) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ ../../games/super-led-bros/test.c $(COMMON) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+
+tests/test_cart: tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) $(COLLIDE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_cart.c cart.c $(COMMON) $(SHOOTER) $(PONG) $(ARKALED) $(TEXT_DEMO) $(SNAKE) $(SUPER_LED_BROS) $(STAGE) $(PLATFORM) $(COLLIDE) ../fw/map.c ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 
 tests/test_synth: tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_synth.c ../fw/synth.c ../fw/wire.c $(CHECK)
@@ -90,11 +100,13 @@ test: $(TEST_BINS)
 	./tests/test_avr128db28
 	./tests/test_entity
 	./tests/test_map
+	./tests/test_stage
 	./tests/test_game
 	./tests/test_pong
 	./tests/test_arkaled
 	./tests/test_text_demo
 	./tests/test_snake
+	./tests/test_super_led_bros
 	./tests/test_cart
 	./tests/test_board
 	./tests/test_synth
