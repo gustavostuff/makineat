@@ -24,9 +24,11 @@
 /* Pure yellow (255,255,0) item containers. Each one is a 2x2. */
 #define STAGE_ITEM_MAX 32
 #define STAGE_ITEM_BOUNCE_TICKS 8
-/* Unused containers cycle three shine patterns this many times per second. */
-#define STAGE_ITEM_SHINE_FPS 8
-#define STAGE_ITEM_SHINE_FRAMES 3
+/* Unused containers cycle four shine patterns. The first holds for 1 second. */
+#define STAGE_ITEM_SHINE_FRAMES 4
+#define STAGE_ITEM_SHINE_HOLD_LONG STAGE_TICK_HZ
+/* The other three patterns hold for 0.1 second, which is 6 ticks at 60 Hz. */
+#define STAGE_ITEM_SHINE_HOLD_SHORT 6
 
 typedef enum {
     STAGE_SCROLL_H,
@@ -66,7 +68,7 @@ typedef struct StageView {
     uint8_t item_bounce[STAGE_ITEM_MAX]; /* ticks left with the 2x2 drawn one cell up */
     uint8_t item_used[STAGE_ITEM_MAX]; /* 1 after the first bump: solid, no shine, no bounce */
     uint8_t item_shine; /* pattern index shared by unused containers */
-    uint8_t item_shine_accum;
+    uint8_t item_shine_age; /* ticks the current pattern has been shown, including this tick */
 } StageView;
 
 int stage_map_get(const StageMap *map, int x, int y);
@@ -101,7 +103,8 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
 void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg);
 int stage_h_solid(const StageView *view, int world_x, int world_y);
 void stage_h_items_tick(StageView *view);
-void stage_h_item_bump(StageView *view, int x, int y);
+/* 1 when this hit uses a fresh container. 0 when nothing new was used. */
+int stage_h_item_bump(StageView *view, int x, int y);
 
 int stage_v_camera_max(const StageView *view);
 void stage_v_scroll_tick(StageView *view, int dy);

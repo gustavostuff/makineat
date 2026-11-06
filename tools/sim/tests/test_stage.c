@@ -182,21 +182,27 @@ static void test_item_block_bump(void)
     stage_view_init(&view);
     stage_bind_h(&view, &item_map);
     stage_h_paint(&view);
-    expect(pixel_get(4, 6) && !pixel_get(5, 7), "a resting item block shows the first shine pattern");
+    expect(pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7),
+           "a resting item block shows the first shine pattern");
     expect(!pixel_get(4, 5), "a resting item block does not draw above itself");
-    stage_h_item_bump(&view, 0, 0);
+    expect(stage_h_item_bump(&view, 0, 0) == 0, "a miss does not use the item block");
     stage_h_paint(&view);
     expect(pixel_get(4, 6) && !pixel_get(4, 5), "a miss does not bump the item block");
-    stage_h_item_bump(&view, 5, 7);
+    expect(stage_h_item_bump(&view, 5, 7) == 1, "the first hit uses the item block");
     stage_h_paint(&view);
     expect(pixel_get(4, 5) && pixel_get(5, 5) && pixel_get(4, 6) && pixel_get(5, 6), "a hit draws the used block one cell higher");
     expect(!pixel_get(4, 7) && !pixel_get(5, 7), "a bumped item block leaves its old bottom row clear");
     stage_h_items_tick(&view);
-    stage_h_item_bump(&view, 5, 7);
+    expect(stage_h_item_bump(&view, 5, 7) == 0, "a used item block does not award another pickup");
     for (i = 0; i < STAGE_ITEM_BOUNCE_TICKS - 1; i++)
         stage_h_items_tick(&view);
     stage_h_paint(&view);
     expect(pixel_get(4, 6) && pixel_get(5, 7) && !pixel_get(4, 5), "the item block returns after one bounce");
+}
+
+static int shine_block_full(void)
+{
+    return pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7);
 }
 
 static void test_item_block_shine(void)
@@ -207,22 +213,41 @@ static void test_item_block_shine(void)
     stage_view_init(&view);
     stage_bind_h(&view, &item_map);
     stage_h_paint(&view);
-    expect(pixel_get(4, 6) && !pixel_get(5, 6) && !pixel_get(4, 7) && !pixel_get(5, 7),
-           "shine pattern 1 lights only the top-left cell");
-    for (i = 0; i < 7; i++)
+    expect(shine_block_full(), "shine pattern 1 lights every cell");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_LONG; i++)
         stage_h_items_tick(&view);
     stage_h_paint(&view);
-    expect(pixel_get(4, 6) && !pixel_get(5, 6), "the first shine pattern holds until the 8 FPS step");
+    expect(shine_block_full(), "the first shine pattern holds for 1 second");
     stage_h_items_tick(&view);
     stage_h_paint(&view);
-    expect(!pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && !pixel_get(5, 7),
-           "shine pattern 2 lights the top-right and bottom-left cells");
-    expect(stage_h_solid(&view, 5, 7), "an item block stays solid on a dark shine cell");
-    for (i = 0; i < 7; i++)
+    expect(!pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7),
+           "shine pattern 2 leaves the top-left cell off");
+    expect(stage_h_solid(&view, 4, 6), "an item block stays solid on a dark shine cell");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_SHORT - 1; i++)
         stage_h_items_tick(&view);
     stage_h_paint(&view);
-    expect(!pixel_get(4, 6) && !pixel_get(5, 6) && !pixel_get(4, 7) && pixel_get(5, 7),
-           "shine pattern 3 lights only the bottom-right cell");
+    expect(!pixel_get(4, 6) && pixel_get(5, 7), "shine pattern 2 holds for 6 frames");
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 6) && !pixel_get(4, 7) && pixel_get(5, 7),
+           "shine pattern 3 lights the top-left and bottom-right cells");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_SHORT - 1; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 6), "shine pattern 3 holds for 6 frames");
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && !pixel_get(5, 7),
+           "shine pattern 4 leaves the bottom-right cell off");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_SHORT - 1; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 7), "shine pattern 4 holds for 6 frames");
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(shine_block_full(), "the shine returns to the full block");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_LONG; i++)
+        stage_h_items_tick(&view);
     stage_h_item_bump(&view, 5, 7);
     stage_h_paint(&view);
     expect(pixel_get(4, 5) && pixel_get(5, 5) && pixel_get(4, 6) && pixel_get(5, 6),

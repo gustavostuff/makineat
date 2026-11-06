@@ -104,6 +104,41 @@ static void feed(PlatformPlayer *player, StageView *view, int left, int right)
     platform_player_tick(player, view, &in);
 }
 
+static const uint16_t coin_rows[16] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff,
+};
+static const StageItem coin_item[] = {{4, 12}};
+static const StageMap coin_map = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 1, coin_item};
+
+static int tick_button(PlatformPlayer *player, StageView *view, int button)
+{
+    Input in;
+
+    input_tick(0, 0, 0, 0, button, &in);
+    return platform_player_tick(player, view, &in);
+}
+
+static void test_item_pickup(void)
+{
+    StageView view;
+    PlatformPlayer player;
+    int got;
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &coin_map);
+    platform_player_bind(&player, &view, &coin_map);
+    expect(tick_button(&player, &view, 0) == 0, "an idle tick collects nothing");
+    expect(tick_button(&player, &view, 1) == 0, "the button debounce tick collects nothing");
+    got = tick_button(&player, &view, 1);
+    expect(got == 1, "a jump into an item block collects it");
+    expect(platform_player_y(&player) == 14, "the player stays under the block");
+    tick_button(&player, &view, 0);
+    tick_button(&player, &view, 0);
+    tick_button(&player, &view, 1);
+    expect(tick_button(&player, &view, 1) == 0, "a used item block does not collect again");
+}
+
 static void test_dead_zone_camera(void)
 {
     StageView view;
@@ -129,5 +164,6 @@ int main(void)
 {
     report_begin("platform");
     test_dead_zone_camera();
+    test_item_pickup();
     return report_end();
 }

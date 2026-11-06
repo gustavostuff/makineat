@@ -4,6 +4,7 @@
 #include "input.h"
 #include "stage.h"
 #include "stage_01.h"
+#include "status.h"
 #include "tests/report.h"
 
 static void expect(int cond, const char *msg)
@@ -93,6 +94,31 @@ static void test_jump_short_release(void)
     expect(peak_y == 10, "minimum jump rises 2 cells after early button release");
 }
 
+static void test_coins(void)
+{
+    int i;
+
+    input_reset();
+    super_led_bros_reset();
+    expect(status_get_digit(0) == 0 && status_get_digit(1) == 0 && status_get_digit(2) == 0 &&
+               status_get_digit(3) == 0,
+           "score starts at 0000");
+    expect(status_get_digit(4) == 0 && status_get_digit(5) == 0, "coins start at 00");
+    expect(status_get_digit(6) == 0 && status_get_digit(7) == 0, "lives start at 00");
+    super_led_bros_apply_pickups(1);
+    expect(status_get_digit(4) == 0 && status_get_digit(5) == 1, "one coin shows on digits 4 and 5");
+    expect(status_get_digit(0) == 0 && status_get_digit(3) == 0, "score stays at zero when a coin is added");
+    expect(status_get_digit(6) == 0 && status_get_digit(7) == 0, "lives stay at zero when a coin is added");
+    for (i = 0; i < 98; i++)
+        super_led_bros_apply_pickups(1);
+    expect(super_led_bros_coins() == 99 && status_get_digit(4) == 9 && status_get_digit(5) == 9,
+           "coins reach 99");
+    super_led_bros_apply_pickups(1);
+    expect(super_led_bros_coins() == 0 && status_get_digit(4) == 0 && status_get_digit(5) == 0,
+           "coins wrap from 99 to 00");
+    expect(status_get_digit(0) == 0 && status_get_digit(6) == 0, "score and lives stay at zero after wrap");
+}
+
 static void test_vertical_stub(void)
 {
     StageView view;
@@ -111,5 +137,6 @@ int main(void)
     test_walk_and_camera();
     test_jump_full_hold();
     test_jump_short_release();
+    test_coins();
     return report_end();
 }

@@ -23,11 +23,13 @@ typedef struct PlatformPlayer {
     int jump_up_i;         /* index into ascent waits (after initial step) */
     int jump_down_i;       /* index into descent waits */
     int jump_base_py;      /* ground row before jump (script uses rise from here) */
+    int item_pickups;      /* fresh containers used during the latest tick */
 } PlatformPlayer;
 
 void platform_player_spawn(PlatformPlayer *player, const StageMap *map);
 void platform_player_bind(PlatformPlayer *player, StageView *view, const StageMap *map);
-void platform_player_tick(PlatformPlayer *player, StageView *view, const Input *in);
+/* Returns how many fresh item containers were used this tick. */
+int platform_player_tick(PlatformPlayer *player, StageView *view, const Input *in);
 
 void platform_h_paint(const StageView *view, const PlatformPlayer *player);
 

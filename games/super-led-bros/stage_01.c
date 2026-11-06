@@ -67,8 +67,7 @@ static const uint16_t stage_01_bg_lit[16 * STAGE_01_BG_ROW_WORDS] = {
     0x0000, 0x0000, 0x0000, 0x0000,
 };
 
-static const StageItem stage_01_items[4] = {
-    { 35, 5 },
+static const StageItem stage_01_items[3] = {
     { 31, 9 },
     { 35, 9 },
     { 39, 9 },
@@ -85,6 +84,6 @@ const StageMap stage_01 = {
     STAGE_01_BG_W,
     STAGE_01_BG_ROW_WORDS,
     stage_01_bg_lit,
-    4,
+    3,
     stage_01_items,
 };

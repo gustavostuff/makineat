@@ -35,7 +35,7 @@ CFLAGS = -std=c11 -Wall -Wextra -Os -mmcu=$(MCU) -DF_CPU=$(CLOCK)UL -I$(CART_DIR
 LDFLAGS = -mmcu=$(MCU)
 
 SRCS = main.c hal.c sound.c $(GAME_SRCS) ../frame.c ../input.c ../flush.c \
-       ../score.c ../text.c ../text_large.c ../over.c ../entity.c ../rand.c persist.c
+       ../score.c ../status.c ../text.c ../text_large.c ../over.c ../entity.c ../rand.c persist.c
 
 game.elf: $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)

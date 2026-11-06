@@ -65,7 +65,7 @@ static void clear_item_state(StageView *view)
     int i;
 
     view->item_shine = 0;
-    view->item_shine_accum = 0;
+    view->item_shine_age = 0;
     for (i = 0; i < STAGE_ITEM_MAX; i++) {
         view->item_bounce[i] = 0;
         view->item_used[i] = 0;
@@ -74,13 +74,22 @@ static void clear_item_state(StageView *view)
 
 /*
  * Shine patterns, top row then bottom row, 1 is ON.
- *   1 0     0 1     0 0
- *   0 0     1 0     0 1
+ *   1 1     0 1     1 0     1 1
+ *   1 1     1 1     0 1     1 0
+ * Holds are 1 second, then 0.1 second for each of the other three.
  */
 static const uint8_t item_shine_pat[STAGE_ITEM_SHINE_FRAMES][2][2] = {
-    {{1, 0}, {0, 0}},
-    {{0, 1}, {1, 0}},
-    {{0, 0}, {0, 1}},
+    {{1, 1}, {1, 1}},
+    {{0, 1}, {1, 1}},
+    {{1, 0}, {0, 1}},
+    {{1, 1}, {1, 0}},
+};
+
+static const uint8_t item_shine_hold[STAGE_ITEM_SHINE_FRAMES] = {
+    STAGE_ITEM_SHINE_HOLD_LONG,
+    STAGE_ITEM_SHINE_HOLD_SHORT,
+    STAGE_ITEM_SHINE_HOLD_SHORT,
+    STAGE_ITEM_SHINE_HOLD_SHORT,
 };
 
 static void paint_item_blocks(const StageView *view);
@@ -368,13 +377,17 @@ void stage_h_items_tick(StageView *view)
 
     if (view == 0 || view->map == 0)
         return;
-    /* 8 does not divide 60, so the shine steps with the same accumulator as walk speed. */
-    view->item_shine_accum += STAGE_ITEM_SHINE_FPS;
-    if (view->item_shine_accum >= STAGE_TICK_HZ) {
-        view->item_shine_accum -= STAGE_TICK_HZ;
+    /*
+     * Age counts ticks already shown for this pattern, including this tick.
+     * The next tick after the hold shows the next pattern, so a 60-tick
+     * pattern stays up for 60 paints in the tick-then-paint loop.
+     */
+    view->item_shine_age++;
+    if (view->item_shine_age > item_shine_hold[view->item_shine]) {
         view->item_shine++;
         if (view->item_shine >= STAGE_ITEM_SHINE_FRAMES)
             view->item_shine = 0;
+        view->item_shine_age = 1;
     }
     n = item_limit(view->map);
     for (i = 0; i < n; i++) {
@@ -383,14 +396,14 @@ void stage_h_items_tick(StageView *view)
     }
 }
 
-void stage_h_item_bump(StageView *view, int x, int y)
+int stage_h_item_bump(StageView *view, int x, int y)
 {
     int i;
     int n;
     const StageItem *it;
 
     if (view == 0 || view->map == 0)
-        return;
+        return 0;
     n = item_limit(view->map);
     for (i = 0; i < n; i++) {
         it = &view->map->items[i];
@@ -398,11 +411,12 @@ void stage_h_item_bump(StageView *view, int x, int y)
             continue;
         /* The first hit uses the container. Later hits leave it as a solid cell. */
         if (view->item_used[i])
-            return;
+            return 0;
         view->item_used[i] = 1;
         view->item_bounce[i] = STAGE_ITEM_BOUNCE_TICKS;
-        return;
+        return 1;
     }
+    return 0;
 }
 
 int stage_v_camera_max(const StageView *view)

@@ -85,7 +85,7 @@ static void move_vertical(PlatformPlayer *player, StageView *view)
                 player->grounded = 1;
                 player->vy = 0;
             } else {
-                stage_h_item_bump(view, player->px, ny);
+                player->item_pickups += stage_h_item_bump(view, player->px, ny);
                 player->vy = 0;
             }
             player->vert_accum = 0;
@@ -105,7 +105,7 @@ static int jump_script_try_step(PlatformPlayer *player, StageView *view, int dy)
         if (dy > 0)
             player->grounded = 1;
         else
-            stage_h_item_bump(view, player->px, ny);
+            player->item_pickups += stage_h_item_bump(view, player->px, ny);
         player->vy = 0;
         return 0;
     }
@@ -219,6 +219,7 @@ void platform_player_spawn(PlatformPlayer *player, const StageMap *map)
     player->jump_up_i = 0;
     player->jump_down_i = 0;
     player->jump_base_py = 0;
+    player->item_pickups = 0;
 }
 
 void platform_player_bind(PlatformPlayer *player, StageView *view, const StageMap *map)
@@ -228,12 +229,13 @@ void platform_player_bind(PlatformPlayer *player, StageView *view, const StageMa
         camera_follow(view, player->px);
 }
 
-void platform_player_tick(PlatformPlayer *player, StageView *view, const Input *in)
+int platform_player_tick(PlatformPlayer *player, StageView *view, const Input *in)
 {
     int dx = 0;
 
     if (player == 0 || view == 0 || in == 0)
-        return;
+        return 0;
+    player->item_pickups = 0;
     stage_h_items_tick(view);
     if (in->left && !in->right)
         dx = -1;
@@ -267,6 +269,7 @@ after_jump_start:
     if (!player->grounded)
         player->grounded = on_ground(view, player->px, player->py);
     camera_follow(view, player->px);
+    return player->item_pickups;
 }
 
 void platform_h_paint(const StageView *view, const PlatformPlayer *player)

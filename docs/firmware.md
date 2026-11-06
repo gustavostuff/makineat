@@ -81,7 +81,8 @@ Wide or tall platform levels live outside the 16×16 `map`. Import art with `too
 - **`(255,255,255)`** exactly one spawn pixel (**not** drawn, **not** solid)
 - **`(0,255,0)`** decorative ON (drawn on the foreground pass, **not** solid)
 - **`(255,0,0)`** solid ON (drawn, solid for collision)
-- **`(255,255,0)`** item container. Every yellow pixel belongs to exactly one **2×2** block. The block is solid and is not stored in `fg_lit` or `fg_solid`. Until it is used the block shines at 8 FPS through three patterns. The first pattern lights only the top-left cell. The second lights the top-right and bottom-left cells. The third lights only the bottom-right cell. Cells that are off in the current pattern are not drawn. The block stays solid the whole time. A jump that tries to enter the block from below shifts that **2×2** up one cell for `STAGE_ITEM_BOUNCE_TICKS` frames, then it returns. That bump uses the container. Afterward the block stays fully lit, stays solid, and does not bounce or shine again. The container does not release an item.
+- **`(255,255,0)`** item container. Every yellow pixel belongs to exactly one **2×2** block. The block is solid and is not stored in `fg_lit` or `fg_solid`. Until it is used the block shines through four patterns. The first pattern lights every cell and holds for 1 second. Each of the other three holds for 0.1 second. The second pattern leaves the top-left cell off. The third pattern lights the top-left and bottom-right cells. The fourth pattern leaves the bottom-right cell off. Cells that are off in the current pattern are not drawn. The block stays solid the whole time. A jump that tries to enter the block from below shifts that **2×2** up one cell for `STAGE_ITEM_BOUNCE_TICKS` frames, then it returns. That bump uses the container. `stage_h_item_bump` returns 1 for that first use and 0 after. Afterward the block stays fully lit, stays solid, and does not bounce or shine again. The stage does not draw a pickup sprite.
+- **`(0,255,255)`** and **`(0,100,100)`** growth marks. They are not drawn and not solid.
 
 On **`bg.png`**, any pixel that is **not** black is drawn in a background pass. The background has **no** collision. `stage_h_paint` draws background first, then foreground, so foreground pixels overwrite where both are ON.
 
@@ -94,7 +95,7 @@ When **`bg.png`** is present, its width may differ from **`fg.png`**. Each layer
 
 ### Platform (`platform.c`)
 
-The player is one playfield cell over a horizontal `StageView`. Entry points are `platform_player_bind`, `platform_player_tick`, and `platform_h_paint`. The camera follows the player with `stage_h_camera_follow_dead_zone` so the player world column stays inside the default dead zone unless the camera is clipped at the stage edge.
+The player is one playfield cell over a horizontal `StageView`. Entry points are `platform_player_bind`, `platform_player_tick`, and `platform_h_paint`. `platform_player_tick` returns how many fresh item containers were used on that tick. The camera follows the player with `stage_h_camera_follow_dead_zone` so the player world column stays inside the default dead zone unless the camera is clipped at the stage edge.
 
 - **Walk:** horizontal motion uses **15** playfield cell steps per second (15 FPS). `platform_player_tick` accumulates against `STAGE_TICK_HZ` (60 Hz). The pattern matches how `stage_h_scroll_tick` uses `STAGE_SCROLL_FPS` for camera scroll, but the player rate is 15 cells per second. Walk has no acceleration.
 - **Jump (scripted):** a debounced **button** press while grounded starts a jump. Motion is **not** velocity-based. It follows a fixed schedule on **60 Hz** game ticks (same tick interval as **Game loop and display refresh**). Playfield rows count as **positions 1 through 6** from the ground row before the first step. Position 1 is that ground row. **Rise** counts how many cells move upward from position 1. A full jump has rise **5** and ends at position 6 apex. If the **button** is not held while rise is still below **2** cells, ascent keeps going until rise reaches **2** (minimum jump height is **3** rows counting position 1). After that, releasing the **button** ends ascent and starts descent. The same mirrored waits apply on the way down from the height reached on the way up.
@@ -107,6 +108,8 @@ The player is one playfield cell over a horizontal `StageView`. Entry points are
 - **Fall (not scripted):** gravity (`vy`) with vertical steps limited to **15** cells per second through the same accumulator pattern as walk (ledge drops and similar).
 
 Stage art for **super-led-bros** uses folders `games/super-led-bros/img/<name>/` with **`fg.png`** and optional **`bg.png`**. The script `games/super-led-bros/regen_stages.sh` calls `tools/fw/gen_stage.py` on each folder and writes **`games/super-led-bros/<name>.c`** and **`.h`** (for example **`stage_01`** from **`img/stage_01/`**).
+
+**super-led-bros** writes the status digits from left to right as four score digits, two coin digits, and two life digits. Score and lives stay at 0. Each fresh yellow container adds one coin. The coin count wraps from 99 to 0.
 
 Link `../stage.c`, `../platform.c`, and generated stage sources in `tools/fw/avr/Makefile` for platform carts.
 

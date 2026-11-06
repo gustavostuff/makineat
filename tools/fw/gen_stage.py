@@ -7,6 +7,8 @@ Pure RGB rules on the foreground image (fg.png):
   (0,255,0)      decorative ON (drawn, not solid)
   (255,0,0)      solid ON (drawn, collidable)
   (255,255,0)    item container (exactly a 2x2, solid, drawn by the runtime)
+  (0,255,255)    growth mark (not drawn, not solid)
+  (0,100,100)    growth mark (not drawn, not solid)
 
 Background (bg.png): any non-black pixel is drawn for parallax only (no collision).
 Width may differ from fg. Height must match fg. Runtime parallax maps scroll
@@ -35,6 +37,8 @@ SPAWN = (255, 255, 255)
 DECOR = (0, 255, 0)
 SOLID = (255, 0, 0)
 ITEM = (255, 255, 0)
+# Reserved for a later growth pickup. Ignored so a block in the art does not break import.
+GROWTH = ((0, 255, 255), (0, 100, 100))
 ITEM_MAX = 32  # STAGE_ITEM_MAX in tools/fw/stage.h
 
 
@@ -50,8 +54,11 @@ def classify_rgb(r: int, g: int, b: int) -> str:
         return "solid"
     if t == ITEM:
         return "item"
+    if t in GROWTH:
+        return "growth"
     raise SystemExit(
-        f"unknown pure color RGB({r},{g},{b}); allowed: black, white, green, red, yellow"
+        f"unknown pure color RGB({r},{g},{b}); "
+        "allowed: black, white, green, red, yellow, cyan"
     )
 
 
@@ -81,6 +88,8 @@ def image_to_bitplanes(path: Path, h_expect: int | None, what: str):
                 continue
             if kind == "item":
                 yellow[y][x] = True
+                continue
+            if kind == "growth":
                 continue
             if kind == "decor":
                 lit_words[wi] |= 1 << bit
