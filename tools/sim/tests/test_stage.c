@@ -296,6 +296,33 @@ static void test_pickup_fall_waits(void)
     expect(dropped - off == 6, "the pickup's first fall cell uses the jump descent wait");
 }
 
+static const uint16_t item_bg_rows[8] = {
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+};
+static const StageMap item_bg_map = {
+    16, 8, 1, 0, 0, item_rows, item_rows, 0, 16, 1, item_bg_rows, 1, one_item,
+};
+
+static void test_item_block_hides_bg(void)
+{
+    int i;
+    StageView view;
+
+    stage_view_init(&view);
+    stage_bind_h(&view, &item_bg_map);
+    stage_h_paint(&view);
+    expect(shine_block_full(), "an item block over background starts fully lit");
+    expect(pixel_get(6, 6), "empty foreground still shows the background");
+    for (i = 0; i < STAGE_ITEM_SHINE_HOLD_LONG; i++)
+        stage_h_items_tick(&view);
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(!pixel_get(4, 6), "a dark shine cell stays off over a lit background");
+    expect(pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7),
+           "the lit shine cells stay on over the background");
+    expect(pixel_get(6, 6) && pixel_get(4, 5), "cells outside the block still show the background");
+}
+
 static void test_item_block_shine(void)
 {
     int i;
@@ -366,6 +393,7 @@ int main(void)
     test_growth_pickup();
     test_pickup_fall_waits();
     test_item_block_shine();
+    test_item_block_hides_bg();
     test_semisolid_platform();
     return report_end();
 }

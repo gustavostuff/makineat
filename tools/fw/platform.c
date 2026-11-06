@@ -26,20 +26,17 @@ static const uint8_t plat_jump_up_waits[PLAT_JUMP_UP_WAITS_LEN] = {1, 2, 3, 4};
 
 static int player_grown_hitbox(const PlatformPlayer *player);
 
+/* A body cell above the stage is above the screen. It is open air, not a wall. */
 static int player_body_blocked_horiz(const StageView *view, int px, int feet_y, int grown)
 {
     if (view == 0 || view->map == 0)
         return 1;
-    if (px < 0 || feet_y < 0 || px >= (int)view->map->width || feet_y >= (int)view->map->height)
+    if (px < 0 || px >= (int)view->map->width || feet_y >= (int)view->map->height)
         return 1;
-    if (stage_h_blocks_horiz(view, px, feet_y))
+    if (feet_y >= 0 && stage_h_blocks_horiz(view, px, feet_y))
         return 1;
-    if (grown) {
-        if (feet_y - 1 < 0)
-            return 1;
-        if (stage_h_blocks_horiz(view, px, feet_y - 1))
-            return 1;
-    }
+    if (grown && feet_y - 1 >= 0 && stage_h_blocks_horiz(view, px, feet_y - 1))
+        return 1;
     return 0;
 }
 
@@ -48,15 +45,18 @@ static int player_body_blocked_vert(const StageView *view, int px, int new_feet_
 {
     if (view == 0 || view->map == 0)
         return 1;
-    if (px < 0 || new_feet_y < 0 || px >= (int)view->map->width || new_feet_y >= (int)view->map->height)
+    if (px < 0 || px >= (int)view->map->width)
         return 1;
-    if (stage_h_blocks_vert(view, px, new_feet_y, prev_feet_y, dy))
+    /* Below the stage there is no floor. A real cell still blocks inside the map. */
+    if (new_feet_y >= (int)view->map->height)
+        return 0;
+    if (new_feet_y >= 0 && stage_h_blocks_vert(view, px, new_feet_y, prev_feet_y, dy))
         return 1;
     if (grown) {
         int head_y = new_feet_y - 1;
 
         if (head_y < 0)
-            return 1;
+            return 0;
         /*
          * One-way ledges only catch the feet. The head must ignore semisolid or a tall body
          * stops one row early, and a body that jumped into the ledge cannot fall back out.
@@ -75,8 +75,8 @@ static int on_ground(const StageView *view, int px, int feet_y, int grown)
     (void)grown;
     if (view == 0 || view->map == 0)
         return 0;
-    if (feet_y + 1 >= (int)view->map->height)
-        return 1;
+    if (feet_y + 1 < 0 || feet_y + 1 >= (int)view->map->height)
+        return 0;
     return stage_h_blocks_vert(view, px, feet_y + 1, feet_y, 1);
 }
 
@@ -113,7 +113,7 @@ static int player_grown_hitbox(const PlatformPlayer *player)
 static int crouch_ceiling(const StageView *view, int px, int feet_y)
 {
     if (feet_y - 1 < 0)
-        return 1;
+        return 0;
     return stage_h_blocks_horiz(view, px, feet_y - 1);
 }
 

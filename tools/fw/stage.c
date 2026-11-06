@@ -432,9 +432,9 @@ void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y,
                 wx == hide_world_x && sy == hide_world_y - 1)
                 player_cell = 1;
             /*
-             * One pass per cell. Foreground wins over background for the ON bit so BG+FG
-             * never stack to a double-bright LED when both layers have art. Background only
-             * contributes when foreground does not draw ON at this cell.
+             * One pass per cell. Empty foreground lets the background show. A foreground LED
+             * that is on covers the background. Item blocks are not in fg_lit; paint_item_blocks
+             * forces their dark shine cells off so a lit background cannot fill those holes.
              *
              * Player hide: on the player cell, skip ON for green fg decor and for bg when fg
              * is not solid red (empty or green), so the sim uses dim led_off acetate green.
@@ -464,6 +464,7 @@ static void paint_item_blocks(const StageView *view)
     int lift;
     int sx;
     int sy;
+    int lit;
     const StageItem *it;
 
     n = item_limit(view->map);
@@ -472,13 +473,17 @@ static void paint_item_blocks(const StageView *view)
         lift = view->item_bounce[i] > 0 ? 1 : 0;
         for (dy = 0; dy < 2; dy++) {
             for (dx = 0; dx < 2; dx++) {
-                if (!view->item_used[i] && !item_shine_pat[view->item_shine][dy][dx])
-                    continue;
                 sx = (int)it->x + dx - view->camera;
                 sy = (int)it->y + dy - lift;
                 if (sx < 0 || sx > FIELD_LAST || sy < 0 || sy > FIELD_LAST)
                     continue;
-                pixel((uint8_t)sx, (uint8_t)sy, true);
+                /*
+                 * Every cell of the block is foreground. A dark shine cell stays off
+                 * and hides a background LED behind it. Empty cells outside the block
+                 * are left alone so the background still shows there.
+                 */
+                lit = view->item_used[i] || item_shine_pat[view->item_shine][dy][dx];
+                pixel((uint8_t)sx, (uint8_t)sy, lit != 0);
             }
         }
     }

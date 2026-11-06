@@ -104,11 +104,12 @@ static void test_coins(void)
                status_get_digit(3) == 0,
            "score starts at 0000");
     expect(status_get_digit(4) == 0 && status_get_digit(5) == 0, "coins start at 00");
-    expect(status_get_digit(6) == 0 && status_get_digit(7) == 0, "lives start at 00");
+    expect(status_get_digit(6) == 0 && status_get_digit(7) == SUPER_LED_BROS_LIVES, "lives start at 04");
     super_led_bros_apply_pickups(1);
     expect(status_get_digit(4) == 0 && status_get_digit(5) == 1, "one coin shows on digits 4 and 5");
     expect(status_get_digit(0) == 0 && status_get_digit(3) == 0, "score stays at zero when a coin is added");
-    expect(status_get_digit(6) == 0 && status_get_digit(7) == 0, "lives stay at zero when a coin is added");
+    expect(status_get_digit(6) == 0 && status_get_digit(7) == SUPER_LED_BROS_LIVES,
+           "lives stay at 04 when a coin is added");
     for (i = 0; i < 98; i++)
         super_led_bros_apply_pickups(1);
     expect(super_led_bros_coins() == 99 && status_get_digit(4) == 9 && status_get_digit(5) == 9,
@@ -116,7 +117,66 @@ static void test_coins(void)
     super_led_bros_apply_pickups(1);
     expect(super_led_bros_coins() == 0 && status_get_digit(4) == 0 && status_get_digit(5) == 0,
            "coins wrap from 99 to 00");
-    expect(status_get_digit(0) == 0 && status_get_digit(6) == 0, "score and lives stay at zero after wrap");
+    expect(status_get_digit(0) == 0 && status_get_digit(7) == SUPER_LED_BROS_LIVES,
+           "score stays at zero and lives stay at 04 after the coin wrap");
+}
+
+static void fall_off(void)
+{
+    super_led_bros_test_place_below();
+    feed(0, 0, 0, 0, 0);
+}
+
+static void wait_death(int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++)
+        feed(0, 0, 0, 0, 0);
+}
+
+static int lives_digit(void)
+{
+    return status_get_digit(6) * 10 + status_get_digit(7);
+}
+
+static void test_death_and_game_over(void)
+{
+    int i;
+
+    input_reset();
+    super_led_bros_reset();
+    super_led_bros_apply_pickups(1);
+    fall_off();
+    expect(lives_digit() == SUPER_LED_BROS_LIVES, "the life counter stays through the death wait");
+    expect(super_led_bros_player_y() >= stage_01.height, "the player is below the stage");
+    wait_death(10);
+    feed(0, 0, 0, 0, 1);
+    feed(0, 0, 0, 0, 1);
+    expect(super_led_bros_player_y() >= stage_01.height, "a button press does not skip the death wait");
+    expect(lives_digit() == SUPER_LED_BROS_LIVES, "the life counter stays while the button is pressed");
+    wait_death(SUPER_LED_BROS_DEATH_TICKS - 13);
+    expect(super_led_bros_player_y() >= stage_01.height, "the stage stays down until the death wait ends");
+    feed(0, 0, 0, 0, 0);
+    expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
+           "the stage restarts at spawn after 3 seconds");
+    expect(lives_digit() == 3, "the life counter drops when the stage restarts");
+    expect(super_led_bros_coins() == 1, "coins survive a death restart");
+
+    for (i = 0; i < 4; i++) {
+        fall_off();
+        wait_death(SUPER_LED_BROS_DEATH_TICKS);
+    }
+    expect(lives_digit() == 0, "life 0 is lost into game over");
+    expect(pixel_get(5, 5) && !pixel_get(4, 5), "game over draws the large G after 4 pixels");
+    expect(!pixel_get(9, 5), "a space follows the first letter");
+    expect(!pixel_get(2, 12), "game over replaces the stage");
+    feed(0, 0, 0, 0, 0);
+    feed_button();
+    expect(lives_digit() == SUPER_LED_BROS_LIVES, "the button starts a new game with 4 lives");
+    expect(super_led_bros_coins() == 0, "a new game clears the coins");
+    expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
+           "a new game starts on the spawn cell");
 }
 
 static void test_vertical_stub(void)
@@ -138,5 +198,6 @@ int main(void)
     test_jump_full_hold();
     test_jump_short_release();
     test_coins();
+    test_death_and_game_over();
     return report_end();
 }

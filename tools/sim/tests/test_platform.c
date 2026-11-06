@@ -405,6 +405,109 @@ static void test_dead_zone_camera(void)
     expect(stage_h_camera_get(&view) == 1, "camera moves when focus exits zone right edge");
 }
 
+/* Floor on row 2, spawn standing on it. A full jump rises through the top of the screen. */
+static const uint16_t sky_rows[16] = {
+    0, 0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+static const StageMap sky_map = {16, 16, 1, 4, 1, sky_rows, sky_rows, 0, 0, 0, 0, 0, 0};
+
+/* Solid top row and a floor on row 3. The ceiling is terrain, not the screen edge. */
+static const uint16_t low_ceiling_rows[16] = {
+    0xffff, 0, 0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+static const StageMap low_ceiling_map = {16, 16, 1, 4, 2, low_ceiling_rows, low_ceiling_rows, 0, 0, 0, 0, 0, 0};
+
+/* Floor on row 1 so a tall player's head sits above the screen. */
+static const uint16_t top_rows[16] = {
+    0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+static const StageMap top_map = {16, 16, 1, 4, 0, top_rows, top_rows, 0, 0, 0, 0, 0, 0};
+
+static void test_above_screen_keeps_moving(void)
+{
+    StageView view;
+    PlatformPlayer player;
+    int i;
+    int peak;
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &sky_map);
+    platform_player_bind(&player, &view, &sky_map);
+    peak = platform_player_y(&player);
+    for (i = 0; i < 120; i++) {
+        tick_button(&player, &view, 1);
+        if (platform_player_y(&player) < peak)
+            peak = platform_player_y(&player);
+    }
+    expect(peak == -4, "a full jump rises through the top of the screen");
+    expect(platform_player_y(&player) == 1 && player.grounded, "the player lands back on the floor");
+
+    input_reset();
+    platform_player_bind(&player, &view, &sky_map);
+    player.py = -3;
+    player.grounded = 0;
+    for (i = 0; i < 5; i++)
+        feed(&player, &view, 0, 1);
+    expect(platform_player_x(&player) == 5, "the player walks while above the screen");
+    expect(platform_player_y(&player) < 0, "walking above the screen does not snap back into view");
+    clear();
+    platform_h_paint(&view, &player);
+    expect(!pixel_get(5, 0), "a player above the screen is not drawn");
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &top_map);
+    platform_player_bind(&player, &view, &top_map);
+    player.grown = 1;
+    for (i = 0; i < 5; i++)
+        feed(&player, &view, 0, 1);
+    expect(platform_player_x(&player) == 5 && platform_player_y(&player) == 0,
+           "a tall player walks on the top row with the head off screen");
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &low_ceiling_map);
+    platform_player_bind(&player, &view, &low_ceiling_map);
+    peak = platform_player_y(&player);
+    for (i = 0; i < 80; i++) {
+        tick_button(&player, &view, 1);
+        if (platform_player_y(&player) < peak)
+            peak = platform_player_y(&player);
+    }
+    expect(peak == 1, "a solid cell on the top row still blocks a jump");
+}
+
+/* No floor at all. The bottom edge must not invent one. */
+static const uint16_t hole_rows[16] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+static const StageMap hole_map = {16, 16, 1, 4, 14, hole_rows, hole_rows, 0, 0, 0, 0, 0, 0};
+
+static void test_fall_through_bottom(void)
+{
+    StageView view;
+    PlatformPlayer player;
+    int i;
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &hole_map);
+    platform_player_bind(&player, &view, &hole_map);
+    for (i = 0; i < 40; i++)
+        feed(&player, &view, 0, 0);
+    expect(platform_player_y(&player) >= 16, "an open bottom lets the player fall off the stage");
+    expect(!player.grounded, "the row below the stage is not ground");
+
+    input_reset();
+    stage_view_init(&view);
+    stage_bind_h(&view, &pit_map);
+    platform_player_bind(&player, &view, &pit_map);
+    for (i = 0; i < 80; i++)
+        feed(&player, &view, 0, 0);
+    expect(platform_player_y(&player) == 14 && player.grounded, "a solid bottom row still catches the player");
+}
+
 int main(void)
 {
     report_begin("platform");
@@ -415,5 +518,7 @@ int main(void)
     test_grown_lands_on_semisolid();
     test_crouch();
     test_ledge_fall_accelerates();
+    test_above_screen_keeps_moving();
+    test_fall_through_bottom();
     return report_end();
 }
