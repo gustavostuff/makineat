@@ -26,7 +26,7 @@ GAME_SRCS = $(CART_DIR)/text_demo.c
 else ifeq ($(CART),snake)
 GAME_SRCS = $(CART_DIR)/snake.c ../map.c
 else ifeq ($(CART),super-led-bros)
-GAME_SRCS = $(CART_DIR)/super_led_bros.c $(CART_DIR)/stage_01.c ../stage.c ../platform.c
+GAME_SRCS = $(CART_DIR)/super_led_bros.c $(CART_DIR)/stage_01.c ../stage.c ../plat_physics.c ../platform.c
 else
 $(error CART must be space-shooter, pong, arkaled, text-demo, snake, or super-led-bros)
 endif

@@ -107,7 +107,7 @@ static void feed(PlatformPlayer *player, StageView *view, int left, int right)
 static const uint16_t coin_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff,
 };
-static const StageItem coin_item[] = {{4, 12}};
+static const StageItem coin_item[] = {{4, 12, STAGE_ITEM_KIND_COIN}};
 static const StageMap coin_map = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 1, coin_item};
 
 static int tick_button(PlatformPlayer *player, StageView *view, int button)

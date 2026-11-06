@@ -30,6 +30,12 @@
 /* The other three patterns hold for 0.1 second, which is 6 ticks at 60 Hz. */
 #define STAGE_ITEM_SHINE_HOLD_SHORT 6
 
+#define STAGE_ITEM_KIND_COIN 0
+#define STAGE_ITEM_KIND_GROWTH 1
+
+#define STAGE_PICKUP_MAX 4
+#define STAGE_PICKUP_HORIZ_FPS 4
+
 typedef enum {
     STAGE_SCROLL_H,
     STAGE_SCROLL_V,
@@ -37,10 +43,28 @@ typedef enum {
 
 #define STAGE_ERR_UNSUPPORTED (-1)
 
+typedef enum {
+    STAGE_BUMP_NONE = 0,
+    STAGE_BUMP_COIN = 1,
+    STAGE_BUMP_GROWTH = 2,
+} StageBumpResult;
+
 typedef struct StageItem {
     uint16_t x;
     uint16_t y;
+    uint8_t kind; /* STAGE_ITEM_KIND_COIN or STAGE_ITEM_KIND_GROWTH */
 } StageItem;
+
+typedef struct StagePickup {
+    int16_t active;
+    int16_t px;
+    int16_t py;
+    int vy;
+    int walk_accum;
+    int vert_accum;
+    int grounded;
+    int8_t dir; /* -1 or +1 world steps */
+} StagePickup;
 
 typedef struct StageMap {
     uint16_t width;
@@ -67,14 +91,17 @@ typedef struct StageView {
     int dead_zone_w; /* width in screen columns */
     uint8_t item_bounce[STAGE_ITEM_MAX]; /* ticks left with the 2x2 drawn one cell up */
     uint8_t item_used[STAGE_ITEM_MAX]; /* 1 after the first bump: solid, no shine, no bounce */
+    uint8_t growth_pickup_spawned[STAGE_ITEM_MAX]; /* 1 after growth pickup left the block */
     uint8_t item_shine; /* pattern index shared by unused containers */
     uint8_t item_shine_age; /* ticks the current pattern has been shown, including this tick */
+    StagePickup pickups[STAGE_PICKUP_MAX];
 } StageView;
 
 int stage_map_get(const StageMap *map, int x, int y);
 int stage_map_lit(const StageMap *map, int x, int y);
 int stage_map_solid(const StageMap *map, int x, int y);
 int stage_item_covers(const StageMap *map, int x, int y);
+int stage_growth_covers(const StageMap *map, int x, int y);
 
 void stage_view_init(StageView *view);
 
@@ -102,9 +129,14 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
  */
 void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg);
 int stage_h_solid(const StageView *view, int world_x, int world_y);
+/*
+ * Solid for movement probes, excluding other pickups so two pickups never block each other.
+ * Pass ignore_pickup_index -1 to ignore none, or a slot index to skip that pickup only.
+ */
+int stage_h_pickup_blocked(const StageView *view, int world_x, int world_y, int ignore_pickup_index);
 void stage_h_items_tick(StageView *view);
-/* 1 when this hit uses a fresh container. 0 when nothing new was used. */
-int stage_h_item_bump(StageView *view, int x, int y);
+/* Fresh hit from below. */
+StageBumpResult stage_h_item_bump(StageView *view, int x, int y);
 
 int stage_v_camera_max(const StageView *view);
 void stage_v_scroll_tick(StageView *view, int dy);

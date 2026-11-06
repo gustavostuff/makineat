@@ -168,7 +168,7 @@ static void test_h_dead_zone_follow(void)
 }
 
 static const uint16_t item_rows[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-static const StageItem one_item[] = {{4, 6}};
+static const StageItem one_item[] = {{4, 6, STAGE_ITEM_KIND_COIN}};
 static const StageMap item_map = {16, 8, 1, 0, 0, item_rows, item_rows, 0, 0, 0, 1, one_item};
 
 static void test_item_block_bump(void)
@@ -185,15 +185,16 @@ static void test_item_block_bump(void)
     expect(pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7),
            "a resting item block shows the first shine pattern");
     expect(!pixel_get(4, 5), "a resting item block does not draw above itself");
-    expect(stage_h_item_bump(&view, 0, 0) == 0, "a miss does not use the item block");
+    expect(stage_h_item_bump(&view, 0, 0) == STAGE_BUMP_NONE, "a miss does not use the item block");
     stage_h_paint(&view);
     expect(pixel_get(4, 6) && !pixel_get(4, 5), "a miss does not bump the item block");
-    expect(stage_h_item_bump(&view, 5, 7) == 1, "the first hit uses the item block");
+    expect(stage_h_item_bump(&view, 5, 7) == STAGE_BUMP_COIN, "the first hit uses the item block");
     stage_h_paint(&view);
     expect(pixel_get(4, 5) && pixel_get(5, 5) && pixel_get(4, 6) && pixel_get(5, 6), "a hit draws the used block one cell higher");
     expect(!pixel_get(4, 7) && !pixel_get(5, 7), "a bumped item block leaves its old bottom row clear");
     stage_h_items_tick(&view);
-    expect(stage_h_item_bump(&view, 5, 7) == 0, "a used item block does not award another pickup");
+    expect(stage_h_item_bump(&view, 5, 7) == STAGE_BUMP_NONE,
+           "a used item block does not award another pickup");
     for (i = 0; i < STAGE_ITEM_BOUNCE_TICKS - 1; i++)
         stage_h_items_tick(&view);
     stage_h_paint(&view);
@@ -203,6 +204,31 @@ static void test_item_block_bump(void)
 static int shine_block_full(void)
 {
     return pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7);
+}
+
+static const uint16_t growth_rows[16] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff,
+};
+static const StageItem growth_item[] = {{4, 12, STAGE_ITEM_KIND_GROWTH}};
+static const StageMap growth_map = {16, 16, 1, 0, 0, growth_rows, growth_rows, 0, 0, 0, 1, growth_item};
+
+static void test_growth_pickup(void)
+{
+    int i;
+    StageView view;
+
+    stage_view_init(&view);
+    stage_bind_h(&view, &growth_map);
+    expect(stage_h_item_bump(&view, 4, 13) == STAGE_BUMP_GROWTH, "growth block bump from below");
+    for (i = 0; i < STAGE_ITEM_BOUNCE_TICKS - 1; i++)
+        stage_h_items_tick(&view);
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 11), "growth pickup appears one row above after the bounce");
+    for (i = 0; i < 14; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(5, 11), "pickup moves right at 4 FPS after fifteen ticks");
 }
 
 static void test_item_block_shine(void)
@@ -272,6 +298,7 @@ int main(void)
     test_h_suppress_player_on_bg();
     test_h_dead_zone_follow();
     test_item_block_bump();
+    test_growth_pickup();
     test_item_block_shine();
     return report_end();
 }

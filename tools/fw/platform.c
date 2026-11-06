@@ -1,10 +1,13 @@
 #include "platform.h"
 
+#include "plat_physics.h"
+
+#include <stddef.h>
 #include <stdint.h>
 
 #define PLAT_MOVE_FPS 15
-#define PLAT_GRAVITY 1
-#define PLAT_MAX_FALL 8
+#define PLAT_GRAVITY PLAT_PHYS_GRAVITY
+#define PLAT_MAX_FALL PLAT_PHYS_MAX_FALL
 /*
  * Scripted jump tables match docs/firmware.md (Platform section). Ascent waits in
  * plat_jump_up_waits, descent in plat_jump_down_waits. While idle on a row (timer
@@ -36,6 +39,12 @@ static int on_ground(const StageView *view, int px, int py)
     return body_blocked(view, px, py + 1);
 }
 
+static int bump_ceiling_hook(StageView *view, int x, int y, void *ctx)
+{
+    (void)ctx;
+    return stage_h_item_bump(view, x, y) == STAGE_BUMP_COIN ? 1 : 0;
+}
+
 static void camera_follow(StageView *view, int px)
 {
     stage_h_camera_follow_dead_zone(view, px);
@@ -58,42 +67,24 @@ static void try_walk(PlatformPlayer *player, StageView *view, int dx)
 
 static void apply_gravity(PlatformPlayer *player)
 {
-    player->vy += PLAT_GRAVITY;
-    if (player->vy > PLAT_MAX_FALL)
-        player->vy = PLAT_MAX_FALL;
+    plat_phys_apply_gravity(&player->vy);
 }
 
 static void move_vertical(PlatformPlayer *player, StageView *view)
 {
-    int ny;
-    int step;
+    PlatBody b;
 
-    if (player->vy > 0)
-        step = 1;
-    else if (player->vy < 0)
-        step = -1;
-    else {
-        player->vert_accum = 0;
-        return;
-    }
-    player->vert_accum += PLAT_MOVE_FPS;
-    while (player->vert_accum >= STAGE_TICK_HZ) {
-        player->vert_accum -= STAGE_TICK_HZ;
-        ny = player->py + step;
-        if (body_blocked(view, player->px, ny)) {
-            if (step > 0) {
-                player->grounded = 1;
-                player->vy = 0;
-            } else {
-                player->item_pickups += stage_h_item_bump(view, player->px, ny);
-                player->vy = 0;
-            }
-            player->vert_accum = 0;
-            return;
-        }
-        player->py = ny;
-        player->grounded = on_ground(view, player->px, player->py);
-    }
+    b.px = player->px;
+    b.py = player->py;
+    b.vy = player->vy;
+    b.walk_accum = 0;
+    b.vert_accum = player->vert_accum;
+    b.grounded = player->grounded;
+    plat_phys_move_vertical(&b, view, bump_ceiling_hook, NULL, &player->item_pickups, NULL, view);
+    player->py = b.py;
+    player->vy = b.vy;
+    player->vert_accum = b.vert_accum;
+    player->grounded = b.grounded;
 }
 
 /* Try one scripted jump step up (−1) or down (+1). Returns 0 if blocked (caller clears script). */
@@ -104,8 +95,13 @@ static int jump_script_try_step(PlatformPlayer *player, StageView *view, int dy)
     if (body_blocked(view, player->px, ny)) {
         if (dy > 0)
             player->grounded = 1;
-        else
-            player->item_pickups += stage_h_item_bump(view, player->px, ny);
+        else {
+            StageBumpResult br;
+
+            br = stage_h_item_bump(view, player->px, ny);
+            if (br == STAGE_BUMP_COIN)
+                player->item_pickups++;
+        }
         player->vy = 0;
         return 0;
     }

@@ -28,7 +28,7 @@ TEXT_DEMO = ../../games/text-demo/text_demo.c
 SNAKE = ../../games/snake/snake.c
 SUPER_LED_BROS = ../../games/super-led-bros/super_led_bros.c \
                  ../../games/super-led-bros/stage_01.c
-STAGE = ../fw/stage.c
+STAGE = ../fw/stage.c ../fw/plat_physics.c
 PLATFORM = ../fw/platform.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
