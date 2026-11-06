@@ -1,17 +1,79 @@
 #include "stage.h"
 
-int stage_map_get(const StageMap *map, int x, int y)
+static int map_bit(const uint16_t *rows, int row_words, int w, int h, int x, int y)
 {
     int word;
     int bit;
 
-    if (map == 0 || map->rows == 0)
+    if (rows == 0 || w <= 0 || h <= 0)
         return 0;
-    if (x < 0 || y < 0 || x >= (int)map->width || y >= (int)map->height)
+    if (x < 0 || y < 0 || x >= w || y >= h)
         return 0;
-    word = y * (int)map->row_words + x / 16;
+    word = y * row_words + x / 16;
     bit = x % 16;
-    return ((map->rows[word] >> bit) & 1u) != 0;
+    return ((rows[word] >> bit) & 1u) != 0;
+}
+
+int stage_map_lit(const StageMap *map, int x, int y)
+{
+    if (map == 0 || map->fg_lit == 0)
+        return 0;
+    return map_bit(map->fg_lit, (int)map->row_words, (int)map->width, (int)map->height, x, y);
+}
+
+int stage_map_solid(const StageMap *map, int x, int y)
+{
+    if (map == 0 || map->fg_solid == 0)
+        return 0;
+    return map_bit(map->fg_solid, (int)map->row_words, (int)map->width, (int)map->height, x, y);
+}
+
+int stage_map_get(const StageMap *map, int x, int y)
+{
+    return stage_map_lit(map, x, y);
+}
+
+static int map_bg_lit(const StageMap *map, int x, int y)
+{
+    if (map == 0 || map->bg_lit == 0 || map->bg_width == 0)
+        return 0;
+    return map_bit(map->bg_lit, (int)map->bg_row_words, (int)map->bg_width, (int)map->height, x, y);
+}
+
+static void sync_bg_camera(StageView *view)
+{
+    int bg;
+    int max_bg;
+
+    if (view == 0 || view->map == 0)
+        return;
+    if (view->map->bg_lit == 0 || view->map->bg_width == 0 || view->map->width == 0) {
+        view->bg_camera = 0;
+        return;
+    }
+    /*
+     * Map the scrollable spans, not the raw widths. Both windows are FIELD_SIZE
+     * wide, so fg can travel (width - FIELD_SIZE) and bg can travel
+     * (bg_width - FIELD_SIZE). Scaling by full widths hits the bg clamp before
+     * the fg camera reaches the end of a wider stage.
+     */
+    {
+        int fg_span = (int)view->map->width - FIELD_SIZE;
+        int bg_span = (int)view->map->bg_width - FIELD_SIZE;
+
+        if (fg_span < 1 || bg_span < 1)
+            bg = 0;
+        else
+            bg = view->camera * bg_span / fg_span;
+    }
+    max_bg = (int)view->map->bg_width - FIELD_SIZE;
+    if (max_bg < 0)
+        max_bg = 0;
+    if (bg < 0)
+        bg = 0;
+    if (bg > max_bg)
+        bg = max_bg;
+    view->bg_camera = bg;
 }
 
 void stage_view_init(StageView *view)
@@ -21,7 +83,10 @@ void stage_view_init(StageView *view)
     view->mode = STAGE_SCROLL_H;
     view->map = 0;
     view->camera = 0;
+    view->bg_camera = 0;
     view->scroll_accum = 0;
+    view->dead_zone_x = STAGE_H_DEAD_ZONE_X;
+    view->dead_zone_w = STAGE_H_DEAD_ZONE_W;
 }
 
 int stage_bind_h(StageView *view, const StageMap *map)
@@ -32,6 +97,9 @@ int stage_bind_h(StageView *view, const StageMap *map)
     view->map = map;
     view->camera = 0;
     view->scroll_accum = 0;
+    view->dead_zone_x = STAGE_H_DEAD_ZONE_X;
+    view->dead_zone_w = STAGE_H_DEAD_ZONE_W;
+    sync_bg_camera(view);
     return 0;
 }
 
@@ -54,11 +122,30 @@ int stage_h_camera_max(const StageView *view)
     return max;
 }
 
+int stage_h_bg_camera_max(const StageView *view)
+{
+    int max;
+
+    if (view == 0 || view->map == 0 || view->map->bg_lit == 0 || view->map->bg_width == 0)
+        return 0;
+    max = (int)view->map->bg_width - FIELD_SIZE;
+    if (max < 0)
+        max = 0;
+    return max;
+}
+
 int stage_h_camera_get(const StageView *view)
 {
     if (view == 0)
         return 0;
     return view->camera;
+}
+
+int stage_h_bg_camera_get(const StageView *view)
+{
+    if (view == 0)
+        return 0;
+    return view->bg_camera;
 }
 
 void stage_h_camera_set(StageView *view, int x)
@@ -73,6 +160,24 @@ void stage_h_camera_set(StageView *view, int x)
     if (x > max)
         x = max;
     view->camera = x;
+    sync_bg_camera(view);
+}
+
+void stage_h_camera_follow_dead_zone(StageView *view, int world_x)
+{
+    int sx;
+    int left;
+    int right;
+
+    if (view == 0 || view->mode != STAGE_SCROLL_H || view->map == 0)
+        return;
+    sx = world_x - view->camera;
+    left = view->dead_zone_x;
+    right = view->dead_zone_x + view->dead_zone_w - 1;
+    if (sx < left)
+        stage_h_camera_set(view, world_x - left);
+    else if (sx > right)
+        stage_h_camera_set(view, world_x - right);
 }
 
 static void h_step_camera(StageView *view, int dx)
@@ -95,11 +200,15 @@ void stage_h_scroll_tick(StageView *view, int dx)
     }
 }
 
-void stage_h_paint(const StageView *view)
+void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg)
 {
     int sx;
     int sy;
     int wx;
+    int bx;
+    int player_cell;
+    int fg_on;
+    int bg_on;
     const StageMap *map;
 
     if (view == 0 || view->map == 0)
@@ -111,17 +220,58 @@ void stage_h_paint(const StageView *view)
             continue;
         for (sx = 0; sx < FIELD_SIZE; sx++) {
             wx = view->camera + sx;
-            if (stage_map_get(map, wx, sy))
+            bx = view->bg_camera + sx;
+            player_cell = hide_player_fg != 0 && wx == hide_world_x && sy == hide_world_y;
+            /*
+             * One pass per cell. Foreground wins over background for the ON bit so BG+FG
+             * never stack to a double-bright LED when both layers have art. Background only
+             * contributes when foreground does not draw ON at this cell.
+             *
+             * Player hide: on the player cell, skip ON for green fg decor and for bg when fg
+             * is not solid red (empty or green), so the sim uses dim led_off acetate green.
+             */
+            fg_on = stage_map_lit(map, wx, sy);
+            if (player_cell && fg_on && !stage_map_solid(map, wx, sy))
+                fg_on = 0;
+            if (fg_on) {
+                pixel((uint8_t)sx, (uint8_t)sy, true);
+                continue;
+            }
+            bg_on = map_bg_lit(map, bx, sy);
+            if (bg_on && !(player_cell && !stage_map_solid(map, wx, sy)))
                 pixel((uint8_t)sx, (uint8_t)sy, true);
         }
     }
+}
+
+void stage_h_paint(const StageView *view)
+{
+    stage_h_paint_ex(view, 0, 0, 0);
+}
+
+int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
+{
+    int sx;
+    int bx;
+
+    if (view == 0 || view->map == 0)
+        return 0;
+    if (stage_map_solid(view->map, world_x, world_y))
+        return 0;
+    if (stage_map_lit(view->map, world_x, world_y))
+        return 1;
+    sx = world_x - view->camera;
+    if (sx < 0 || sx > FIELD_LAST || world_y < 0 || world_y > FIELD_LAST)
+        return 0;
+    bx = view->bg_camera + sx;
+    return map_bg_lit(view->map, bx, world_y);
 }
 
 int stage_h_solid(const StageView *view, int world_x, int world_y)
 {
     if (view == 0 || view->map == 0)
         return 0;
-    return stage_map_get(view->map, world_x, world_y);
+    return stage_map_solid(view->map, world_x, world_y);
 }
 
 int stage_v_camera_max(const StageView *view)

@@ -27,13 +27,13 @@ ARKALED = ../../games/arkaled/arkaled.c
 TEXT_DEMO = ../../games/text-demo/text_demo.c
 SNAKE = ../../games/snake/snake.c
 SUPER_LED_BROS = ../../games/super-led-bros/super_led_bros.c \
-                 ../../games/super-led-bros/stage_01_test.c
+                 ../../games/super-led-bros/stage_01.c
 STAGE = ../fw/stage.c
 PLATFORM = ../fw/platform.c
 COLLIDE = ../fw/collide.c
 FW = $(COMMON) $(SHOOTER) ../fw/flush.c
 
-TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_map tests/test_stage tests/test_board tests/test_game \
+TEST_BINS = tests/test_max7219 tests/test_matrix tests/test_status_digits tests/test_avr128db28 tests/test_entity tests/test_map tests/test_stage tests/test_platform tests/test_board tests/test_game \
             tests/test_pong tests/test_arkaled tests/test_text_demo tests/test_snake tests/test_super_led_bros tests/test_cart tests/test_synth tests/test_acetate
 CHECK = tests/report.c
 
@@ -62,6 +62,9 @@ tests/test_map: tests/test_map.c ../fw/map.c ../fw/entity.c ../fw/frame.c $(CHEC
 
 tests/test_stage: tests/test_stage.c $(STAGE) ../fw/frame.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_stage.c $(STAGE) ../fw/frame.c $(CHECK)
+
+tests/test_platform: tests/test_platform.c $(PLATFORM) $(STAGE) ../fw/frame.c ../fw/input.c $(CHECK)
+	$(CC) $(CFLAGS) -o $@ tests/test_platform.c $(PLATFORM) $(STAGE) ../fw/frame.c ../fw/input.c $(CHECK)
 
 tests/test_board: tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_board.c hal.c $(CORE) $(FW) ../fw/persist_ram.c tests/sound_log.c $(CHECK)
@@ -101,6 +104,7 @@ test: $(TEST_BINS)
 	./tests/test_entity
 	./tests/test_map
 	./tests/test_stage
+	./tests/test_platform
 	./tests/test_game
 	./tests/test_pong
 	./tests/test_arkaled

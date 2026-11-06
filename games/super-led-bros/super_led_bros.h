@@ -4,7 +4,7 @@
 #include "input.h"
 
 /*
- * Platform demo: 1x1 player from the red spawn in stage_01_test. Left/right
+ * Platform demo: 1x1 player from the white spawn in stage_01. Left/right
  * walk at 30 FPS; button jumps when grounded. Camera follows the player.
  */
 

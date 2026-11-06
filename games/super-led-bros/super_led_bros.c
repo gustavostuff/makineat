@@ -2,7 +2,7 @@
 
 #include "platform.h"
 #include "stage.h"
-#include "stage_01_test.h"
+#include "stage_01.h"
 
 static StageView view;
 static PlatformPlayer player;
@@ -10,8 +10,8 @@ static PlatformPlayer player;
 void super_led_bros_reset(void)
 {
     stage_view_init(&view);
-    stage_bind_h(&view, &stage_01_test);
-    platform_player_bind(&player, &view, &stage_01_test);
+    stage_bind_h(&view, &stage_01);
+    platform_player_bind(&player, &view, &stage_01);
     platform_h_paint(&view, &player);
 }
 

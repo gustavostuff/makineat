@@ -75,14 +75,37 @@ Pairwise overlap uses `world_pairs`, `entity_covers`, and `entity_overlaps`. Que
 
 ### Stage (`stage.c`)
 
-Wide or tall platform levels live outside the 16×16 `map`. Import art with `tools/fw/gen_stage.py`: RGB `(0,0,0)` is empty, pure red `(255,0,0)` is the **one-pixel player spawn** (not solid), any other pixel is solid and drawn. Generated `StageMap` data is checked in like `text_large.c`.
+Wide or tall platform levels live outside the 16×16 `map`. Import art with `tools/fw/gen_stage.py`. A stage folder holds **`fg.png`** and optional **`bg.png`** (same height as **`fg.png`**). Pure RGB on **`fg.png`** only:
 
-- **Horizontal (implemented):** `stage_bind_h`, `stage_h_scroll_tick` (held stick at **30 FPS**), `stage_h_paint`, `stage_h_solid`
-- **Vertical (stub):** `stage_bind_v` returns `STAGE_ERR_UNSUPPORTED`; `stage_v_*` are placeholders
+- **`(0,0,0)`** empty (**not** drawn, **not** solid)
+- **`(255,255,255)`** exactly one spawn pixel (**not** drawn, **not** solid)
+- **`(0,255,0)`** decorative ON (drawn on the foreground pass, **not** solid)
+- **`(255,0,0)`** solid ON (drawn, solid for collision)
+
+On **`bg.png`**, any pixel that is **not** black is drawn in a background pass. The background has **no** collision. `stage_h_paint` draws background first, then foreground, so foreground pixels overwrite where both are ON.
+
+When **`bg.png`** is present, its width may differ from **`fg.png`**. Each layer can scroll by its width minus **16**. The background camera follows **`bg_camera = fg_camera * (bg_width - 16) / (fg_width - 16)`** with integer division, then stays inside that background span. Both cameras are **0** at the left edge and both sit on their last legal column at the right edge. A **64** wide background behind a **256** wide foreground therefore keeps moving until the foreground camera reaches **240**.
+
+`StageMap` stores **`fg_lit`** and **`fg_solid`**. **`stage_map_get`** / **`stage_map_lit`** return the lit mask (decor plus solid). **`stage_map_solid`** returns the solid mask only.
+
+- **Horizontal (implemented):** `stage_bind_h`, `stage_h_scroll_tick` (held stick at **30 FPS**), `stage_h_paint`, `stage_h_solid`, `stage_h_camera_follow_dead_zone`, `stage_h_bg_camera_get`. Defaults are `STAGE_H_DEAD_ZONE_X` **5** and `STAGE_H_DEAD_ZONE_W` **6** in `stage.h`, so the dead zone is screen columns **5** through **10** inclusive with height **FIELD_SIZE** rows. `stage_h_camera_set` clips the foreground camera and refreshes the background camera so each **FIELD_SIZE** window stays inside its layer bounds.
+- **Vertical (stub):** `stage_bind_v` returns `STAGE_ERR_UNSUPPORTED`. The `stage_v_*` symbols are placeholders.
 
 ### Platform (`platform.c`)
 
-1×1 horizontal player: `platform_player_bind`, `platform_player_tick` (walk and jump/fall **15 FPS**, **button** jump when grounded, gravity), `platform_h_paint` (stage + player). Camera follows the player on `StageView`.
+The player is one playfield cell over a horizontal `StageView`. Entry points are `platform_player_bind`, `platform_player_tick`, and `platform_h_paint`. The camera follows the player with `stage_h_camera_follow_dead_zone` so the player world column stays inside the default dead zone unless the camera is clipped at the stage edge.
+
+- **Walk:** horizontal motion uses **15** playfield cell steps per second (15 FPS). `platform_player_tick` accumulates against `STAGE_TICK_HZ` (60 Hz). The pattern matches how `stage_h_scroll_tick` uses `STAGE_SCROLL_FPS` for camera scroll, but the player rate is 15 cells per second. Walk has no acceleration.
+- **Jump (scripted):** a debounced **button** press while grounded starts a jump. Motion is **not** velocity-based. It follows a fixed schedule on **60 Hz** game ticks (same tick interval as **Game loop and display refresh**). Playfield rows count as **positions 1 through 6** from the ground row before the first step. Position 1 is that ground row. **Rise** counts how many cells move upward from position 1. A full jump has rise **5** and ends at position 6 apex. If the **button** is not held while rise is still below **2** cells, ascent keeps going until rise reaches **2** (minimum jump height is **3** rows counting position 1). After that, releasing the **button** ends ascent and starts descent. The same mirrored waits apply on the way down from the height reached on the way up.
+  - **1 to 2:** one cell up on the same tick as the jump input.
+  - **At position 2:** **1** idle tick, then step to position 3.
+  - **At 3:** **2** idle ticks, then step to 4.
+  - **At 4:** **3** idle ticks, then step to 5.
+  - **At 5:** **4** idle ticks, then step to 6 apex on a full jump.
+  - **Descent** always uses the same mirrored wait list as a full jump, but it **starts at the step that matches apex height**. The list of waits between downward steps stays **4, 3, 2, 1, 0** ticks. A wait of **0** means the next step happens on the very next tick (the mirror of the immediate step from 1 to 2). After the script ends, normal gravity applies for any later fall that is not a jump.
+- **Fall (not scripted):** gravity (`vy`) with vertical steps limited to **15** cells per second through the same accumulator pattern as walk (ledge drops and similar).
+
+Stage art for **super-led-bros** uses folders `games/super-led-bros/img/<name>/` with **`fg.png`** and optional **`bg.png`**. The script `games/super-led-bros/regen_stages.sh` calls `tools/fw/gen_stage.py` on each folder and writes **`games/super-led-bros/<name>.c`** and **`.h`** (for example **`stage_01`** from **`img/stage_01/`**).
 
 Link `../stage.c`, `../platform.c`, and generated stage sources in `tools/fw/avr/Makefile` for platform carts.
 

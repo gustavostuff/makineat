@@ -12,7 +12,7 @@ static const uint16_t tiny_rows[] = {
     0x0001, 0x0001,
 };
 
-static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows};
+static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows, tiny_rows, 0, 0, 0};
 
 static void test_map_get(void)
 {
@@ -35,10 +35,143 @@ static void test_h_paint_and_camera(void)
     expect(!pixel_get(0, 0) && pixel_get(15, 0), "camera offset shifts visible art");
 }
 
+static const uint16_t para_fg_lit[] = {
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+};
+static const uint16_t para_fg_sol[] = {0x0000, 0x0000, 0x0000, 0x0000};
+static const uint16_t para_bg_same[] = {
+    0xffff,
+    0xffff,
+};
+
+static void bind_scroll_map(StageView *view, StageMap *map, int fg_w, int bg_w)
+{
+    map->width = (uint16_t)fg_w;
+    map->height = 1;
+    map->row_words = 1;
+    map->spawn_x = 0;
+    map->spawn_y = 0;
+    map->fg_lit = para_fg_lit;
+    map->fg_solid = para_fg_sol;
+    map->bg_width = (uint16_t)bg_w;
+    map->bg_row_words = 1;
+    map->bg_lit = bg_w > 0 ? para_bg_same : 0;
+    stage_view_init(view);
+    stage_bind_h(view, map);
+}
+
+static void test_h_scroll_math(void)
+{
+    StageView view;
+    StageMap map;
+
+    /* Equal widths: spans match, so the cameras stay locked. */
+    bind_scroll_map(&view, &map, 32, 32);
+    expect(stage_h_camera_get(&view) == 0 && stage_h_bg_camera_get(&view) == 0,
+           "both cameras start at 0");
+    stage_h_camera_set(&view, 10);
+    expect(stage_h_bg_camera_get(&view) == 10, "equal widths keep bg locked to fg");
+    stage_h_camera_set(&view, 16);
+    expect(stage_h_camera_get(&view) == 16 && stage_h_bg_camera_get(&view) == 16,
+           "equal widths end together");
+
+    /* fg 64, bg 32: spans 48 and 16. */
+    bind_scroll_map(&view, &map, 64, 32);
+    stage_h_camera_set(&view, 20);
+    expect(stage_h_bg_camera_get(&view) == 6, "mid scroll uses bg span over fg span");
+    stage_h_camera_set(&view, 48);
+    expect(stage_h_bg_camera_get(&view) == 16, "narrower bg reaches its end with the fg");
+    stage_h_camera_set(&view, 1);
+    expect(stage_h_bg_camera_get(&view) == 0, "integer span math can stay at 0 for one fg step");
+
+    /* Stage 01 shape: fg 256 (span 240), bg 64 (span 48). */
+    bind_scroll_map(&view, &map, 256, 64);
+    stage_h_camera_set(&view, 120);
+    expect(stage_h_bg_camera_get(&view) == 24, "256 by 64 mid point is one fifth of the fg camera");
+    stage_h_camera_set(&view, 192);
+    expect(stage_h_bg_camera_get(&view) == 38,
+           "256 by 64 still scrolls after the old width-ratio clamp");
+    stage_h_camera_set(&view, 999);
+    expect(stage_h_camera_get(&view) == 240 && stage_h_bg_camera_get(&view) == 48,
+           "fg clamp at 240 lands bg on its last column");
+    stage_h_camera_set(&view, -4);
+    expect(stage_h_camera_get(&view) == 0 && stage_h_bg_camera_get(&view) == 0,
+           "a negative camera request clamps both layers to 0");
+
+    /* Background wider than foreground: fg span 16, bg span 48. */
+    bind_scroll_map(&view, &map, 32, 64);
+    stage_h_camera_set(&view, 8);
+    expect(stage_h_bg_camera_get(&view) == 24, "a wider bg moves farther per fg step");
+    stage_h_camera_set(&view, 16);
+    expect(stage_h_bg_camera_get(&view) == 48, "a wider bg also ends with the fg");
+
+    /* A layer that is only one screen wide has no travel. */
+    bind_scroll_map(&view, &map, 64, 16);
+    stage_h_camera_set(&view, 20);
+    expect(stage_h_bg_camera_get(&view) == 0, "a 16-wide bg stays pinned");
+    bind_scroll_map(&view, &map, 16, 64);
+    stage_h_camera_set(&view, 8);
+    expect(stage_h_camera_get(&view) == 0 && stage_h_bg_camera_get(&view) == 0,
+           "a 16-wide fg cannot scroll the bg");
+
+    /* No background layer. */
+    bind_scroll_map(&view, &map, 64, 0);
+    stage_h_camera_set(&view, 20);
+    expect(stage_h_bg_camera_get(&view) == 0, "missing bg keeps the bg camera at 0");
+}
+
+static void test_h_suppress_player_on_bg(void)
+{
+    StageView view;
+    static const uint16_t fg_empty[] = {0x0000};
+    static const uint16_t fg_solid[] = {0x0001};
+    static const uint16_t bg_lit[] = {0x0001};
+    static const StageMap bg_only = {16, 1, 1, 0, 0, fg_empty, fg_empty, 16, 1, bg_lit};
+    static const StageMap solid_fg = {16, 1, 1, 0, 0, fg_solid, fg_solid, 16, 1, bg_lit};
+
+    stage_view_init(&view);
+    stage_bind_h(&view, &bg_only);
+    stage_h_paint_ex(&view, 0, 0, 1);
+    expect(!pixel_get(0, 0), "background under the player stays off in the framebuffer");
+    expect(stage_h_suppress_player_led(&view, 0, 0),
+           "player LED stays off on background art with empty foreground");
+    expect(!stage_h_suppress_player_led(&view, 1, 0),
+           "player LED draws on an empty cell");
+    stage_bind_h(&view, &solid_fg);
+    expect(!stage_h_suppress_player_led(&view, 0, 0),
+           "player LED draws on solid foreground even when background is lit");
+}
+
+static void test_h_dead_zone_follow(void)
+{
+    StageView view;
+
+    stage_view_init(&view);
+    stage_bind_h(&view, &tiny);
+    /* Default zone is screen x 5..10. Focus left of zone: new camera clips at 0. */
+    stage_h_camera_set(&view, 5);
+    stage_h_camera_follow_dead_zone(&view, 2);
+    expect(stage_h_camera_get(&view) == 0, "dead zone pans left and clips at map edge");
+    /* Focus inside zone 5..10 at screen x 7, camera unchanged. */
+    stage_h_camera_set(&view, 5);
+    stage_h_camera_follow_dead_zone(&view, 12);
+    expect(stage_h_camera_get(&view) == 5, "dead zone does nothing when focus is inside zone");
+    /* Focus right of zone at screen x 11, camera moves right by one. */
+    stage_h_camera_set(&view, 0);
+    stage_h_camera_follow_dead_zone(&view, 11);
+    expect(stage_h_camera_get(&view) == 1, "dead zone pans right when focus exits zone right edge");
+}
+
 int main(void)
 {
     report_begin("stage");
     test_map_get();
     test_h_paint_and_camera();
+    test_h_scroll_math();
+    test_h_suppress_player_on_bg();
+    test_h_dead_zone_follow();
     return report_end();
 }

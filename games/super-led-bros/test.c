@@ -3,7 +3,7 @@
 #include "frame.h"
 #include "input.h"
 #include "stage.h"
-#include "stage_01_test.h"
+#include "stage_01.h"
 #include "tests/report.h"
 
 static void expect(int cond, const char *msg)
@@ -27,10 +27,10 @@ static void feed_button(void)
 
 static void test_stage_spawn(void)
 {
-    expect(stage_01_test.spawn_x == 2 && stage_01_test.spawn_y == 12,
-           "the red pixel defines spawn at (2, 12)");
-    expect(!stage_map_get(&stage_01_test, 2, 12), "spawn is not solid terrain");
-    expect(stage_map_get(&stage_01_test, 2, 13), "ground below spawn is solid");
+    expect(stage_01.spawn_x == 2 && stage_01.spawn_y == 12,
+           "the white pixel defines spawn at (2, 12)");
+    expect(!stage_map_solid(&stage_01, 2, 12), "spawn is not solid terrain");
+    expect(stage_map_solid(&stage_01, 2, 13), "ground below spawn is solid");
 }
 
 static void test_player_start(void)
@@ -52,10 +52,10 @@ static void test_walk_and_camera(void)
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
     expect(super_led_bros_player_x() == 3, "holding right walks at 15 FPS");
-    expect(super_led_bros_camera_x() == 0, "camera stays pinned at the left edge early on");
+    expect(super_led_bros_camera_x() == 0, "dead zone keeps camera still while focus stays inside");
 }
 
-static void test_jump(void)
+static void test_jump_full_hold(void)
 {
     int i;
     int y;
@@ -64,13 +64,33 @@ static void test_jump(void)
     input_reset();
     super_led_bros_reset();
     feed_button();
-    for (i = 0; i < 40; i++) {
+    for (i = 0; i < 80; i++) {
+        feed(0, 0, 0, 0, 1);
+        y = super_led_bros_player_y();
+        if (y < peak_y)
+            peak_y = y;
+    }
+    expect(peak_y == 7, "full jump rises 5 cells with button held");
+}
+
+static void test_jump_short_release(void)
+{
+    int i;
+    int y;
+    int peak_y = 12;
+
+    input_reset();
+    super_led_bros_reset();
+    feed_button();
+    feed(0, 0, 0, 0, 0);
+    feed(0, 0, 0, 0, 0);
+    for (i = 0; i < 80; i++) {
         feed(0, 0, 0, 0, 0);
         y = super_led_bros_player_y();
         if (y < peak_y)
             peak_y = y;
     }
-    expect(peak_y == 7, "jump rises 5 cells at 15 FPS");
+    expect(peak_y == 10, "minimum jump rises 2 cells after early button release");
 }
 
 static void test_vertical_stub(void)
@@ -78,7 +98,7 @@ static void test_vertical_stub(void)
     StageView view;
 
     stage_view_init(&view);
-    expect(stage_bind_v(&view, &stage_01_test) == STAGE_ERR_UNSUPPORTED,
+    expect(stage_bind_v(&view, &stage_01) == STAGE_ERR_UNSUPPORTED,
            "vertical scroll mode is not implemented yet");
 }
 
@@ -89,6 +109,7 @@ int main(void)
     test_vertical_stub();
     test_player_start();
     test_walk_and_camera();
-    test_jump();
+    test_jump_full_hold();
+    test_jump_short_release();
     return report_end();
 }
