@@ -71,7 +71,11 @@ void super_led_bros_apply_pickups(int n)
 
 void super_led_bros_tick(const Input *in)
 {
-    apply_pickups(platform_player_tick(&player, &view, in));
+    int p;
+
+    p = platform_player_tick(&player, &view, in);
+    if (!platform_player_growth_freeze(&player))
+        apply_pickups(p);
     hud_show();
     platform_h_paint(&view, &player);
 }

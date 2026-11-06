@@ -32,6 +32,13 @@ int stage_map_solid(const StageMap *map, int x, int y)
     return map_bit(map->fg_solid, (int)map->row_words, (int)map->width, (int)map->height, x, y);
 }
 
+int stage_map_semisolid(const StageMap *map, int x, int y)
+{
+    if (map == 0 || map->fg_semisolid == 0)
+        return 0;
+    return map_bit(map->fg_semisolid, (int)map->row_words, (int)map->width, (int)map->height, x, y);
+}
+
 int stage_map_get(const StageMap *map, int x, int y)
 {
     return stage_map_lit(map, x, y);
@@ -152,10 +159,12 @@ struct pickup_block_ctx {
     int slot;
 };
 
-static int pickup_blocked_cb(void *p, int x, int y)
+static int pickup_blocked_cb(void *p, int x, int y, int prev_feet_y, int dy)
 {
     struct pickup_block_ctx *c = (struct pickup_block_ctx *)p;
 
+    (void)prev_feet_y;
+    (void)dy;
     if (c == 0 || c->view == 0)
         return 1;
     return stage_h_pickup_blocked(c->view, x, y, c->slot);
@@ -192,6 +201,9 @@ static void try_spawn_growth_pickup(StageView *view, int idx, const StageItem *i
         view->pickups[s].vert_accum = 0;
         view->pickups[s].grounded = 0;
         view->pickups[s].dir = 1;
+        view->pickups[s].fall_on = 0;
+        view->pickups[s].fall_i = 0;
+        view->pickups[s].fall_timer = 0;
         view->growth_pickup_spawned[idx] = 1;
         return;
     }
@@ -387,7 +399,8 @@ void stage_h_scroll_tick(StageView *view, int dx)
     }
 }
 
-void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg)
+void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg,
+    int hide_player_h)
 {
     int sx;
     int sy;
@@ -397,10 +410,16 @@ void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y,
     int fg_on;
     int bg_on;
     const StageMap *map;
+    int ph;
 
     if (view == 0 || view->map == 0)
         return;
     map = view->map;
+    ph = hide_player_h;
+    if (ph < 1)
+        ph = 1;
+    if (ph > 2)
+        ph = 2;
     clear();
     for (sy = 0; sy < FIELD_SIZE; sy++) {
         if (sy >= (int)map->height)
@@ -409,6 +428,9 @@ void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y,
             wx = view->camera + sx;
             bx = view->bg_camera + sx;
             player_cell = hide_player_fg != 0 && wx == hide_world_x && sy == hide_world_y;
+            if (!player_cell && hide_player_fg != 0 && ph == 2 &&
+                wx == hide_world_x && sy == hide_world_y - 1)
+                player_cell = 1;
             /*
              * One pass per cell. Foreground wins over background for the ON bit so BG+FG
              * never stack to a double-bright LED when both layers have art. Background only
@@ -418,14 +440,14 @@ void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y,
              * is not solid red (empty or green), so the sim uses dim led_off acetate green.
              */
             fg_on = stage_map_lit(map, wx, sy);
-            if (player_cell && fg_on && !stage_map_solid(map, wx, sy))
+            if (player_cell && fg_on && !stage_map_solid(map, wx, sy) && !stage_map_semisolid(map, wx, sy))
                 fg_on = 0;
             if (fg_on) {
                 pixel((uint8_t)sx, (uint8_t)sy, true);
                 continue;
             }
             bg_on = map_bg_lit(map, bx, sy);
-            if (bg_on && !(player_cell && !stage_map_solid(map, wx, sy)))
+            if (bg_on && !(player_cell && !stage_map_solid(map, wx, sy) && !stage_map_semisolid(map, wx, sy)))
                 pixel((uint8_t)sx, (uint8_t)sy, true);
         }
     }
@@ -450,14 +472,8 @@ static void paint_item_blocks(const StageView *view)
         lift = view->item_bounce[i] > 0 ? 1 : 0;
         for (dy = 0; dy < 2; dy++) {
             for (dx = 0; dx < 2; dx++) {
-                /*
-                 * Coin blocks use the shine table while unused. Growth blocks draw
-                 * the full 2x2 until used.
-                 */
-                if (it->kind == STAGE_ITEM_KIND_COIN) {
-                    if (!view->item_used[i] && !item_shine_pat[view->item_shine][dy][dx])
-                        continue;
-                }
+                if (!view->item_used[i] && !item_shine_pat[view->item_shine][dy][dx])
+                    continue;
                 sx = (int)it->x + dx - view->camera;
                 sy = (int)it->y + dy - lift;
                 if (sx < 0 || sx > FIELD_LAST || sy < 0 || sy > FIELD_LAST)
@@ -470,7 +486,7 @@ static void paint_item_blocks(const StageView *view)
 
 void stage_h_paint(const StageView *view)
 {
-    stage_h_paint_ex(view, 0, 0, 0);
+    stage_h_paint_ex(view, 0, 0, 0, 1);
 }
 
 int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
@@ -481,6 +497,8 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
     if (view == 0 || view->map == 0)
         return 0;
     if (stage_map_solid(view->map, world_x, world_y))
+        return 0;
+    if (stage_map_semisolid(view->map, world_x, world_y))
         return 0;
     if (stage_map_lit(view->map, world_x, world_y))
         return 1;
@@ -501,6 +519,8 @@ int stage_h_pickup_blocked(const StageView *view, int world_x, int world_y,
         return 1;
     if (stage_map_solid(view->map, world_x, world_y))
         return 1;
+    if (stage_map_semisolid(view->map, world_x, world_y))
+        return 1;
     if (item_blocks_cell(view->map, world_x, world_y))
         return 1;
     if (pickup_at(view, world_x, world_y, ignore_pickup_index))
@@ -514,7 +534,62 @@ int stage_h_solid(const StageView *view, int world_x, int world_y)
         return 0;
     if (stage_map_solid(view->map, world_x, world_y))
         return 1;
+    if (stage_map_semisolid(view->map, world_x, world_y))
+        return 1;
     return item_blocks_cell(view->map, world_x, world_y);
+}
+
+int stage_h_blocks_horiz(const StageView *view, int world_x, int world_y)
+{
+    if (view == 0 || view->map == 0)
+        return 1;
+    if (world_x < 0 || world_y < 0 || world_x >= (int)view->map->width ||
+        world_y >= (int)view->map->height)
+        return 1;
+    if (stage_map_solid(view->map, world_x, world_y))
+        return 1;
+    return item_blocks_cell(view->map, world_x, world_y);
+}
+
+int stage_h_blocks_vert(const StageView *view, int world_x, int world_y, int prev_feet_y, int dy)
+{
+    const StageMap *map;
+    int semi;
+
+    (void)prev_feet_y;
+    if (view == 0 || view->map == 0)
+        return 1;
+    map = view->map;
+    if (world_x < 0 || world_y < 0 || world_x >= (int)map->width || world_y >= (int)map->height)
+        return 1;
+    if (item_blocks_cell(map, world_x, world_y))
+        return 1;
+    if (stage_map_solid(map, world_x, world_y))
+        return 1;
+    semi = stage_map_semisolid(map, world_x, world_y);
+    if (!semi)
+        return 0;
+    /*
+     * One-way ledge: the body stands in the cell above the gray row, same as red ground.
+     * Falling into the cell is blocked. Jumping up into it from below is not.
+     */
+    if (dy > 0)
+        return 1;
+    return 0;
+}
+
+int stage_h_blocks_vert_hard(const StageView *view, int world_x, int world_y)
+{
+    if (view == 0 || view->map == 0)
+        return 1;
+    if (world_x < 0 || world_y < 0 || world_x >= (int)view->map->width ||
+        world_y >= (int)view->map->height)
+        return 1;
+    if (item_blocks_cell(view->map, world_x, world_y))
+        return 1;
+    if (stage_map_solid(view->map, world_x, world_y))
+        return 1;
+    return 0;
 }
 
 void stage_h_items_tick(StageView *view)
@@ -564,7 +639,6 @@ static void tick_pickups(StageView *view)
         if (!p->active)
             continue;
         ctx.slot = s;
-        plat_phys_apply_gravity(&p->vy);
         px = (int)p->px;
         py = (int)p->py;
         b.px = px;
@@ -573,12 +647,18 @@ static void tick_pickups(StageView *view)
         b.walk_accum = 0;
         b.vert_accum = p->vert_accum;
         b.grounded = p->grounded;
+        b.fall_on = p->fall_on;
+        b.fall_i = p->fall_i;
+        b.fall_timer = p->fall_timer;
         plat_phys_move_vertical(&b, view, NULL, NULL, NULL, pickup_blocked_cb, &ctx);
         px = b.px;
         py = b.py;
         p->vy = b.vy;
         p->vert_accum = b.vert_accum;
         p->grounded = b.grounded;
+        p->fall_on = b.fall_on;
+        p->fall_i = b.fall_i;
+        p->fall_timer = b.fall_timer;
         plat_phys_horiz_bounce(&px, &p->walk_accum, &p->dir, py, view,
             STAGE_PICKUP_HORIZ_FPS, pickup_blocked_cb, &ctx);
         p->px = (int16_t)px;
@@ -609,6 +689,36 @@ StageBumpResult stage_h_item_bump(StageView *view, int x, int y)
         return kind;
     }
     return STAGE_BUMP_NONE;
+}
+
+int stage_h_collect_growth_pickup(StageView *view, int px, int py, int player_h)
+{
+    int s;
+    int hit_py;
+
+    if (view == 0)
+        return 0;
+    if (player_h < 1)
+        player_h = 1;
+    if (player_h > 2)
+        player_h = 2;
+    for (s = 0; s < STAGE_PICKUP_MAX; s++) {
+        StagePickup *p = &view->pickups[s];
+
+        if (!p->active)
+            continue;
+        for (hit_py = py; hit_py > py - player_h; hit_py--) {
+            if (hit_py == (int)p->py && px == (int)p->px) {
+                p->active = 0;
+                p->vy = 0;
+                p->walk_accum = 0;
+                p->vert_accum = 0;
+                p->grounded = 0;
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 int stage_v_camera_max(const StageView *view)

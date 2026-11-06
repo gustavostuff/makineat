@@ -64,6 +64,9 @@ typedef struct StagePickup {
     int vert_accum;
     int grounded;
     int8_t dir; /* -1 or +1 world steps */
+    uint8_t fall_on;
+    uint8_t fall_i;
+    uint8_t fall_timer;
 } StagePickup;
 
 typedef struct StageMap {
@@ -74,6 +77,7 @@ typedef struct StageMap {
     uint16_t spawn_y;
     const uint16_t *fg_lit;
     const uint16_t *fg_solid;
+    const uint16_t *fg_semisolid; /* 1-cell-thick platforms (gray); lit like decor, special vertical rules */
     uint16_t bg_width;
     uint16_t bg_row_words;
     const uint16_t *bg_lit;
@@ -100,6 +104,7 @@ typedef struct StageView {
 int stage_map_get(const StageMap *map, int x, int y);
 int stage_map_lit(const StageMap *map, int x, int y);
 int stage_map_solid(const StageMap *map, int x, int y);
+int stage_map_semisolid(const StageMap *map, int x, int y);
 int stage_item_covers(const StageMap *map, int x, int y);
 int stage_growth_covers(const StageMap *map, int x, int y);
 
@@ -127,8 +132,23 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
  * red. Foreground always wins over background for the ON bit in one pass so bg never stacks
  * under fg on the same LED. Red solid fg can still sit over bg without double brightness.
  */
-void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg);
+/*
+ * hide_player_h is 1 or 2. When 2, both (hide_world_x, hide_world_y) and
+ * (hide_world_x, hide_world_y - 1) use the player hide rules for decor and bg dimming.
+ */
+void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg,
+    int hide_player_h);
 int stage_h_solid(const StageView *view, int world_x, int world_y);
+/* Horizontal body probe: red + item cells only (semisolid is pass-through sideways). */
+int stage_h_blocks_horiz(const StageView *view, int world_x, int world_y);
+/*
+ * Vertical step into (world_x, world_y). prev_feet_y is the feet row before the step;
+ * dy is -1 moving up or +1 moving down. Semisolid (#808080 ledges) blocks a downward
+ * step into the cell and allows an upward step through it.
+ */
+int stage_h_blocks_vert(const StageView *view, int world_x, int world_y, int prev_feet_y, int dy);
+/* Vertical probe for a body cell that must not treat semisolid as a ceiling (e.g. tall head while feet land). */
+int stage_h_blocks_vert_hard(const StageView *view, int world_x, int world_y);
 /*
  * Solid for movement probes, excluding other pickups so two pickups never block each other.
  * Pass ignore_pickup_index -1 to ignore none, or a slot index to skip that pickup only.
@@ -137,6 +157,11 @@ int stage_h_pickup_blocked(const StageView *view, int world_x, int world_y, int 
 void stage_h_items_tick(StageView *view);
 /* Fresh hit from below. */
 StageBumpResult stage_h_item_bump(StageView *view, int x, int y);
+/*
+ * If a growth pickup overlaps the player feet at (px, py) or head at (px, py-1) when
+ * player_h is 2, consumes it and returns 1.
+ */
+int stage_h_collect_growth_pickup(StageView *view, int px, int py, int player_h);
 
 int stage_v_camera_max(const StageView *view);
 void stage_v_scroll_tick(StageView *view, int dy);
