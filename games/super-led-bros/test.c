@@ -169,9 +169,14 @@ static void test_death_and_game_over(void)
     }
     expect(lives_digit() == 0, "life 0 is lost into game over");
     expect(pixel_get(5, 5) && !pixel_get(4, 5), "game over draws the large G after 4 pixels");
-    expect(!pixel_get(9, 5), "a space follows the first letter");
+    expect(!pixel_get(9, 5) && pixel_get(11, 5),
+           "A follows G after the default one pixel gap");
     expect(!pixel_get(2, 12), "game over replaces the stage");
-    feed(0, 0, 0, 0, 0);
+    feed_button();
+    expect(lives_digit() == 0, "a button press does not skip the game over hold");
+    expect(super_led_bros_player_y() >= stage_01.height, "game over stays up while the button is pressed");
+    wait_death(SUPER_LED_BROS_OVER_TICKS - 2);
+    expect(lives_digit() == 0, "game over lasts 3 seconds");
     feed_button();
     expect(lives_digit() == SUPER_LED_BROS_LIVES, "the button starts a new game with 4 lives");
     expect(super_led_bros_coins() == 0, "a new game clears the coins");

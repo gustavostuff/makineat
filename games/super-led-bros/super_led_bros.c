@@ -10,6 +10,9 @@
 #if SUPER_LED_BROS_DEATH_TICKS != STAGE_TICK_HZ * 3
 #error "death wait must stay 3 seconds at the game tick rate"
 #endif
+#if SUPER_LED_BROS_OVER_TICKS != STAGE_TICK_HZ * 3
+#error "game over hold must stay 3 seconds at the game tick rate"
+#endif
 
 enum {
     PHASE_PLAY = 0,
@@ -24,6 +27,7 @@ static int coins;
 static int lives;
 static int phase;
 static int death_ticks;
+static int over_ticks;
 
 static void apply_pickups(int n)
 {
@@ -75,12 +79,13 @@ static void paint_stage_only(void)
 static void game_over_begin(void)
 {
     phase = PHASE_OVER;
+    over_ticks = SUPER_LED_BROS_OVER_TICKS;
     text_scroll_stop(&over_scroll);
     over_scroll.font = TEXT_FONT_LARGE;
     over_scroll.repeat = TEXT_SCROLL_BOUNCE;
     over_scroll.margin_left = 4;
     over_scroll.margin_right = 4;
-    text_scroll_start(&over_scroll, 0, (FIELD_SIZE - TEXT_LARGE_H) / 2, "g a m e  o v e r");
+    text_scroll_start(&over_scroll, 0, (FIELD_SIZE - TEXT_LARGE_H) / 2, "game over");
     clear();
     text_scroll_paint(&over_scroll);
     hud_show();
@@ -106,6 +111,7 @@ void super_led_bros_reset(void)
     lives = SUPER_LED_BROS_LIVES;
     phase = PHASE_PLAY;
     death_ticks = 0;
+    over_ticks = 0;
     text_scroll_stop(&over_scroll);
     status_clear();
     stage_start();
@@ -160,6 +166,10 @@ void super_led_bros_tick(const Input *in)
         clear();
         print_scroll(&over_scroll);
         hud_show();
+        if (over_ticks > 0) {
+            over_ticks--;
+            return;
+        }
         if (in->button_pressed)
             super_led_bros_reset();
         return;

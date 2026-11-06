@@ -6,9 +6,11 @@
  * Digits 0-9, letters A-Z, dot, comma, colon, semicolon, -, +, =, and /.
  * A lowercase letter uses the capital glyph. A space is a blank cell.
  *
- * text_print paints one line from column x, row y. Each glyph takes
- * the next four columns (eight when scale is TEXT_SCALE_2). Pixels past
- * the field are ignored.
+ * text_print paints one line from column x, row y. Each glyph takes its
+ * cell (four columns, or eight when scale is TEXT_SCALE_2) plus
+ * character_spacing font pixels before the next glyph. The usual gap is
+ * TEXT_CHAR_SPACING_DEFAULT (1). Pass 0 for no extra gap. Spacing grows
+ * with scale. Pixels past the field are ignored.
  * text_print_outline first stamps each glyph pixel OFF in the eight
  * neighbor cells, then draws the glyphs ON. Blink inverts those two
  * passes at TEXT_BLINK_FPS_DEFAULT.
@@ -18,7 +20,9 @@
  * once per 60 Hz frame. Set TextScroll.font to TEXT_FONT_LARGE for the
  * 5×6 set (see text_large.h). Set TextScroll.scale to TEXT_SCALE_2 for
  * 2×2 pixels per font pixel on either font; scroll_x still moves one
- * field pixel per step. margin_left and margin_right add empty field
+ * field pixel per step. character_spacing is the same gap as text_print.
+ * A zeroed field becomes TEXT_CHAR_SPACING_DEFAULT when the scroll starts.
+ * margin_left and margin_right add empty field
  * pixels before the first glyph and after the last (included in bounce travel).
  * print_scroll_outline does the same with a 1px ring; print_scroll_outline_blink
  * also inverts that ring with TextBlink.
@@ -39,6 +43,7 @@
 #define TEXT_BLINK_FPS_DEFAULT 2
 #define TEXT_SCALE_1 1
 #define TEXT_SCALE_2 2
+#define TEXT_CHAR_SPACING_DEFAULT 1
 
 typedef enum {
     TEXT_FONT_DEFAULT = 0,
@@ -61,6 +66,7 @@ typedef struct TextScroll {
     TextScrollRepeat repeat;
     TextFont font;
     int scale;
+    int character_spacing; /* 0 at start selects TEXT_CHAR_SPACING_DEFAULT */
     int margin_left;
     int margin_right;
     int scroll_x;
@@ -80,20 +86,20 @@ typedef struct TextBlink {
 
 const uint8_t *text_glyph(char c);
 
-void text_draw(int x, int y, const char *s);
-void text_print(int x, int y, const char *s);
-void text_draw_scaled(int x, int y, int scale, const char *s);
-void text_print_scaled(int x, int y, int scale, const char *s);
+void text_draw(int x, int y, const char *s, int character_spacing);
+void text_print(int x, int y, const char *s, int character_spacing);
+void text_draw_scaled(int x, int y, int scale, const char *s, int character_spacing);
+void text_print_scaled(int x, int y, int scale, const char *s, int character_spacing);
 
 /*
  * Outline punches a 1px OFF ring (8 neighbors) then draws the glyphs ON.
  * Blink inverts that: the ring is ON and the glyphs are OFF. Default 2 FPS.
  */
-void text_draw_outline(int x, int y, const char *s, int invert);
-void text_print_outline(int x, int y, const char *s);
+void text_draw_outline(int x, int y, const char *s, int character_spacing, int invert);
+void text_print_outline(int x, int y, const char *s, int character_spacing);
 void text_blink_start(TextBlink *tb);
 void text_blink_advance(TextBlink *tb);
-void text_print_outline_blink(int x, int y, const char *s, TextBlink *tb);
+void text_print_outline_blink(int x, int y, const char *s, int character_spacing, TextBlink *tb);
 
 void text_scroll_start(TextScroll *ts, int x, int y, const char *text);
 void text_scroll_stop(TextScroll *ts);

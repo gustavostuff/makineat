@@ -46,7 +46,7 @@
 #define ARROW_W 3
 #define ARROW_H 3
 #define MENU_GAP 1
-#define MENU_TEXT_W (2 * TEXT_W)
+#define MENU_TEXT_W (2 * TEXT_W + TEXT_CHAR_SPACING_DEFAULT)
 #define MENU_TEXT_H (2 * TEXT_H)
 #define MENU_W (ARROW_W + MENU_GAP + MENU_TEXT_W)
 #define MENU_H MENU_TEXT_H
@@ -439,8 +439,8 @@ static void paint_title(void)
 
     clear();
     print_scroll(&name_scroll);
-    text_print(TEXT_X, MENU_Y, "1P");
-    text_print(TEXT_X, MENU_Y + TEXT_H, "2P");
+    text_print(TEXT_X, MENU_Y, "1P", TEXT_CHAR_SPACING_DEFAULT);
+    text_print(TEXT_X, MENU_Y + TEXT_H, "2P", TEXT_CHAR_SPACING_DEFAULT);
     ay = pick == 2 ? MENU_Y + TEXT_H : MENU_Y;
     for (r = 0; r < ARROW_H; r++) {
         for (c = 0; c < ARROW_W; c++) {

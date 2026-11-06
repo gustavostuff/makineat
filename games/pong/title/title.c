@@ -168,7 +168,7 @@ static void serve_nudge(Input *npc_in)
 void title_paint(void)
 {
     if (TITLE_MATRIX_WORD)
-        text_draw_outline(WORD_X, WORD_Y, "pong", word_blink.invert);
+        text_draw_outline(WORD_X, WORD_Y, "pong", TEXT_CHAR_SPACING_DEFAULT, word_blink.invert);
     if (TITLE_SINE)
         paint_sine();
     else

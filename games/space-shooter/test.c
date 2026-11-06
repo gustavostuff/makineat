@@ -264,7 +264,7 @@ static void test_crash(void)
     score_add(3);
     over_start_shooter(3, 0);
     expect(smile(), "a new record shows the smile");
-    expect(pixel_get(2, 7) && pixel_get(9, 9),
+    expect(pixel_get(2, 7) && pixel_get(11, 9),
            "a new record bounce-scrolls new record on one line");
 
     input_reset();
@@ -277,38 +277,39 @@ static void test_crash(void)
 static void test_glyphs(void)
 {
     clear();
-    text_draw(0, 0, "A");
+    text_draw(0, 0, "A", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(1, 0) && !pixel_get(0, 0) && pixel_get(0, 2) && pixel_get(2, 2),
            "A is the 4x4 capital");
     clear();
-    text_draw(0, 0, "a");
+    text_draw(0, 0, "a", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(1, 0) && pixel_get(0, 2), "a lowercase letter uses the capital");
     clear();
-    text_draw(0, 0, "M");
+    text_draw(0, 0, "M", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 0) && pixel_get(1, 1) && pixel_get(2, 2),
            "M is drawn in 4x4");
     clear();
-    text_draw(0, 0, ".");
+    text_draw(0, 0, ".", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 2) && !pixel_get(0, 1) && !pixel_get(1, 2),
            "the dot sits on row 2");
     clear();
-    text_draw(0, 0, "-");
+    text_draw(0, 0, "-", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 1) && pixel_get(1, 1) && pixel_get(2, 1) && !pixel_get(0, 0),
            "the dash is the middle row");
     clear();
-    text_draw(0, 0, ":");
+    text_draw(0, 0, ":", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(1, 0) && pixel_get(1, 2) && !pixel_get(1, 1),
            "the colon is two dots");
     clear();
-    text_draw(0, 0, "Z");
+    text_draw(0, 0, "Z", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 0) && pixel_get(1, 1) && pixel_get(2, 2),
            "Z is the last letter");
     clear();
-    text_draw(1, 8, "10");
+    text_draw(1, 8, "10", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(1, 8) && pixel_get(2, 8) && !pixel_get(3, 8),
            "the digit 1 keeps its narrow top");
-    expect(pixel_get(5, 8) && pixel_get(6, 8) && pixel_get(7, 8) && !pixel_get(8, 8),
-           "the next glyph starts four columns later");
+    expect(!pixel_get(5, 8) && pixel_get(6, 8) && pixel_get(7, 8) && pixel_get(8, 8) &&
+               !pixel_get(9, 8),
+           "the next glyph starts after a one pixel gap");
 }
 
 static void test_score(void)

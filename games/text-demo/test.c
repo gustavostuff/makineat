@@ -123,6 +123,31 @@ static void test_scroll_bounce_done(void)
     expect(toggled, "bounce scroll signals when a full cycle finishes");
 }
 
+static void test_character_spacing(void)
+{
+    TextScroll ts;
+
+    clear();
+    text_print(0, 0, "II", TEXT_CHAR_SPACING_DEFAULT);
+    expect(pixel_get(0, 0) && !pixel_get(4, 0) && pixel_get(5, 0),
+           "default spacing is one pixel between glyphs");
+
+    clear();
+    text_print(0, 0, "II", 0);
+    expect(pixel_get(4, 0), "zero spacing places the next cell on the following column");
+
+    clear();
+    memset(&ts, 0, sizeof ts);
+    ts.font = TEXT_FONT_LARGE;
+    text_scroll_start(&ts, 0, 0, "II");
+    expect(ts.character_spacing == TEXT_CHAR_SPACING_DEFAULT,
+           "a scroll starts at one pixel of character spacing");
+    text_scroll_paint(&ts);
+    expect(pixel_get(1, 0) && !pixel_get(5, 0) && pixel_get(7, 0),
+           "the large font uses that same one pixel gap");
+    clear();
+}
+
 static void test_large_font_glyph(void)
 {
     const uint8_t *g;
@@ -141,7 +166,7 @@ static void test_scaled_text(void)
     int period;
 
     clear();
-    text_print_scaled(0, 0, TEXT_SCALE_2, "I");
+    text_print_scaled(0, 0, TEXT_SCALE_2, "I", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 0) && pixel_get(1, 0) && pixel_get(0, 1) && pixel_get(1, 1),
            "2x scale draws a 2x2 block per font pixel");
 
@@ -202,7 +227,7 @@ static void test_outline_punches(void)
 {
     clear();
     fill_on();
-    text_print_outline(0, 0, "I");
+    text_print_outline(0, 0, "I", TEXT_CHAR_SPACING_DEFAULT);
     expect(pixel_get(0, 0) && pixel_get(1, 0) && pixel_get(2, 0),
            "outline keeps the glyph pixels on");
     expect(!pixel_get(0, 1) && pixel_get(1, 1) && !pixel_get(2, 1),
@@ -220,14 +245,14 @@ static void test_outline_blink(void)
     fill_on();
     memset(&tb, 0, sizeof tb);
     text_blink_start(&tb);
-    text_print_outline_blink(0, 0, "I", &tb);
+    text_print_outline_blink(0, 0, "I", TEXT_CHAR_SPACING_DEFAULT, &tb);
     expect(pixel_get(1, 0) && !pixel_get(0, 1),
            "blink starts with a normal outline");
 
     for (i = 0; i < 29; i++) {
         clear();
         fill_on();
-        text_print_outline_blink(0, 0, "I", &tb);
+        text_print_outline_blink(0, 0, "I", TEXT_CHAR_SPACING_DEFAULT, &tb);
     }
     expect(!pixel_get(1, 0) && pixel_get(0, 1),
            "at 2 FPS the fill and ring swap after half a second");
@@ -292,6 +317,7 @@ int main(void)
     test_print_idle();
     test_demo_switch();
     test_bounce_scroll_moves();
+    test_character_spacing();
     test_large_font_glyph();
     test_scroll_margins();
     test_scroll_bounce_done();

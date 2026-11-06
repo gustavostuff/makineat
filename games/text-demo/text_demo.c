@@ -150,7 +150,7 @@ static void frame_draw(void)
     print_scroll(&title_scroll);
     switch (kind) {
     case DEMO_PRINT:
-        text_print(0, BODY_Y, sample);
+        text_print(0, BODY_Y, sample, TEXT_CHAR_SPACING_DEFAULT);
         break;
     case DEMO_SCROLL_BOUNCE:
     case DEMO_SCROLL_RESET:

@@ -122,19 +122,36 @@ static int font_glyph_advance(TextFont font, int scale)
     return font_cell_w(font) * text_scale_norm(scale);
 }
 
+/* Gap between glyphs, in field pixels. Negative spacing is none. */
+static int spacing_field(int character_spacing, int scale)
+{
+    if (character_spacing < 0)
+        character_spacing = 0;
+    return character_spacing * text_scale_norm(scale);
+}
+
+static int glyph_step(TextFont font, int scale, int character_spacing)
+{
+    return font_glyph_advance(font, scale) + spacing_field(character_spacing, scale);
+}
+
 static int font_glyph_height(TextFont font, int scale)
 {
     return font_cell_h(font) * text_scale_norm(scale);
 }
 
-static int text_pixel_w(const char *s, TextFont font, int scale)
+static int text_pixel_w(const char *s, TextFont font, int scale, int character_spacing)
 {
     int len;
+    int gap;
 
     if (s == 0)
         return 0;
     len = (int)strlen(s);
-    return len * font_glyph_advance(font, scale);
+    if (len <= 0)
+        return 0;
+    gap = spacing_field(character_spacing, scale);
+    return len * font_glyph_advance(font, scale) + (len - 1) * gap;
 }
 
 static TextFont scroll_font(const TextScroll *ts)
@@ -183,16 +200,18 @@ static void blit(int x, int y, const uint8_t *rows, int cell_w, int cell_h, int 
     stamp(x, y, rows, cell_w, cell_h, scale, true);
 }
 
-void text_draw_outline(int x, int y, const char *s, int invert)
+void text_draw_outline(int x, int y, const char *s, int character_spacing, int invert)
 {
     const char *p;
     int gx;
     int i;
+    int step;
     bool ring = invert != 0;
     bool fill = invert == 0;
 
     if (s == 0)
         return;
+    step = glyph_step(TEXT_FONT_DEFAULT, TEXT_SCALE_1, character_spacing);
 
     for (i = 0; i < 8; i++) {
         gx = x;
@@ -206,7 +225,7 @@ void text_draw_outline(int x, int y, const char *s, int invert)
             if (gx + TEXT_W > 0)
                 stamp(gx + outline_dx[i], y + outline_dy[i], rows, TEXT_W, TEXT_H,
                       TEXT_SCALE_1, ring);
-            gx += TEXT_W;
+            gx += step;
         }
     }
 
@@ -220,13 +239,13 @@ void text_draw_outline(int x, int y, const char *s, int invert)
             break;
         if (gx + TEXT_W > 0)
             stamp(gx, y, rows, TEXT_W, TEXT_H, TEXT_SCALE_1, fill);
-        gx += TEXT_W;
+        gx += step;
     }
 }
 
-void text_print_outline(int x, int y, const char *s)
+void text_print_outline(int x, int y, const char *s, int character_spacing)
 {
-    text_draw_outline(x, y, s, 0);
+    text_draw_outline(x, y, s, character_spacing, 0);
 }
 
 static int blink_period(const TextBlink *tb)
@@ -264,10 +283,10 @@ void text_blink_advance(TextBlink *tb)
     }
 }
 
-void text_print_outline_blink(int x, int y, const char *s, TextBlink *tb)
+void text_print_outline_blink(int x, int y, const char *s, int character_spacing, TextBlink *tb)
 {
     text_blink_advance(tb);
-    text_draw_outline(x, y, s, tb != 0 ? tb->invert : 0);
+    text_draw_outline(x, y, s, character_spacing, tb != 0 ? tb->invert : 0);
 }
 
 static void stamp_clip(int x, int y, const uint8_t *rows, int cell_w, int cell_h, int scale,
@@ -310,14 +329,14 @@ static void blit_clip(int x, int y, const uint8_t *rows, int cell_w, int cell_h,
     stamp_clip(x, y, rows, cell_w, cell_h, scale, clip_x, clip_y, clip_w, clip_h, true);
 }
 
-void text_draw_scaled(int x, int y, int scale, const char *s)
+void text_draw_scaled(int x, int y, int scale, const char *s, int character_spacing)
 {
     int advance;
 
     if (s == 0)
         return;
     scale = text_scale_norm(scale);
-    advance = font_glyph_advance(TEXT_FONT_DEFAULT, scale);
+    advance = glyph_step(TEXT_FONT_DEFAULT, scale, character_spacing);
     for (; *s != '\0'; s++) {
         const uint8_t *rows = text_glyph(*s);
 
@@ -331,19 +350,19 @@ void text_draw_scaled(int x, int y, int scale, const char *s)
     }
 }
 
-void text_print_scaled(int x, int y, int scale, const char *s)
+void text_print_scaled(int x, int y, int scale, const char *s, int character_spacing)
 {
-    text_draw_scaled(x, y, scale, s);
+    text_draw_scaled(x, y, scale, s, character_spacing);
 }
 
-void text_draw(int x, int y, const char *s)
+void text_draw(int x, int y, const char *s, int character_spacing)
 {
-    text_draw_scaled(x, y, TEXT_SCALE_1, s);
+    text_draw_scaled(x, y, TEXT_SCALE_1, s, character_spacing);
 }
 
-void text_print(int x, int y, const char *s)
+void text_print(int x, int y, const char *s, int character_spacing)
 {
-    text_draw(x, y, s);
+    text_draw(x, y, s, character_spacing);
 }
 
 static int scroll_step_period(const TextScroll *ts)
@@ -403,7 +422,8 @@ static int scroll_strip_w(const TextScroll *ts)
 {
     if (ts == 0 || ts->text == 0)
         return 0;
-    return scroll_margin_left(ts) + text_pixel_w(ts->text, scroll_font(ts), scroll_scale(ts)) +
+    return scroll_margin_left(ts) +
+           text_pixel_w(ts->text, scroll_font(ts), scroll_scale(ts), ts->character_spacing) +
            scroll_margin_right(ts);
 }
 
@@ -419,6 +439,8 @@ static void scroll_apply_defaults(TextScroll *ts)
         ts->pause_frames = TEXT_SCROLL_PAUSE_DEFAULT;
     if (ts->scale <= 0)
         ts->scale = TEXT_SCALE_1;
+    if (ts->character_spacing <= 0)
+        ts->character_spacing = TEXT_CHAR_SPACING_DEFAULT;
 }
 
 void text_scroll_start(TextScroll *ts, int x, int y, const char *text)
@@ -532,7 +554,7 @@ static void scroll_paint(const TextScroll *ts)
     scale = scroll_scale(ts);
     cell_w = font_cell_w(font);
     cell_h = font_cell_h(font);
-    advance = font_glyph_advance(font, scale);
+    advance = glyph_step(font, scale, ts->character_spacing);
     clip_w = scroll_view_w(ts);
     clip_h = scroll_view_h(ts);
     x = ts->x + ts->scroll_x + scroll_margin_left(ts);
@@ -586,7 +608,7 @@ static void scroll_paint_outline(const TextScroll *ts, int invert)
     scale = scroll_scale(ts);
     cell_w = font_cell_w(font);
     cell_h = font_cell_h(font);
-    advance = font_glyph_advance(font, scale);
+    advance = glyph_step(font, scale, ts->character_spacing);
     clip_w = scroll_view_w(ts);
     clip_h = scroll_view_h(ts);
     ring_x = ts->x - 1;

@@ -9,8 +9,13 @@
 
 #define TICK_HZ 60
 #define STEP_FRAMES (TICK_HZ / 2)
-#define TITLE_BOUNCE_CYCLE_FRAMES 500
-#define TITLE_PRESS_CYCLE_FRAMES 700
+/*
+ * A bounce cycle is three 60-frame pauses plus the out-and-back travel.
+ * Large glyphs are 5px with the default 1px gap, plus 4px margins.
+ * snake_reset already paints one frame of the first pause.
+ */
+#define TITLE_BOUNCE_CYCLE_FRAMES 539
+#define TITLE_PRESS_CYCLE_FRAMES 684
 
 static void expect(int cond, const char *msg)
 {

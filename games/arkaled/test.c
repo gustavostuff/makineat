@@ -849,19 +849,19 @@ static void test_title(void)
     expect(arkaled_on_title() && arkaled_title_scroll_x() < 0,
            "the banner bounces left");
     expect(pixel_get(6, 7) && pixel_get(6, 11), "1P sits above 2P");
-    expect(pixel_get(2, 7) && pixel_get(3, 8) && pixel_get(2, 9),
+    expect(pixel_get(1, 7) && pixel_get(2, 8) && pixel_get(1, 9),
            "the arrow starts on 1P");
-    expect(!pixel_get(2, 11) && !pixel_get(0, 7) && !pixel_get(14, 7),
+    expect(!pixel_get(1, 11) && !pixel_get(0, 7) && !pixel_get(14, 7),
            "the 1P 2P block is centered");
     expect(row_count(15) == 0, "the title has no paddles");
     feed(0, 1, 0, 0, 0);
     feed(0, 1, 0, 0, 0);
-    expect(arkaled_on_title() && pixel_get(2, 11) && pixel_get(3, 12) && pixel_get(2, 13),
+    expect(arkaled_on_title() && pixel_get(1, 11) && pixel_get(2, 12) && pixel_get(1, 13),
            "down moves the arrow to 2P");
-    expect(!pixel_get(2, 7), "the arrow leaves 1P");
+    expect(!pixel_get(1, 7), "the arrow leaves 1P");
     feed(1, 0, 0, 0, 0);
     feed(1, 0, 0, 0, 0);
-    expect(pixel_get(2, 7) && !pixel_get(2, 11), "up returns the arrow to 1P");
+    expect(pixel_get(1, 7) && !pixel_get(1, 11), "up returns the arrow to 1P");
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
     expect(!arkaled_on_title() && pad_x() == 2 && arkaled_count() == 48,

@@ -10,13 +10,15 @@
  * A fresh yellow block adds one coin. The count wraps from 99 to 0.
  * Falling off the bottom leaves the stage up for SUPER_LED_BROS_DEATH_TICKS.
  * The life counter drops when that wait restarts the stage, and it counts
- * through 0. Losing the life shown as 0 ends on "game over" until the button
- * starts a new game.
+ * through 0. Losing the life shown as 0 ends on "game over". The action
+ * button can start a new game after SUPER_LED_BROS_OVER_TICKS.
  */
 
 #define SUPER_LED_BROS_LIVES 4
 /* 3 seconds at the 60 Hz game tick, held open for a later death sting. */
 #define SUPER_LED_BROS_DEATH_TICKS 180
+/* 3 seconds of game over before the action button can start a new game. */
+#define SUPER_LED_BROS_OVER_TICKS 180
 
 void super_led_bros_reset(void);
 void super_led_bros_tick(const Input *in);

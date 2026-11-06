@@ -65,7 +65,7 @@ static void draw_points(void)
         buf[--i] = (char)('0' + (n % 10));
         n /= 10;
     } while (n > 0 && i > 0);
-    text_print(1, 8, buf + i);
+    text_print(1, 8, buf + i, TEXT_CHAR_SPACING_DEFAULT);
 }
 
 static void draw_face(void)
@@ -97,8 +97,8 @@ static void draw_over(void)
         return;
     }
     if (style == OVER_STYLE_PONG_WIN) {
-        text_print(1, 1, pong_winner == 1 ? "P1" : "P2");
-        text_print(1, 5, "wins");
+        text_print(1, 1, pong_winner == 1 ? "P1" : "P2", TEXT_CHAR_SPACING_DEFAULT);
+        text_print(1, 5, "wins", TEXT_CHAR_SPACING_DEFAULT);
         return;
     }
     draw_face();
