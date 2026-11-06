@@ -26,7 +26,7 @@ static int body_blocked(const StageView *view, int x, int y)
         return 1;
     if (x < 0 || y < 0 || x >= (int)view->map->width || y >= (int)view->map->height)
         return 1;
-    return stage_map_solid(view->map, x, y);
+    return stage_h_solid(view, x, y);
 }
 
 static int on_ground(const StageView *view, int px, int py)
@@ -84,8 +84,10 @@ static void move_vertical(PlatformPlayer *player, StageView *view)
             if (step > 0) {
                 player->grounded = 1;
                 player->vy = 0;
-            } else
+            } else {
+                stage_h_item_bump(view, player->px, ny);
                 player->vy = 0;
+            }
             player->vert_accum = 0;
             return;
         }
@@ -102,6 +104,8 @@ static int jump_script_try_step(PlatformPlayer *player, StageView *view, int dy)
     if (body_blocked(view, player->px, ny)) {
         if (dy > 0)
             player->grounded = 1;
+        else
+            stage_h_item_bump(view, player->px, ny);
         player->vy = 0;
         return 0;
     }
@@ -230,6 +234,7 @@ void platform_player_tick(PlatformPlayer *player, StageView *view, const Input *
 
     if (player == 0 || view == 0 || in == 0)
         return;
+    stage_h_items_tick(view);
     if (in->left && !in->right)
         dx = -1;
     else if (in->right && !in->left)

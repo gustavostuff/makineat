@@ -12,7 +12,7 @@ static const uint16_t tiny_rows[] = {
     0x0001, 0x0001,
 };
 
-static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows, tiny_rows, 0, 0, 0};
+static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows, tiny_rows, 0, 0, 0, 0, 0};
 
 static void test_map_get(void)
 {
@@ -59,6 +59,8 @@ static void bind_scroll_map(StageView *view, StageMap *map, int fg_w, int bg_w)
     map->bg_width = (uint16_t)bg_w;
     map->bg_row_words = 1;
     map->bg_lit = bg_w > 0 ? para_bg_same : 0;
+    map->item_count = 0;
+    map->items = 0;
     stage_view_init(view);
     stage_bind_h(view, map);
 }
@@ -129,8 +131,8 @@ static void test_h_suppress_player_on_bg(void)
     static const uint16_t fg_empty[] = {0x0000};
     static const uint16_t fg_solid[] = {0x0001};
     static const uint16_t bg_lit[] = {0x0001};
-    static const StageMap bg_only = {16, 1, 1, 0, 0, fg_empty, fg_empty, 16, 1, bg_lit};
-    static const StageMap solid_fg = {16, 1, 1, 0, 0, fg_solid, fg_solid, 16, 1, bg_lit};
+    static const StageMap bg_only = {16, 1, 1, 0, 0, fg_empty, fg_empty, 16, 1, bg_lit, 0, 0};
+    static const StageMap solid_fg = {16, 1, 1, 0, 0, fg_solid, fg_solid, 16, 1, bg_lit, 0, 0};
 
     stage_view_init(&view);
     stage_bind_h(&view, &bg_only);
@@ -165,6 +167,77 @@ static void test_h_dead_zone_follow(void)
     expect(stage_h_camera_get(&view) == 1, "dead zone pans right when focus exits zone right edge");
 }
 
+static const uint16_t item_rows[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+static const StageItem one_item[] = {{4, 6}};
+static const StageMap item_map = {16, 8, 1, 0, 0, item_rows, item_rows, 0, 0, 0, 1, one_item};
+
+static void test_item_block_bump(void)
+{
+    int i;
+    StageView view;
+
+    expect(stage_item_covers(&item_map, 4, 6), "item block covers its top-left cell");
+    expect(stage_item_covers(&item_map, 5, 7), "item block covers its bottom-right cell");
+    expect(!stage_item_covers(&item_map, 6, 6), "the cell beside an item block is open");
+    stage_view_init(&view);
+    stage_bind_h(&view, &item_map);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 7), "a resting item block shows the first shine pattern");
+    expect(!pixel_get(4, 5), "a resting item block does not draw above itself");
+    stage_h_item_bump(&view, 0, 0);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(4, 5), "a miss does not bump the item block");
+    stage_h_item_bump(&view, 5, 7);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 5) && pixel_get(5, 5) && pixel_get(4, 6) && pixel_get(5, 6), "a hit draws the used block one cell higher");
+    expect(!pixel_get(4, 7) && !pixel_get(5, 7), "a bumped item block leaves its old bottom row clear");
+    stage_h_items_tick(&view);
+    stage_h_item_bump(&view, 5, 7);
+    for (i = 0; i < STAGE_ITEM_BOUNCE_TICKS - 1; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && pixel_get(5, 7) && !pixel_get(4, 5), "the item block returns after one bounce");
+}
+
+static void test_item_block_shine(void)
+{
+    int i;
+    StageView view;
+
+    stage_view_init(&view);
+    stage_bind_h(&view, &item_map);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 6) && !pixel_get(4, 7) && !pixel_get(5, 7),
+           "shine pattern 1 lights only the top-left cell");
+    for (i = 0; i < 7; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && !pixel_get(5, 6), "the first shine pattern holds until the 8 FPS step");
+    stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(!pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && !pixel_get(5, 7),
+           "shine pattern 2 lights the top-right and bottom-left cells");
+    expect(stage_h_solid(&view, 5, 7), "an item block stays solid on a dark shine cell");
+    for (i = 0; i < 7; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(!pixel_get(4, 6) && !pixel_get(5, 6) && !pixel_get(4, 7) && pixel_get(5, 7),
+           "shine pattern 3 lights only the bottom-right cell");
+    stage_h_item_bump(&view, 5, 7);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 5) && pixel_get(5, 5) && pixel_get(4, 6) && pixel_get(5, 6),
+           "a used block lifts as a solid 2x2");
+    for (i = 0; i < STAGE_ITEM_BOUNCE_TICKS + STAGE_TICK_HZ; i++)
+        stage_h_items_tick(&view);
+    stage_h_paint(&view);
+    expect(pixel_get(4, 6) && pixel_get(5, 6) && pixel_get(4, 7) && pixel_get(5, 7),
+           "a used block stays fully lit after the shine would have moved");
+    expect(!pixel_get(4, 5), "a used block does not stay lifted");
+    stage_h_item_bump(&view, 4, 6);
+    stage_h_paint(&view);
+    expect(!pixel_get(4, 5) && pixel_get(4, 6), "a used item block does not bounce again");
+}
+
 int main(void)
 {
     report_begin("stage");
@@ -173,5 +246,7 @@ int main(void)
     test_h_scroll_math();
     test_h_suppress_player_on_bg();
     test_h_dead_zone_follow();
+    test_item_block_bump();
+    test_item_block_shine();
     return report_end();
 }

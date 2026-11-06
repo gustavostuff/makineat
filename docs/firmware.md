@@ -81,12 +81,13 @@ Wide or tall platform levels live outside the 16×16 `map`. Import art with `too
 - **`(255,255,255)`** exactly one spawn pixel (**not** drawn, **not** solid)
 - **`(0,255,0)`** decorative ON (drawn on the foreground pass, **not** solid)
 - **`(255,0,0)`** solid ON (drawn, solid for collision)
+- **`(255,255,0)`** item container. Every yellow pixel belongs to exactly one **2×2** block. The block is solid and is not stored in `fg_lit` or `fg_solid`. Until it is used the block shines at 8 FPS through three patterns. The first pattern lights only the top-left cell. The second lights the top-right and bottom-left cells. The third lights only the bottom-right cell. Cells that are off in the current pattern are not drawn. The block stays solid the whole time. A jump that tries to enter the block from below shifts that **2×2** up one cell for `STAGE_ITEM_BOUNCE_TICKS` frames, then it returns. That bump uses the container. Afterward the block stays fully lit, stays solid, and does not bounce or shine again. The container does not release an item.
 
 On **`bg.png`**, any pixel that is **not** black is drawn in a background pass. The background has **no** collision. `stage_h_paint` draws background first, then foreground, so foreground pixels overwrite where both are ON.
 
 When **`bg.png`** is present, its width may differ from **`fg.png`**. Each layer can scroll by its width minus **16**. The background camera follows **`bg_camera = fg_camera * (bg_width - 16) / (fg_width - 16)`** with integer division, then stays inside that background span. Both cameras are **0** at the left edge and both sit on their last legal column at the right edge. A **64** wide background behind a **256** wide foreground therefore keeps moving until the foreground camera reaches **240**.
 
-`StageMap` stores **`fg_lit`** and **`fg_solid`**. **`stage_map_get`** / **`stage_map_lit`** return the lit mask (decor plus solid). **`stage_map_solid`** returns the solid mask only.
+`StageMap` stores **`fg_lit`** and **`fg_solid`**. **`stage_map_get`** / **`stage_map_lit`** return the lit mask (decor plus solid). **`stage_map_solid`** returns the solid mask only. **`stage_h_solid`** is that mask or an item container. Item block origins live in **`items`**.
 
 - **Horizontal (implemented):** `stage_bind_h`, `stage_h_scroll_tick` (held stick at **30 FPS**), `stage_h_paint`, `stage_h_solid`, `stage_h_camera_follow_dead_zone`, `stage_h_bg_camera_get`. Defaults are `STAGE_H_DEAD_ZONE_X` **5** and `STAGE_H_DEAD_ZONE_W` **6** in `stage.h`, so the dead zone is screen columns **5** through **10** inclusive with height **FIELD_SIZE** rows. `stage_h_camera_set` clips the foreground camera and refreshes the background camera so each **FIELD_SIZE** window stays inside its layer bounds.
 - **Vertical (stub):** `stage_bind_v` returns `STAGE_ERR_UNSUPPORTED`. The `stage_v_*` symbols are placeholders.

@@ -21,12 +21,24 @@
 #define STAGE_H_DEAD_ZONE_X 5
 #define STAGE_H_DEAD_ZONE_W 6
 
+/* Pure yellow (255,255,0) item containers. Each one is a 2x2. */
+#define STAGE_ITEM_MAX 32
+#define STAGE_ITEM_BOUNCE_TICKS 8
+/* Unused containers cycle three shine patterns this many times per second. */
+#define STAGE_ITEM_SHINE_FPS 8
+#define STAGE_ITEM_SHINE_FRAMES 3
+
 typedef enum {
     STAGE_SCROLL_H,
     STAGE_SCROLL_V,
 } StageScrollMode;
 
 #define STAGE_ERR_UNSUPPORTED (-1)
+
+typedef struct StageItem {
+    uint16_t x;
+    uint16_t y;
+} StageItem;
 
 typedef struct StageMap {
     uint16_t width;
@@ -39,6 +51,8 @@ typedef struct StageMap {
     uint16_t bg_width;
     uint16_t bg_row_words;
     const uint16_t *bg_lit;
+    uint16_t item_count;
+    const StageItem *items;
 } StageMap;
 
 typedef struct StageView {
@@ -49,11 +63,16 @@ typedef struct StageView {
     int scroll_accum;
     int dead_zone_x; /* screen column of left edge (0-based), full FIELD_SIZE height */
     int dead_zone_w; /* width in screen columns */
+    uint8_t item_bounce[STAGE_ITEM_MAX]; /* ticks left with the 2x2 drawn one cell up */
+    uint8_t item_used[STAGE_ITEM_MAX]; /* 1 after the first bump: solid, no shine, no bounce */
+    uint8_t item_shine; /* pattern index shared by unused containers */
+    uint8_t item_shine_accum;
 } StageView;
 
 int stage_map_get(const StageMap *map, int x, int y);
 int stage_map_lit(const StageMap *map, int x, int y);
 int stage_map_solid(const StageMap *map, int x, int y);
+int stage_item_covers(const StageMap *map, int x, int y);
 
 void stage_view_init(StageView *view);
 
@@ -81,6 +100,8 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
  */
 void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y, int hide_player_fg);
 int stage_h_solid(const StageView *view, int world_x, int world_y);
+void stage_h_items_tick(StageView *view);
+void stage_h_item_bump(StageView *view, int x, int y);
 
 int stage_v_camera_max(const StageView *view);
 void stage_v_scroll_tick(StageView *view, int dy);

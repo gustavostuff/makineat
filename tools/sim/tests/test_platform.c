@@ -87,6 +87,8 @@ static const StageMap open_map = {
     0,
     0,
     0,
+    0,
+    0,
 };
 
 static void expect(int cond, const char *msg)
