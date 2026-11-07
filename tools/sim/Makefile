@@ -97,24 +97,7 @@ tests/test_acetate: tests/test_acetate.c acetate_geom.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_acetate.c acetate_geom.c $(CHECK)
 
 test: $(TEST_BINS)
-	./tests/test_max7219
-	./tests/test_matrix
-	./tests/test_status_digits
-	./tests/test_avr128db28
-	./tests/test_entity
-	./tests/test_map
-	./tests/test_stage
-	./tests/test_platform
-	./tests/test_game
-	./tests/test_pong
-	./tests/test_arkaled
-	./tests/test_text_demo
-	./tests/test_snake
-	./tests/test_super_led_bros
-	./tests/test_cart
-	./tests/test_board
-	./tests/test_synth
-	./tests/test_acetate
+	@sh tests/run.sh $(TEST_BINS)
 
 clean:
 	rm -f makineat-ui maki-nita-ui makinita-ui retrodiode-ui test_chips $(TEST_BINS)

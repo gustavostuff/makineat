@@ -4,7 +4,7 @@
 #include "input.h"
 
 /*
- * Reset opens a title in the large 5x6 font: "S n a k e" scroll-bounces,
+ * Reset opens a title in the large 5x6 font: "SNAKE" scroll-bounces,
  * then alternates with "PRESS BUTTON" after each full bounce cycle until the
  * action button starts play (status digits stay off on the title). Classic snake on
  * the 16x16 map. Four score food cells stay lit until eaten.

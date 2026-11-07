@@ -14,7 +14,7 @@
  * Large glyphs are 5px with the default 1px gap, plus 4px margins.
  * snake_reset already paints one frame of the first pause.
  */
-#define TITLE_BOUNCE_CYCLE_FRAMES 539
+#define TITLE_BOUNCE_CYCLE_FRAMES 347
 #define TITLE_PRESS_CYCLE_FRAMES 684
 
 static void expect(int cond, const char *msg)
@@ -99,16 +99,16 @@ static void test_title(void)
     snake_seed(42);
     snake_reset();
     expect(snake_on_title(), "reset opens on the title screen");
-    expect(strcmp(snake_title_message(), "S n a k e") == 0,
-           "the title starts with spaced Snake scroll-bounce");
+    expect(strcmp(snake_title_message(), "SNAKE") == 0,
+           "the title starts with Snake scroll-bounce");
     for (d = 0; d < 8; d++)
         expect(status_get_digit(d) == 0, "title keeps status digits off");
     idle(TITLE_BOUNCE_CYCLE_FRAMES);
     expect(strcmp(snake_title_message(), "PRESS BUTTON") == 0,
            "a finished bounce switches to PRESS BUTTON");
     idle(TITLE_PRESS_CYCLE_FRAMES);
-    expect(strcmp(snake_title_message(), "S n a k e") == 0,
-           "the next finished bounce returns to spaced Snake");
+    expect(strcmp(snake_title_message(), "SNAKE") == 0,
+           "the next finished bounce returns to Snake");
     for (i = 0; i < 8; i++)
         expect(status_get_digit(i) == 0, "digits stay off while the title runs");
     feed_button();
