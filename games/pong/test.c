@@ -310,8 +310,8 @@ static void test_score_pause_resets(void)
 #define SEG_G 0x01
 #define DIGIT_P (SEG_A | SEG_B | SEG_E | SEG_F | SEG_G)
 #define DIGIT_O (SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F)
-#define DIGIT_N (SEG_C | SEG_E | SEG_G)
-#define DIGIT_G6 (SEG_A | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G)
+#define DIGIT_N (SEG_A | SEG_B | SEG_C | SEG_E | SEG_F)
+#define DIGIT_G6 (SEG_A | SEG_C | SEG_D | SEG_E | SEG_F)
 
 static int digits_pong_at(int off)
 {
