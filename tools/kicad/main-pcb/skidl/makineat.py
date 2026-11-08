@@ -306,7 +306,7 @@ def _audio(vcc: Net, gnd: Net, event: Net, reset: Net) -> None:
     pull = _passive(_ic_ref("R", 5), R_FP, "10k EVENT", "10 kohm EVENT pull-up")
     _tie(pull, 1, event)
     _tie(pull, 2, vcc)
-    reset_pull = _passive(_ic_ref("R", 5, 2), R_FP, "10k RESET", "10 kohm RESET pull-up")
+    reset_pull = _passive(_ic_ref("R", 5, 2), R_HORIZ_FP, "10k RESET", "10 kohm RESET pull-up")
     _tie(reset_pull, 1, reset)
     _tie(reset_pull, 2, vcc)
     sink = _passive(_ic_ref("R", 5, 1), R_FP, "10k DAC", "10 kohm DAC load")
@@ -688,10 +688,10 @@ def _check(text: str) -> None:
         raise SystemExit("expected 2 UPDI headers (audio and cart)")
     if text.count('(description "Cartridge programming")') != 1:
         raise SystemExit("cart UPDI header missing")
-    if text.count(f'(footprint "{R_HORIZ_FP}")') != 5:
-        raise SystemExit("expected 5 horizontal resistor footprints")
-    if text.count(f'(footprint "{R_VERT_FP}")') != 6:
-        raise SystemExit("expected 6 vertical resistor footprints")
+    if text.count(f'(footprint "{R_HORIZ_FP}")') != 6:
+        raise SystemExit("expected 6 horizontal resistor footprints")
+    if text.count(f'(footprint "{R_VERT_FP}")') != 5:
+        raise SystemExit("expected 5 vertical resistor footprints")
     if text.count('(value "10k EVENT")') != 1 or text.count('(value "10k DAC")') != 1 or text.count('(value "10k RESET")') != 1:
         raise SystemExit("expected the EVENT pull-up, DAC load, and RESET pull-up")
     if text.count('(value "22k IN")') != 1 or text.count('(value "1k IN")') != 1:

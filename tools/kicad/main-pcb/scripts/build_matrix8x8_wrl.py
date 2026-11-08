@@ -15,11 +15,12 @@ LIB_WRL = (
     / "library/MakiNeat.3dshapes/NFM-12881xx.wrl"
 )
 
-BODY = (12 / 255, 12 / 255, 12 / 255)
-LED = (200 / 255, 200 / 255, 200 / 255)
+BODY = (12 / 255, 12 / 255, 12 / 255)  # face the LEDs sit in
+SIDE = (1.0, 1.0, 1.0)  # faces that do not show LEDs
+LED = (1.0, 0.96, 0.62)  # pale yellow
 
 SIZE = 32.0
-BODY_H = 8.0
+BODY_H = 5.5
 LED_H = 3.0
 LED_PROUD = 0.2  # mm above body top; rest of cylinder is inside the block
 LED_R = 1.5  # 3 mm dia per NFM-12881xx drawing
@@ -139,12 +140,9 @@ coordIndex [
 def main() -> None:
     ox, oy, oz = FOOTPRINT_OFFSET_MM
     parts: list[tuple[list, list, tuple[float, float, float]]] = []
-    parts.append(
-        (
-            *box_faces(0, 0, 0, SIZE, SIZE, BODY_H),
-            BODY,
-        )
-    )
+    body_pts, body_faces = box_faces(0, 0, 0, SIZE, SIZE, BODY_H)
+    parts.append((body_pts, [body_faces[1]], BODY))
+    parts.append((body_pts, [body_faces[0], *body_faces[2:]], SIDE))
 
     z_top = BODY_H + LED_PROUD
     z_bot = z_top - LED_H
