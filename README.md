@@ -1,16 +1,16 @@
 <img src="img/logos/logo_v_08.svg" alt="Logo V8" />
 
-MakiNeat is a cartridge-based portable tabletop arcade. The name comes from _maquinita_, a Mexican word for arcade machines (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field. Graphics are 1-bit (LEDs are either ON or OFF).
+MakiNeat is a cartridge-based portable arcade tabletop. The name comes from _maquinita_, a Mexican word for arcade machines (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field. Graphics are 1-bit (LEDs are either ON or OFF).
 
 On a similar spirit as the Magnavox Odyssey and the Vectrex, MakiNeat uses colored, translucent sheets to cover the screen. So the overlay is an extension of the cartridge, part of the game experience. Read [overlays](docs/overlays.md) and [design](docs/design.md) for details.
 
-An AVR128DB28 on a cartridge runs the game and holds the picture (the cartridge is both the system brain and the game data). Four MAX7219 drivers refresh the screen grid.
+An AVR128DB28 on a cartridge runs the game and holds the picture (the cartridge is both the system brain and the game data). Five MAX7219 drivers share one SPI chain. Four refresh the screen grid. The fifth drives the 7-segment status digits.
 
 Simple graphics + simple input can still be fun. A stick (and sometimes a button) is all that's needed. Together with cartridges, colored overlays, and a sturdy design, that is the spirit of MakiNeat.
 
 ## PCBs
 
-Copper tracing is mostly done but not polished (test points, status LEDs, remaining EMI margins, noise review). The main layout includes ground pour via stitching on `makineat_v_05.kicad_pcb`. The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are already under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
+Copper tracing is mostly done but not polished. The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
 
 Main system PCB, 100x100 mm:
 

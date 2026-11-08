@@ -8,10 +8,10 @@ The runtime loops at 60 Hz (~16.67 ms per frame). Each pass debounces inputs, ex
 
 The framebuffer is sixteen rows of sixteen bits in `frame[16]`. `pixel`, `pixel_get`, and `clear` form the drawing API. There is no per-pixel brightness in RAM.
 
-DIN is PA4, CLK is PA6, LOAD is PA7. One flush transmits eight digit rows across all four drivers via SPI. During init, firmware configures:
-- Decode mode register (0x09) to 0x00 (raw matrix drive, no BCD decode).
-- Scan limit register (0x0B) to 0x07 (scan all 8 digits).
-- Shutdown register (0x0C) to 0x01 (normal operation).
+DIN is PA4, CLK is PA6, LOAD is PA7. One flush transmits eight digit rows to five MAX7219 drivers over SPI. U1 through U4 drive the 16x16 matrix. U7 drives the 7-segment status digits. During init, firmware configures:
+- Decode mode register (0x09) is 0x00 on U1 through U4 (raw matrix drive, no BCD decode). U7 defaults to Code-B decode (0xFF).
+- Scan limit register (0x0B) is 0x07 on every driver (scan all 8 digits).
+- Shutdown register (0x0C) is 0x01 (normal operation).
 - Intensity register (0x0A) defaults to 0x0F (full intensity).
 
 ### Refresh rate and timing
@@ -29,7 +29,7 @@ Player 1 and Player 2 stick and action button nets reach dedicated input pins on
 
 Debouncing in `tools/fw/input.c` samples inputs once per 60 Hz tick. Two consecutive disagreeing ticks are required before a state change registers, providing approximately 33 ms of noise immunity.
 
-The planned system brightness control uses debounced input on the Bright button and stick. Tapping the Bright button advances brightness to the next level (wrapping from 15 to 1). Holding the Bright button while pressing stick Up or Down steps the level up or down. Levels are 1, 3, 5, 7, 9, 11, 13, and 15 across all four MAX7219 parts. Zero is not used. Bright and intensity writes are not in the SKiDL netlist yet. The simulator does not model Brightness.
+The planned system brightness control uses debounced input on the Bright button and stick. Tapping the Bright button advances brightness to the next level (wrapping from 15 to 1). Holding the Bright button while pressing stick Up or Down steps the level up or down. Levels are 1, 3, 5, 7, 9, 11, 13, and 15 across all five MAX7219 parts. Zero is not used. Bright and intensity writes are not in the SKiDL netlist yet. The simulator does not model Brightness.
 
 ## Sound
 

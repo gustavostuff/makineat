@@ -112,7 +112,7 @@ Driver changes are located in cartridge firmware (`tools/fw/`).
 
 ### 3.1 Cascade Chain Configuration
 
-In `flush.c`, the cascade chain count increases:
+In `flush.c`, the cascade chain is five drivers:
 
 ```c
 #define CHAIN 5
@@ -151,7 +151,7 @@ Games that omit status calls leave digits blank.
 
 ### 3.4 Frame Timing
 
-Transmitting five words instead of four adds negligible overhead (around 128 us at a 1 MHz SPI clock rate), fitting well within the 16.6 ms (60 Hz) frame interval.
+Each frame flush writes all five drivers. That transfer stays inside the 16.6 ms (60 Hz) frame interval.
 
 ## 4. Mechanical and Visual Layout
 
@@ -180,6 +180,6 @@ Most parts are standard through-hole components, while the display modules are c
 2. Connect DOUT of U4 to DIN of U7 (`DOUT_U4`), sharing CLK and LOAD. *(Done in SKiDL)*
 3. Route U7 segment pins to J7 and digit pins to J9. *(Done in SKiDL)*
 4. Add the 2x6 auxiliary expansion header.
-5. Update `CHAIN` to 5 in `tools/fw/flush.c` and expand `drivers_init()` and `drivers_flush()`.
-6. Implement the status buffer API in `tools/fw/`.
-7. Add simulation support in `tools/sim/` for fifth-driver telemetry.
+5. `CHAIN` is 5 in `tools/fw/flush.c`. `drivers_init()` and `drivers_flush()` write U1 through U4 and U7. *(Done)*
+6. The status buffer API is in `tools/fw/status.c`. *(Done)*
+7. The simulator includes U7 on the SPI chain. *(Done)*
