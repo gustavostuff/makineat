@@ -20,6 +20,10 @@ for d in "$img_root"/*/; do
         continue
     fi
     base=$(basename "$d")
+    if [[ ! "$base" =~ ^stage_[0-9]+$ ]]; then
+        echo "regen_stages: skip $base" >&2
+        continue
+    fi
     out="$game_dir/$base"
     echo "regen_stages: $d -> $out.{c,h}"
     python3 "$gen" "$d" "$out"

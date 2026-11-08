@@ -458,6 +458,7 @@ void text_scroll_start(TextScroll *ts, int x, int y, const char *text)
     ts->pending_reset = 0;
     ts->saw_far_edge = 0;
     ts->bounce_done = 0;
+    ts->far_done = 0;
 }
 
 void text_scroll_stop(TextScroll *ts)
@@ -468,6 +469,7 @@ void text_scroll_stop(TextScroll *ts)
     ts->pending_reset = 0;
     ts->saw_far_edge = 0;
     ts->bounce_done = 0;
+    ts->far_done = 0;
 }
 
 int text_scroll_take_bounce_done(TextScroll *ts)
@@ -478,6 +480,17 @@ int text_scroll_take_bounce_done(TextScroll *ts)
         return 0;
     done = ts->bounce_done;
     ts->bounce_done = 0;
+    return done;
+}
+
+int text_scroll_take_far_done(TextScroll *ts)
+{
+    int done;
+
+    if (ts == 0)
+        return 0;
+    done = ts->far_done;
+    ts->far_done = 0;
     return done;
 }
 
@@ -503,7 +516,9 @@ static void scroll_advance(TextScroll *ts)
                    ts->scroll_x == 0 && ts->dir == -1) {
             ts->bounce_done = 1;
             ts->saw_far_edge = 0;
-        }
+        } else if (ts->wait == 0 && ts->repeat == TEXT_SCROLL_BOUNCE && ts->saw_far_edge &&
+                   ts->dir == 1)
+            ts->far_done = 1;
         return;
     }
 

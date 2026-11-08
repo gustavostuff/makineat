@@ -39,6 +39,13 @@ int stage_map_semisolid(const StageMap *map, int x, int y)
     return map_bit(map->fg_semisolid, (int)map->row_words, (int)map->width, (int)map->height, x, y);
 }
 
+int stage_map_goal(const StageMap *map, int x, int y)
+{
+    if (map == 0 || map->fg_goal == 0)
+        return 0;
+    return map_bit(map->fg_goal, (int)map->row_words, (int)map->width, (int)map->height, x, y);
+}
+
 int stage_map_get(const StageMap *map, int x, int y)
 {
     return stage_map_lit(map, x, y);
@@ -281,6 +288,7 @@ void stage_view_init(StageView *view)
     view->map = 0;
     view->camera = 0;
     view->bg_camera = 0;
+    view->draw_bg = 1;
     view->scroll_accum = 0;
     view->dead_zone_x = STAGE_H_DEAD_ZONE_X;
     view->dead_zone_w = STAGE_H_DEAD_ZONE_W;
@@ -446,9 +454,11 @@ void stage_h_paint_ex(const StageView *view, int hide_world_x, int hide_world_y,
                 pixel((uint8_t)sx, (uint8_t)sy, true);
                 continue;
             }
-            bg_on = map_bg_lit(map, bx, sy);
-            if (bg_on && !(player_cell && !stage_map_solid(map, wx, sy) && !stage_map_semisolid(map, wx, sy)))
-                pixel((uint8_t)sx, (uint8_t)sy, true);
+            if (view->draw_bg) {
+                bg_on = map_bg_lit(map, bx, sy);
+                if (bg_on && !(player_cell && !stage_map_solid(map, wx, sy) && !stage_map_semisolid(map, wx, sy)))
+                    pixel((uint8_t)sx, (uint8_t)sy, true);
+            }
         }
     }
     paint_item_blocks(view);
@@ -507,6 +517,8 @@ int stage_h_suppress_player_led(const StageView *view, int world_x, int world_y)
         return 0;
     if (stage_map_lit(view->map, world_x, world_y))
         return 1;
+    if (!view->draw_bg)
+        return 0;
     sx = world_x - view->camera;
     if (sx < 0 || sx > FIELD_LAST || world_y < 0 || world_y > FIELD_LAST)
         return 0;

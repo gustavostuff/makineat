@@ -7,6 +7,7 @@ Pure RGB rules on the foreground image (fg.png):
   (0,255,0)      decorative ON (drawn, not solid)
   (255,0,0)      solid ON (drawn, collidable)
   (128,128,128)  one-row one-way platform (#808080): stand on the cell above, jump up through it
+  (255,0,255)    stage goal (drawn, not solid; player overlap clears the stage)
   (255,255,0)    coin block (exactly a 2x2, solid, drawn by the runtime)
   (0,100,100)    growth block (exactly a 2x2, solid; growth pickup spawns when hit)
 
@@ -38,6 +39,7 @@ DECOR = (0, 255, 0)
 SOLID = (255, 0, 0)
 # One-pixel-tall one-way platforms. Exactly #808080.
 SEMISOLID = (0x80, 0x80, 0x80)
+GOAL = (255, 0, 255)
 ITEM = (255, 255, 0)
 GROWTH_BLOCKS = ((0, 100, 100), (0, 255, 255))
 ITEM_MAX = 32  # STAGE_ITEM_MAX in tools/fw/stage.h
@@ -55,13 +57,15 @@ def classify_rgb(r: int, g: int, b: int) -> str:
         return "solid"
     if t == SEMISOLID:
         return "semisolid"
+    if t == GOAL:
+        return "goal"
     if t == ITEM:
         return "item"
     if t in GROWTH_BLOCKS:
         return "growth_block"
     raise SystemExit(
         f"unknown pure color RGB({r},{g},{b}); "
-        "allowed: black, white, green, red, #808080, yellow, dark cyan growth"
+        "allowed: black, white, green, red, #808080, magenta, yellow, dark cyan growth"
     )
 
 
@@ -75,6 +79,7 @@ def image_to_bitplanes(path: Path, h_expect: int | None, what: str):
     lit_rows: list[int] = []
     solid_rows: list[int] = []
     semisolid_rows: list[int] = []
+    goal_rows: list[int] = []
     spawns: list[tuple[int, int]] = []
     yellow = [[False] * w for _ in range(h)]
     cyan = [[False] * w for _ in range(h)]
@@ -82,6 +87,7 @@ def image_to_bitplanes(path: Path, h_expect: int | None, what: str):
         lit_words = [0] * row_words
         solid_words = [0] * row_words
         semisolid_words = [0] * row_words
+        goal_words = [0] * row_words
         for x in range(w):
             r, g, b = px[x, y]
             kind = classify_rgb(r, g, b)
@@ -106,16 +112,20 @@ def image_to_bitplanes(path: Path, h_expect: int | None, what: str):
             elif kind == "semisolid":
                 lit_words[wi] |= 1 << bit
                 semisolid_words[wi] |= 1 << bit
+            elif kind == "goal":
+                lit_words[wi] |= 1 << bit
+                goal_words[wi] |= 1 << bit
         lit_rows.extend(lit_words)
         solid_rows.extend(solid_words)
         semisolid_rows.extend(semisolid_words)
+        goal_rows.extend(goal_words)
     if what == "foreground" and len(spawns) != 1:
         raise SystemExit(
             f"{path.name}: expected exactly one pure white spawn pixel, found {len(spawns)}"
         )
     spawn_x, spawn_y = spawns[0]
     items = collect_item_blocks(path, yellow, cyan)
-    return w, h, row_words, lit_rows, solid_rows, semisolid_rows, spawn_x, spawn_y, items
+    return w, h, row_words, lit_rows, solid_rows, semisolid_rows, goal_rows, spawn_x, spawn_y, items
 
 
 def collect_item_blocks(
@@ -182,6 +192,7 @@ def emit(
     fg_lit: list[int],
     fg_solid: list[int],
     fg_semisolid: list[int],
+    fg_goal: list[int],
     spawn_x: int,
     spawn_y: int,
     bg_w: int,
@@ -220,6 +231,10 @@ def emit(
     for y in range(h):
         chunk = fg_semisolid[y * row_words : (y + 1) * row_words]
         lines.append("    " + ", ".join(f"0x{v:04x}" for v in chunk) + ",")
+    lines.extend(["};", "", f"static const uint16_t {stem}_fg_goal[{h} * {sym}_ROW_WORDS] = {{"])
+    for y in range(h):
+        chunk = fg_goal[y * row_words : (y + 1) * row_words]
+        lines.append("    " + ", ".join(f"0x{v:04x}" for v in chunk) + ",")
     lines.append("};")
 
     if bg_lit is not None:
@@ -257,6 +272,7 @@ def emit(
             f"    {bg_ptr},",
             f"    {item_count},",
             f"    {item_ptr},",
+            f"    {stem}_fg_goal,",
             "};",
             "",
         ]
@@ -279,7 +295,7 @@ def main() -> None:
         bg_path = inp / "bg.png"
         if not fg_path.is_file():
             raise SystemExit(f"missing {fg_path}")
-        w, h, row_words, fg_lit, fg_solid, fg_semisolid, spawn_x, spawn_y, items = image_to_bitplanes(
+        w, h, row_words, fg_lit, fg_solid, fg_semisolid, fg_goal, spawn_x, spawn_y, items = image_to_bitplanes(
             fg_path, None, "foreground"
         )
         if w > 65535 or h > 65535 or row_words > 65535 or spawn_x > 65535 or spawn_y > 65535:
@@ -298,7 +314,7 @@ def main() -> None:
             raise SystemExit("single file mode expects .png")
         fg_path = inp
         bg_png = None
-        w, h, row_words, fg_lit, fg_solid, fg_semisolid, spawn_x, spawn_y, items = image_to_bitplanes(
+        w, h, row_words, fg_lit, fg_solid, fg_semisolid, fg_goal, spawn_x, spawn_y, items = image_to_bitplanes(
             fg_path, None, "foreground"
         )
         if w > 65535 or h > 65535 or row_words > 65535 or spawn_x > 65535 or spawn_y > 65535:
@@ -317,6 +333,7 @@ def main() -> None:
         fg_lit,
         fg_solid,
         fg_semisolid,
+        fg_goal,
         spawn_x,
         spawn_y,
         bg_w,

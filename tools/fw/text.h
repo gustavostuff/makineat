@@ -76,6 +76,7 @@ typedef struct TextScroll {
     int pending_reset;
     int saw_far_edge;
     int bounce_done;
+    int far_done; /* TEXT_SCROLL_BOUNCE: set when the pause at the far edge ends */
 } TextScroll;
 
 typedef struct TextBlink {
@@ -105,6 +106,8 @@ void text_scroll_start(TextScroll *ts, int x, int y, const char *text);
 void text_scroll_stop(TextScroll *ts);
 /* TEXT_SCROLL_BOUNCE: set when a full out-and-back scroll finishes its home pause. */
 int text_scroll_take_bounce_done(TextScroll *ts);
+/* TEXT_SCROLL_BOUNCE: set when the pause after scrolling to the far edge ends. */
+int text_scroll_take_far_done(TextScroll *ts);
 void text_scroll_advance(TextScroll *ts);
 void text_scroll_paint(const TextScroll *ts);
 void text_scroll_paint_outline(const TextScroll *ts, int invert);

@@ -12,6 +12,11 @@
  * The life counter drops when that wait restarts the stage, and it counts
  * through 0. Losing the life shown as 0 ends on "game over". The action
  * button can start a new game after SUPER_LED_BROS_OVER_TICKS.
+ * A new game, and each stage clear, shows a large-font "Stage N" line first.
+ * The line starts at column 3, scrolls left, and stops with 4 blank pixels
+ * after the last letter before its far-edge pause. Touching a magenta
+ * goal freezes the stage for SUPER_LED_BROS_CLEAR_TICKS, then advances.
+ * Clearing the last stage returns to stage 1. A death restart skips the title.
  */
 
 #define SUPER_LED_BROS_LIVES 4
@@ -19,6 +24,8 @@
 #define SUPER_LED_BROS_DEATH_TICKS 180
 /* 3 seconds of game over before the action button can start a new game. */
 #define SUPER_LED_BROS_OVER_TICKS 180
+/* 1 second of frozen play after a magenta goal, before the next stage title. */
+#define SUPER_LED_BROS_CLEAR_TICKS 60
 
 void super_led_bros_reset(void);
 void super_led_bros_tick(const Input *in);
@@ -32,6 +39,14 @@ int super_led_bros_coins(void);
 void super_led_bros_apply_pickups(int n);
 /* Put the feet on the first row below the stage. The next tick is a fall death. */
 void super_led_bros_test_place_below(void);
+/* 1 while the large-font stage title is on screen. */
+int super_led_bros_on_card(void);
+/* 1 during the one-second freeze after a magenta goal. */
+int super_led_bros_clearing(void);
+/* 1-based stage named by the title, or the stage currently in play. */
+int super_led_bros_stage_number(void);
+/* Stand on the magenta flag at the end of the current stage. */
+void super_led_bros_test_place_on_goal(void);
 #endif
 
 #endif

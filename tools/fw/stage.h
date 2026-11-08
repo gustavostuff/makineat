@@ -83,6 +83,7 @@ typedef struct StageMap {
     const uint16_t *bg_lit;
     uint16_t item_count;
     const StageItem *items;
+    const uint16_t *fg_goal; /* pure magenta (255,0,255): drawn, not solid, clears the stage */
 } StageMap;
 
 typedef struct StageView {
@@ -90,6 +91,7 @@ typedef struct StageView {
     const StageMap *map;
     int camera;
     int bg_camera;
+    int draw_bg; /* 0 skips background pixels. Parallax camera math still runs. */
     int scroll_accum;
     int dead_zone_x; /* screen column of left edge (0-based), full FIELD_SIZE height */
     int dead_zone_w; /* width in screen columns */
@@ -105,6 +107,7 @@ int stage_map_get(const StageMap *map, int x, int y);
 int stage_map_lit(const StageMap *map, int x, int y);
 int stage_map_solid(const StageMap *map, int x, int y);
 int stage_map_semisolid(const StageMap *map, int x, int y);
+int stage_map_goal(const StageMap *map, int x, int y);
 int stage_item_covers(const StageMap *map, int x, int y);
 int stage_growth_covers(const StageMap *map, int x, int y);
 

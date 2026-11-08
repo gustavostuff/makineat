@@ -12,7 +12,7 @@ static const uint16_t tiny_rows[] = {
     0x0001, 0x0001,
 };
 
-static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows, tiny_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap tiny = {32, 1, 2, 0, 0, tiny_rows, tiny_rows, 0, 0, 0, 0, 0, 0, 0};
 
 static void test_map_get(void)
 {
@@ -62,6 +62,7 @@ static void bind_scroll_map(StageView *view, StageMap *map, int fg_w, int bg_w)
     map->bg_lit = bg_w > 0 ? para_bg_same : 0;
     map->item_count = 0;
     map->items = 0;
+    map->fg_goal = 0;
     stage_view_init(view);
     stage_bind_h(view, map);
 }
@@ -132,8 +133,8 @@ static void test_h_suppress_player_on_bg(void)
     static const uint16_t fg_empty[] = {0x0000};
     static const uint16_t fg_solid[] = {0x0001};
     static const uint16_t bg_lit[] = {0x0001};
-    static const StageMap bg_only = {16, 1, 1, 0, 0, fg_empty, fg_empty, 0, 16, 1, bg_lit, 0, 0};
-    static const StageMap solid_fg = {16, 1, 1, 0, 0, fg_solid, fg_solid, 0, 16, 1, bg_lit, 0, 0};
+    static const StageMap bg_only = {16, 1, 1, 0, 0, fg_empty, fg_empty, 0, 16, 1, bg_lit, 0, 0, 0};
+    static const StageMap solid_fg = {16, 1, 1, 0, 0, fg_solid, fg_solid, 0, 16, 1, bg_lit, 0, 0, 0};
 
     stage_view_init(&view);
     stage_bind_h(&view, &bg_only);
@@ -170,7 +171,7 @@ static void test_h_dead_zone_follow(void)
 
 static const uint16_t item_rows[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static const StageItem one_item[] = {{4, 6, STAGE_ITEM_KIND_COIN}};
-static const StageMap item_map = {16, 8, 1, 0, 0, item_rows, item_rows, 0, 0, 0, 0, 1, one_item};
+static const StageMap item_map = {16, 8, 1, 0, 0, item_rows, item_rows, 0, 0, 0, 0, 1, one_item, 0};
 
 static void test_item_block_bump(void)
 {
@@ -211,7 +212,7 @@ static const uint16_t growth_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff, 0xffff, 0xffff,
 };
 static const StageItem growth_item[] = {{4, 12, STAGE_ITEM_KIND_GROWTH}};
-static const StageMap growth_map = {16, 16, 1, 0, 0, growth_rows, growth_rows, 0, 0, 0, 0, 1, growth_item};
+static const StageMap growth_map = {16, 16, 1, 0, 0, growth_rows, growth_rows, 0, 0, 0, 0, 1, growth_item, 0};
 
 /* Row 10: one-pixel semisolid platform at x=4; row 15: full red floor */
 static const uint16_t semi_lit[16] = {
@@ -232,6 +233,7 @@ static const StageMap semisolid_map = {
     semi_lit,
     semi_sol,
     semi_plat,
+    0,
     0,
     0,
     0,
@@ -300,7 +302,7 @@ static const uint16_t item_bg_rows[8] = {
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
 };
 static const StageMap item_bg_map = {
-    16, 8, 1, 0, 0, item_rows, item_rows, 0, 16, 1, item_bg_rows, 1, one_item,
+    16, 8, 1, 0, 0, item_rows, item_rows, 0, 16, 1, item_bg_rows, 1, one_item, 0,
 };
 
 static void test_item_block_hides_bg(void)

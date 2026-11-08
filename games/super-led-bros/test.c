@@ -4,6 +4,7 @@
 #include "input.h"
 #include "stage.h"
 #include "stage_01.h"
+#include "stage_02.h"
 #include "status.h"
 #include "tests/report.h"
 
@@ -26,18 +27,49 @@ static void feed_button(void)
     feed(0, 0, 0, 0, 1);
 }
 
+static void idle(int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++)
+        feed(0, 0, 0, 0, 0);
+}
+
+/* "Stage N" is 7 glyphs (41px) plus a 3px start inset and a 4px right margin. The strip is 48.
+ * Travel across a 16-wide view is 32px at 15 FPS (4 ticks each), plus the 60-tick intro pause
+ * and the 60-tick pause at the far edge. reset paints once without advancing. */
+#define STAGE_CARD_TICKS 248
+
+static void finish_card(void)
+{
+    int guard;
+
+    for (guard = 0; guard < STAGE_CARD_TICKS && super_led_bros_on_card(); guard++)
+        feed(0, 0, 0, 0, 0);
+}
+
+static void play_from_reset(void)
+{
+    input_reset();
+    super_led_bros_reset();
+    finish_card();
+}
+
 static void test_stage_spawn(void)
 {
     expect(stage_01.spawn_x == 2 && stage_01.spawn_y == 12,
            "the white pixel defines spawn at (2, 12)");
     expect(!stage_map_solid(&stage_01, 2, 12), "spawn is not solid terrain");
     expect(stage_map_solid(&stage_01, 2, 13), "ground below spawn is solid");
+    expect(stage_map_goal(&stage_01, 250, 9) && !stage_map_solid(&stage_01, 250, 9),
+           "stage 1 goal is the magenta flag and is not solid");
+    expect(stage_map_goal(&stage_02, 250, 9) && !stage_map_solid(&stage_02, 250, 9),
+           "stage 2 goal is the magenta flag and is not solid");
 }
 
 static void test_player_start(void)
 {
-    input_reset();
-    super_led_bros_reset();
+    play_from_reset();
     expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
            "the player starts on the spawn cell");
     expect(pixel_get(2, 12), "the player draws on the field");
@@ -45,8 +77,7 @@ static void test_player_start(void)
 
 static void test_walk_and_camera(void)
 {
-    input_reset();
-    super_led_bros_reset();
+    play_from_reset();
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
     feed(0, 0, 0, 1, 0);
@@ -62,8 +93,7 @@ static void test_jump_full_hold(void)
     int y;
     int peak_y = 12;
 
-    input_reset();
-    super_led_bros_reset();
+    play_from_reset();
     feed_button();
     for (i = 0; i < 80; i++) {
         feed(0, 0, 0, 0, 1);
@@ -80,8 +110,7 @@ static void test_jump_short_release(void)
     int y;
     int peak_y = 12;
 
-    input_reset();
-    super_led_bros_reset();
+    play_from_reset();
     feed_button();
     feed(0, 0, 0, 0, 0);
     feed(0, 0, 0, 0, 0);
@@ -144,8 +173,7 @@ static void test_death_and_game_over(void)
 {
     int i;
 
-    input_reset();
-    super_led_bros_reset();
+    play_from_reset();
     super_led_bros_apply_pickups(1);
     fall_off();
     expect(lives_digit() == SUPER_LED_BROS_LIVES, "the life counter stays through the death wait");
@@ -180,8 +208,85 @@ static void test_death_and_game_over(void)
     feed_button();
     expect(lives_digit() == SUPER_LED_BROS_LIVES, "the button starts a new game with 4 lives");
     expect(super_led_bros_coins() == 0, "a new game clears the coins");
+    expect(super_led_bros_on_card() && super_led_bros_stage_number() == 1,
+           "a new game opens on the Stage 1 title");
+    finish_card();
     expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
            "a new game starts on the spawn cell");
+}
+
+static void test_stage_card_and_clear(void)
+{
+    input_reset();
+    super_led_bros_reset();
+    expect(super_led_bros_on_card() && super_led_bros_stage_number() == 1,
+           "stage 1 opens on its title");
+    expect(pixel_get(4, 5) && !pixel_get(3, 5), "the title starts at column 3");
+    expect(!pixel_get(2, 12), "the title replaces the stage");
+    feed_button();
+    expect(super_led_bros_on_card(), "the title ignores the action button");
+    idle(186);
+    expect(pixel_get(7, 5) && pixel_get(8, 5) && !pixel_get(12, 5) && !pixel_get(15, 5),
+           "the leftward scroll stops with 4 blank pixels after the last letter");
+    idle(STAGE_CARD_TICKS - 189);
+    expect(super_led_bros_on_card(), "the title stays through the left-edge pause");
+    feed(0, 0, 0, 0, 0);
+    expect(!super_led_bros_on_card() && super_led_bros_stage_number() == 1,
+           "the title ends when the left-edge pause ends");
+    expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
+           "stage 1 starts at spawn after the title");
+
+    super_led_bros_apply_pickups(1);
+    super_led_bros_test_place_on_goal();
+    feed(0, 0, 0, 0, 0);
+    expect(super_led_bros_clearing() && super_led_bros_player_x() == 250 &&
+               super_led_bros_player_y() == 9,
+           "the magenta flag freezes the player");
+    feed(0, 0, 0, 1, 1);
+    feed(0, 0, 0, 1, 1);
+    expect(super_led_bros_clearing() && super_led_bros_player_x() == 250,
+           "input does not move the player during the freeze");
+    idle(SUPER_LED_BROS_CLEAR_TICKS - 3);
+    expect(super_led_bros_clearing(), "the freeze lasts one second");
+    feed(0, 0, 0, 0, 0);
+    expect(super_led_bros_on_card() && super_led_bros_stage_number() == 2,
+           "the freeze ends on the Stage 2 title");
+    expect(pixel_get(4, 5) && !pixel_get(3, 5) && !pixel_get(2, 12),
+           "Stage 2 uses the same large title at column 3");
+    idle(STAGE_CARD_TICKS - 1);
+    expect(super_led_bros_on_card(), "Stage 2 stays through the left-edge pause");
+    feed(0, 0, 0, 0, 0);
+    expect(!super_led_bros_on_card() && super_led_bros_stage_number() == 2,
+           "Stage 2 starts when its title finishes");
+    expect(super_led_bros_player_x() == (int)stage_02.spawn_x &&
+               super_led_bros_player_y() == (int)stage_02.spawn_y,
+           "stage 2 starts at its spawn");
+    expect(super_led_bros_coins() == 1 && lives_digit() == SUPER_LED_BROS_LIVES,
+           "coins and lives carry onto stage 2");
+
+    fall_off();
+    expect(!super_led_bros_on_card() && super_led_bros_stage_number() == 2,
+           "a death on stage 2 does not show a title");
+    idle(SUPER_LED_BROS_DEATH_TICKS);
+    expect(!super_led_bros_on_card() && super_led_bros_stage_number() == 2,
+           "stage 2 restarts without a title");
+    expect(super_led_bros_player_x() == (int)stage_02.spawn_x && lives_digit() == 3,
+           "the life counter drops on the stage 2 restart");
+    expect(super_led_bros_coins() == 1, "coins survive the stage 2 death");
+
+    super_led_bros_test_place_on_goal();
+    feed(0, 0, 0, 0, 0);
+    expect(super_led_bros_clearing(), "stage 2's flag starts the freeze");
+    idle(SUPER_LED_BROS_CLEAR_TICKS);
+    expect(super_led_bros_on_card() && super_led_bros_stage_number() == 1,
+           "clearing the last stage returns to the Stage 1 title");
+    finish_card();
+    expect(!super_led_bros_on_card() && super_led_bros_stage_number() == 1,
+           "the return lands on stage 1");
+    expect(super_led_bros_player_x() == 2 && super_led_bros_player_y() == 12,
+           "stage 1 starts at spawn again");
+    expect(super_led_bros_coins() == 1 && lives_digit() == 3,
+           "the return keeps coins and lives");
 }
 
 static void test_vertical_stub(void)
@@ -204,5 +309,6 @@ int main(void)
     test_jump_short_release();
     test_coins();
     test_death_and_game_over();
+    test_stage_card_and_clear();
     return report_end();
 }

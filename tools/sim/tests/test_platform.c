@@ -90,6 +90,7 @@ static const StageMap open_map = {
     0,
     0,
     0,
+    0,
 };
 
 static void expect(int cond, const char *msg)
@@ -117,14 +118,14 @@ static const uint16_t coin_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff,
 };
 static const StageItem coin_item[] = {{4, 12, STAGE_ITEM_KIND_COIN}};
-static const StageMap coin_map = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 0, 1, coin_item};
+static const StageMap coin_map = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 0, 1, coin_item, 0};
 
 /*
  * Same coin block y as coin_map, but spawn one row higher. A 1-tall player at py=13 would hit
  * with feet in the block; a grown player at py=14 hits with the head into y=12 first while feet
  * stay at y=13 (air), which used to skip stage_h_item_bump.
  */
-static const StageMap coin_map_grown_probe = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 0, 1, coin_item};
+static const StageMap coin_map_grown_probe = {16, 16, 1, 4, 14, coin_rows, coin_rows, 0, 0, 0, 0, 1, coin_item, 0};
 
 /* 16x16: solid floor row 15; #808080 ledge at row 9, x 10–12. Feet stand on row 8. */
 static const uint16_t semi_only_floor_lit[16] = {
@@ -145,6 +146,7 @@ static const StageMap semi_platform_map = {
     semi_only_floor_lit,
     semi_only_floor_sol,
     semi_only_floor_plat,
+    0,
     0,
     0,
     0,
@@ -240,6 +242,7 @@ static const StageMap semi_tall_map = {
     0,
     0,
     0,
+    0,
 };
 
 static void test_grown_lands_on_semisolid(void)
@@ -281,7 +284,7 @@ static const uint16_t crouch_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0040, 0, 0xffff,
 };
 static const StageMap crouch_map = {
-    16, 16, 1, 4, 14, crouch_rows, crouch_rows, 0, 0, 0, 0, 0, 0,
+    16, 16, 1, 4, 14, crouch_rows, crouch_rows, 0, 0, 0, 0, 0, 0, 0,
 };
 
 static void hold_down(PlatformPlayer *player, StageView *view, int n)
@@ -346,7 +349,7 @@ static void test_crouch(void)
 static const uint16_t pit_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xffff,
 };
-static const StageMap pit_map = {16, 16, 1, 4, 2, pit_rows, pit_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap pit_map = {16, 16, 1, 4, 2, pit_rows, pit_rows, 0, 0, 0, 0, 0, 0, 0};
 
 static void test_ledge_fall_accelerates(void)
 {
@@ -409,19 +412,19 @@ static void test_dead_zone_camera(void)
 static const uint16_t sky_rows[16] = {
     0, 0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-static const StageMap sky_map = {16, 16, 1, 4, 1, sky_rows, sky_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap sky_map = {16, 16, 1, 4, 1, sky_rows, sky_rows, 0, 0, 0, 0, 0, 0, 0};
 
 /* Solid top row and a floor on row 3. The ceiling is terrain, not the screen edge. */
 static const uint16_t low_ceiling_rows[16] = {
     0xffff, 0, 0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-static const StageMap low_ceiling_map = {16, 16, 1, 4, 2, low_ceiling_rows, low_ceiling_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap low_ceiling_map = {16, 16, 1, 4, 2, low_ceiling_rows, low_ceiling_rows, 0, 0, 0, 0, 0, 0, 0};
 
 /* Floor on row 1 so a tall player's head sits above the screen. */
 static const uint16_t top_rows[16] = {
     0, 0xffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-static const StageMap top_map = {16, 16, 1, 4, 0, top_rows, top_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap top_map = {16, 16, 1, 4, 0, top_rows, top_rows, 0, 0, 0, 0, 0, 0, 0};
 
 static void test_above_screen_keeps_moving(void)
 {
@@ -482,7 +485,7 @@ static void test_above_screen_keeps_moving(void)
 static const uint16_t hole_rows[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-static const StageMap hole_map = {16, 16, 1, 4, 14, hole_rows, hole_rows, 0, 0, 0, 0, 0, 0};
+static const StageMap hole_map = {16, 16, 1, 4, 14, hole_rows, hole_rows, 0, 0, 0, 0, 0, 0, 0};
 
 static void test_fall_through_bottom(void)
 {
