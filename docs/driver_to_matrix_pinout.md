@@ -1,33 +1,53 @@
-# 1088AS 8x8 LED Matrix Pinout & Activation Reference
+# 1088AW 8x8 LED Matrix Pinout & Activation Reference
 
-This document is the **electrical source of truth** for the 1088AS 8x8 LED matrix displays used in the MakiNeat system.
+This document is the **electrical source of truth** for the 1088AW 8x8 LED matrix displays used in the MakiNeat system.
 
 ---
 
 ## 1. Physical Orientation & Pin Layout
 
-The matrix is viewed from the **front display face**. The notch and the `1088AS` silkscreen label are located at the **bottom edge**.
+The matrix is viewed from the **front display face**. The notch and the `1088AW` silkscreen label are located at the **bottom edge**.
 
 Pins are named using single hexadecimal characters **`0` through `F`**:
 - **Top Row (Pins 0 to 7)**: Opposite the notch, ordered left-to-right (Col 0 to Col 7).
 - **Bottom Row (Pins 8 to F)**: On the notch side, ordered left-to-right (Col 0 to Col 7).
 
+The MAX7219 package is drawn on the right. A label `PIN n` is matrix pin n.
+
 ```
-       ----------------------------             
-Row 0 |   0  1  2  3  4  5  6  7   |            
-      |   .  .  .  .  .  .  .  .   |            
-      |                            |            
-      |                            |            
-      |                            |            
-      |                            |            
-      |                            |            
-      |                            |            
-      |   8  9  A  B  C  D  E  F   |            
-      |   .  .  .  .  .  .  .  .   |            
-Row 7 |                            |            
-       ------------/  \-------------            
-                  (Notch)
-       Col 0                   Col 7   
+MAX7219, top of the chip:
+
+                 notch
+          +------- U ------+
+      DIN | 1           24 | DOUT
+    PIN 7 | 2           23 | PIN D
+    PIN 8 | 3           22 | PIN 3
+      GND | 4           21 | PIN 5
+    PIN 9 | 5           20 | PIN 6
+    PIN F | 6  MAX7219  19 | V+
+    PIN 4 | 7           18 | ISET
+    PIN C | 8           17 | PIN 0
+      GND | 9           16 | PIN B
+    PIN E | 10          15 | PIN 1
+    PIN 2 | 11          14 | PIN A
+LOAD (CS) | 12          13 | CLK
+          +----------------+
+
+
+1088AW, front face:
+
+         ----------------------------                    
+        |                            | 
+        |   8                    0   | 
+        |   9                    1   |
+        |   A                    2   | 
+Notch  -    B                    3   | 
+       -    C                    4   | 
+        |   D                    5   |
+        |   E                    6   |
+        |   F                    7   |
+        |                            |
+         -----------------------------              
 ```
 
 ---
@@ -110,22 +130,7 @@ The MAX7219 is a multiplexed Common-Cathode driver:
 - **Segments (`SEGDP`, `SEGA`-`SEGG`)** are current sources -> Connect to **Column Anodes** (`PIN 0`, `1`, `3`, `5`, `6`, `A`, `B`, `D`).
 - **Digits (`DIG0`-`DIG7`)** are current sinks -> Connect to **Row Cathodes** (`PIN 2`, `4`, `7`, `8`, `9`, `C`, `E`, `F`).
 
-```
-               +----------------+
-           DIN | 1           24 | DOUT
-         PIN 7 | 2           23 | PIN D
-         PIN 8 | 3           22 | PIN 3
-           GND | 4           21 | PIN 5
-         PIN 9 | 5           20 | PIN 6
-         PIN F | 6  MAX7219  19 | V+
-         PIN 4 | 7           18 | ISET
-         PIN C | 8           17 | PIN 0
-           GND | 9           16 | PIN B
-         PIN E | 10          15 | PIN 1
-         PIN 2 | 11          14 | PIN A
-     LOAD (CS) | 12          13 | CLK
-               +----------------+
-```
+Package pins are drawn beside the matrix in section 1.
 
 *(Note: Matrix pins `PIN 0` through `PIN F` correspond to nets `DSn_0` through `DSn_F` in the system netlist).*
 

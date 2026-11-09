@@ -15,7 +15,7 @@ third adds 20. C1 and R1 sit on U1. C5 and R5 sit on U5.
 Each matrix footprint is two PinSocket_1x08 strips composed in
 Matrix8x8_2x8_P2.52mm_R25mm.
 Top row has pads 0-7 (left to right) and bottom row has pads 8-F (left to right),
-with the notch and 1088AS label at the bottom edge.
+with the notch and 1088AW label at the bottom edge.
 Display Row 0 is DIG0, Row 7 is DIG7. Display Col 0 is SEGDP, Col 7 is SEGG.
 
 Run from the repo:

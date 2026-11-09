@@ -57,5 +57,5 @@ The image below is an **AI-generated** concept idea of how the build _might_ loo
 - [Overlays](docs/overlays.md) covers physical sheets, simulator tinting, and edit controls.
 - [Future plans](docs/future-plans.md) is the hardware and firmware enhancement roadmap.
 - [Status digits](docs/status-digits.md) is the fifth MAX7219 driver, J7/J9 interfaces, and the planned digit daughterboard.
-- [Driver to matrix pinout](docs/driver_to_matrix_pinout.md) is the MAX7219 and 1088AS LED matrix pinout and activation reference.
+- [Driver to matrix pinout](docs/driver_to_matrix_pinout.md) is the MAX7219 and 1088AW LED matrix pinout and activation reference.
 

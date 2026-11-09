@@ -12,7 +12,7 @@ static void expect(int cond, const char *msg)
 }
 
 /*
- * Replicates the bench tests performed on actual 1088AS hardware
+ * Replicates the bench tests performed on actual 1088AW hardware
  * using a +5V source and 220 ohm resistor to ground (source: docs/driver_to_matrix_pinout.md).
  */
 static void test_bench_pairs(void)
@@ -207,8 +207,8 @@ static void test_old_netlist_fails(void)
 {
     /*
      * If an incorrect / swapped netlist is wired:
-     * Segment DP (pin 22) -> Pin 7 (which is 1088AS Row 0 Cathode)
-     * Digit 0 (pin 2) -> Pin 2 (which is 1088AS Row 1 Cathode)
+     * Segment DP (pin 22) -> Pin 7 (which is 1088AW Row 0 Cathode)
+     * Digit 0 (pin 2) -> Pin 2 (which is 1088AW Row 1 Cathode)
      * Both pins are cathodes, so driving them produces zero forward current.
      */
     Max7219 drv;

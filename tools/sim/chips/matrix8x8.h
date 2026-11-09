@@ -2,7 +2,7 @@
 #define RD_MATRIX8X8_H
 
 /*
- * 1088AS 8x8 LED Matrix module model.
+ * 1088AW 8x8 LED Matrix module model.
  * 16-pin package (two 1x08 socket strips, 25.4 mm row spacing).
  *
  * Source of truth: docs/driver_to_matrix_pinout.md
@@ -11,7 +11,7 @@
  * Top row (opposite notch, left-to-right, Col 0 to Col 7): Pins 0 to 7.
  * Bottom row (notch side, left-to-right, Col 0 to Col 7): Pins 8 to F.
  *
- * Polarity: Row Cathode / Column Anode (1088AS).
+ * Polarity: Row Cathode / Column Anode (1088AW).
  * An LED at (col, row) illuminates if and only if its column anode pin is driven
  * HIGH (SIG_H) and its row cathode pin is pulled LOW (SIG_L).
  *

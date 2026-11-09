@@ -88,7 +88,7 @@ A future high-resolution MakiNeat system revision doubles display resolution fro
 
 ### 7.1 Display Architecture
 
-* **Matrix Array**: 16 standard 8x8 LED matrix units (such as 1088AS) arranged in a 4x4 panel layout.
+* **Matrix Array**: 16 standard 8x8 LED matrix units (such as 1088AW) arranged in a 4x4 panel layout.
 * **Driver Network**: 16 MAX7219 display drivers arranged in four parallel 4-chip SPI chains, or two 8-chip cascade chains.
 * **Refresh Budget**: At 12 MHz SPI clock rates, updating 16 driver registers requires under 30 us per row scan, maintaining standard 60 Hz frame refresh rates.
 
