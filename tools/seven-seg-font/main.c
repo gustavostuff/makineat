@@ -11,19 +11,23 @@
 
 #define MAX_ROWS 128
 /* Picture is scaled up by an integer nearest-neighbor factor. */
-#define CANVAS_W 320
-#define CANVAS_H 180
-#define VIEW_SCALE 2
+#define CANVAS_W 128
+#define CANVAS_H 192
+#define VIEW_SCALE 4
 #define DIGIT_SCALE 2
-#define MARGIN 4
+#define MARGIN 2
 #define GAP 2
-#define COL_GAP 20
+#define COL_DIGIT_TRASH 8
+#define COL_FIELD_DIGIT 12
+#define INDEX_GAP 4
 #define PAD 4
 #define BAR_W 4
-#define FOOT_H 22
+#define FOOT_H 18
 #define LIST_Y 2
 #define SCROLL_STEP 16
 #define FACE 232
+#define FOCUS_BLINK_MS 250
+#define FIELD_BG_DARK 32
 
 typedef struct Row {
     char symbol;
@@ -40,6 +44,7 @@ static int text_w;
 static int text_h;
 static int field_w;
 static int field_h;
+static int index_col_w;
 static int new_w;
 static int new_h;
 static SDL_Texture *trash_tex;
@@ -59,11 +64,12 @@ static void layout_from_font(TTF_Font *font)
     int h = 0;
 
     TTF_SizeUTF8(font, "0", &text_w, &text_h);
+    TTF_SizeUTF8(font, "127", &index_col_w, &h);
     TTF_SizeUTF8(font, "New", &new_w, &h);
     field_w = text_w + PAD * 2;
     field_h = text_h + PAD * 2;
-    new_w += 10;
-    new_h = h + 6;
+    new_w += 6;
+    new_h = h + 4;
 }
 
 static int list_top(void)
@@ -483,6 +489,69 @@ static void fill_face(SDL_Renderer *renderer, const SDL_Rect *box)
     SDL_RenderFillRect(renderer, box);
 }
 
+static int field_blink_phase(void)
+{
+    return (int)((SDL_GetTicks() / FOCUS_BLINK_MS) & 1u);
+}
+
+static void draw_field(SDL_Renderer *renderer, TTF_Font *font, const SDL_Rect *field, const Row *row,
+                       int focused)
+{
+    SDL_Color dark = {0, 0, 0, 255};
+    SDL_Color light = {255, 255, 255, 255};
+    int lit;
+    int bg;
+    SDL_Color fg;
+
+    if (!focused) {
+        fill_face(renderer, field);
+        lit = 1;
+        fg = dark;
+    } else {
+        lit = field_blink_phase() == 0;
+        if (lit) {
+            bg = FACE;
+            fg = dark;
+        } else {
+            bg = FIELD_BG_DARK;
+            fg = light;
+        }
+        SDL_SetRenderDrawColor(renderer, bg, bg, bg, 255);
+        SDL_RenderFillRect(renderer, field);
+    }
+
+    if (row->symbol == ' ') {
+        SDL_Rect mark;
+
+        mark.w = text_w - 2;
+        if (mark.w < 1)
+            mark.w = 1;
+        mark.h = 1;
+        mark.x = field->x + (field->w - mark.w) / 2;
+        mark.y = field->y + field->h / 2;
+        if (lit)
+            SDL_SetRenderDrawColor(renderer, 90, 90, 90, 255);
+        else
+            SDL_SetRenderDrawColor(renderer, 220, 220, 220, 255);
+        SDL_RenderFillRect(renderer, &mark);
+        return;
+    }
+    if (row->symbol == '\0')
+        return;
+
+    {
+        char text[2];
+        int tw = 0;
+        int th = 0;
+
+        text[0] = row->symbol;
+        text[1] = '\0';
+        TTF_SizeUTF8(font, text, &tw, &th);
+        draw_label(renderer, font, text, field->x + (field->w - tw) / 2,
+                   field->y + (field->h - th) / 2, fg);
+    }
+}
+
 static void draw_button(SDL_Renderer *renderer, TTF_Font *font, const SDL_Rect *box, const char *label)
 {
     SDL_Color black = {0, 0, 0, 255};
@@ -500,18 +569,18 @@ static void row_boxes(const SevenSegDisplay *disp, int index, SDL_Rect *field, S
     int digit_h = disp->digit_h * DIGIT_SCALE;
     int top = list_top() + index * row_pitch(disp) - scroll_y;
     int mid = top + (digit_h - field_h) / 2;
-    int x = MARGIN + text_w * 3 + 10;
+    int x = MARGIN + index_col_w + INDEX_GAP;
 
     field->x = x;
     field->y = mid;
     field->w = field_w;
     field->h = field_h;
-    x += field_w + COL_GAP;
+    x += field_w + COL_FIELD_DIGIT;
     digit->x = x;
     digit->y = top;
     digit->w = disp->digit_w * DIGIT_SCALE;
     digit->h = digit_h;
-    x += digit->w + COL_GAP;
+    x += digit->w + COL_DIGIT_TRASH;
     remove->w = trash_src_w > 0 ? trash_src_w : 11;
     remove->h = trash_src_h > 0 ? trash_src_h : 12;
     remove->x = x;
@@ -522,7 +591,7 @@ static void new_box(SDL_Rect *add)
 {
     add->w = new_w;
     add->h = new_h;
-    add->x = CANVAS_W - MARGIN - add->w;
+    add->x = CANVAS_W - BAR_W - MARGIN - add->w;
     add->y = footer_y() + (FOOT_H - add->h) / 2;
 }
 
@@ -754,7 +823,6 @@ static void draw_trash(SDL_Renderer *renderer, const SDL_Rect *box)
 
 static void draw_rows(SDL_Renderer *renderer, TTF_Font *font, const SevenSegDisplay *disp)
 {
-    SDL_Color black = {0, 0, 0, 255};
     SDL_Rect clip;
     SDL_Rect foot;
     int i;
@@ -771,7 +839,6 @@ static void draw_rows(SDL_Renderer *renderer, TTF_Font *font, const SevenSegDisp
         SDL_Rect field;
         SDL_Rect digit;
         SDL_Rect remove;
-        char text[2];
 
         row_boxes(disp, i, &field, &digit, &remove);
         if (digit.y + digit.h <= list_top() || digit.y >= footer_y())
@@ -786,28 +853,7 @@ static void draw_rows(SDL_Renderer *renderer, TTF_Font *font, const SevenSegDisp
             TTF_SizeUTF8(font, idx, &tw, &th);
             draw_label(renderer, font, idx, MARGIN, digit.y + (digit.h - th) / 2, num);
         }
-        fill_face(renderer, &field);
-        if (rows[i].symbol == ' ') {
-            SDL_Rect mark;
-
-            mark.w = text_w - 2;
-            if (mark.w < 1)
-                mark.w = 1;
-            mark.h = 1;
-            mark.x = field.x + (field.w - mark.w) / 2;
-            mark.y = field.y + field.h / 2;
-            SDL_SetRenderDrawColor(renderer, 90, 90, 90, 255);
-            SDL_RenderFillRect(renderer, &mark);
-        } else if (rows[i].symbol != '\0') {
-            int tw = 0;
-            int th = 0;
-
-            text[0] = rows[i].symbol;
-            text[1] = '\0';
-            TTF_SizeUTF8(font, text, &tw, &th);
-            draw_label(renderer, font, text, field.x + (field.w - tw) / 2,
-                       field.y + (field.h - th) / 2, black);
-        }
+        draw_field(renderer, font, &field, &rows[i], focus_row == i);
         seven_seg_draw_digit(disp, renderer, digit.x, digit.y, rows[i].mask, DIGIT_SCALE);
         if (hover_valid) {
             int id = segment_at(&digit, hover_x, hover_y);
@@ -830,8 +876,8 @@ static void draw_rows(SDL_Renderer *renderer, TTF_Font *font, const SevenSegDisp
         int tw = 0;
         int th = 0;
 
-        TTF_SizeUTF8(font, "already assigned", &tw, &th);
-        draw_label(renderer, font, "already assigned", MARGIN, foot.y + (foot.h - th) / 2, msg);
+        TTF_SizeUTF8(font, "Assigned", &tw, &th);
+        draw_label(renderer, font, "Assigned", MARGIN, foot.y + (foot.h - th) / 2, msg);
     }
     {
         SDL_Rect add;

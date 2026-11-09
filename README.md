@@ -38,7 +38,7 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 `tools/seven-seg-font` edits the shared 7-segment font. Each row is a symbol and the segments that light for it. Games use that table when they draw their own digits, such as the Pong title screen. Closing the editor writes `tools/fw/seven_seg_font.c`.
 
-`./seven_segment_font_editor.sh` opens the editor.
+`./seven-seg-editor.sh` opens the editor.
 
 <img src="img/seven_segment_font/seven_segment_font_editor.png" alt="7-segment editor" />
 
@@ -46,7 +46,7 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 The image below is an **AI-generated** concept idea of how the build _might_ look when assembled. It's currently only being used as a reference.
 
-<img src="img/references/1794188800335.jpg" alt="AI concept" />
+<img src="img/references/AI_concept_v_07.jpg" alt="AI concept" />
 
 ## Docs
 
