@@ -4,7 +4,8 @@
 /*
  * Shared 4x4 glyphs (3x3 font with 1px right and bottom margin).
  * Digits 0-9, letters A-Z, dot, comma, colon, semicolon, -, +, =, and /.
- * A lowercase letter uses the capital glyph. A space is a blank cell.
+ * A letter uses its own glyph, then the other case. A missing character is not drawn.
+ * A space is a blank cell.
  *
  * text_print paints one line from column x, row y. Each glyph takes its
  * cell (four columns, or eight when scale is TEXT_SCALE_2) plus

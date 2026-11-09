@@ -3,7 +3,8 @@
 
 /*
  * 5x6 glyphs from img/fonts/larger_5x6_font.png (row 0: 0-9 - . , :;
- * row 1: A-Z). Lowercase letters use the capital glyph. Space is blank.
+ * row 1: A-Z). A letter uses its own glyph, then the other case. A missing
+ * character is not drawn. Space is blank.
  */
 
 #include <stdint.h>

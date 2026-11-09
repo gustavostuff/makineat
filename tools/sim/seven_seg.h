@@ -1,6 +1,8 @@
 #ifndef SEVEN_SEG_H
 #define SEVEN_SEG_H
 
+#include "seven_seg_font.h"
+
 #include <SDL.h>
 #include <stdint.h>
 
@@ -12,16 +14,6 @@ typedef struct Max7219 Max7219;
 #define SEVEN_SEG_GRID_MARGIN 4
 /* PNG layers sit this many pixels right of the logical row origin (acetate uses origin). */
 #define SEVEN_SEG_LAYER_X_OFFSET 2
-
-/* Segment bits (A through G, then decimal point). */
-#define SEVEN_SEG_A (1u << 0)
-#define SEVEN_SEG_B (1u << 1)
-#define SEVEN_SEG_C (1u << 2)
-#define SEVEN_SEG_D (1u << 3)
-#define SEVEN_SEG_E (1u << 4)
-#define SEVEN_SEG_F (1u << 5)
-#define SEVEN_SEG_G (1u << 6)
-#define SEVEN_SEG_DP (1u << 7)
 
 typedef void (*SevenSegLayerBlitFn)(SDL_Renderer *renderer, SDL_Texture *tex,
                                     const SDL_Rect *src, const SDL_Rect *dst, int lit);
@@ -58,6 +50,10 @@ int seven_seg_row_width(const SevenSegDisplay *disp);
 
 void seven_seg_draw(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
                     int canvas_w, int canvas_h);
+
+/* One digit. scale is an integer zoom of the layer PNGs. */
+void seven_seg_draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
+                          uint8_t mask, int scale);
 
 /* Origin of the abutting digit row centered on the matrix. */
 int seven_seg_below_field_origin(const SevenSegDisplay *disp, int field_x, int field_y,

@@ -34,6 +34,14 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 `./sim.sh` opens the UI. The active cart is named in `cart_placed.json`. Game SDK tiers (frame, map, entity, collide) are documented in [firmware](docs/firmware.md).
 
+## 7-segment font
+
+`tools/seven-seg-font` edits the shared 7-segment font. Each row is a symbol and the segments that light for it. Games use that table when they draw their own digits, such as the Pong title screen. Closing the editor writes `tools/fw/seven_seg_font.c`.
+
+`./seven_segment_font_editor.sh` opens the editor.
+
+<img src="img/seven_segment_font/seven_segment_font_editor.png" alt="7-segment editor" />
+
 ## Design
 
 The image below is an **AI-generated** concept idea of how the build _might_ look when assembled. It's not final but it will be used as guidance for the actual design.

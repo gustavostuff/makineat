@@ -2,6 +2,7 @@
 #include "chips/status_digits.h"
 #include "engine/signal.h"
 #include "seven_seg.h"
+#include "seven_seg_hitmap.h"
 
 #include "tests/report.h"
 
@@ -72,10 +73,53 @@ static void test_max7219_mask_map(void)
            "Code-B 1 maps to segments B and C");
 }
 
+static void test_font_seed(void)
+{
+    expect(seven_seg_font_mask('0') ==
+               (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F),
+           "font 0 is segments A through F");
+    expect(seven_seg_font_mask('1') == (SEVEN_SEG_B | SEVEN_SEG_C), "font 1 is segments B and C");
+    expect(seven_seg_font_mask('2') ==
+               (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_G),
+           "font 2 is segments A B D E G");
+    expect(seven_seg_font_mask('3') ==
+               (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_G),
+           "font 3 is segments A B C D G");
+    expect(seven_seg_font_mask('4') == (SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_F | SEVEN_SEG_G),
+           "font 4 is segments B C F G");
+    expect(seven_seg_font_mask('5') ==
+               (SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_F | SEVEN_SEG_G),
+           "font 5 is segments A C D F G");
+    expect(seven_seg_font_mask('6') == (SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E |
+                                        SEVEN_SEG_F | SEVEN_SEG_G),
+           "font 6 is segments A C D E F G");
+    expect(seven_seg_font_mask('7') == (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C),
+           "font 7 is segments A B C");
+    expect(seven_seg_font_mask('8') == (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D |
+                                        SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G),
+           "font 8 lights every bar");
+    expect(seven_seg_font_mask('9') ==
+               (SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_F | SEVEN_SEG_G),
+           "font 9 is segments A B C D F G");
+    expect(seven_seg_font_mask(' ') == 0, "font space is blank");
+    expect(seven_seg_encode_char('4') == seven_seg_font_mask('4'),
+           "the simulator lookup uses the shared font");
+    expect(seven_seg_font_mask('@') == 0, "a missing symbol stays blank");
+    expect(seven_seg_font_mask('F') == seven_seg_font_mask('f'),
+           "F uses f when that is the letter in the font");
+    expect(seven_seg_font_mask('a') == seven_seg_font_mask('A'),
+           "a uses A when that is the letter in the font");
+    expect(seven_seg_hitmap[0 * SEVEN_SEG_HIT_W + 2] == 1, "the top red pixels are segment A");
+    expect(seven_seg_hitmap[16 * SEVEN_SEG_HIT_W + 10] == 8,
+           "the lower-right decimal point is a hit target");
+    expect(seven_seg_hitmap[0] == 0, "empty pixels are not a segment");
+}
+
 int main(void)
 {
     report_begin("status_digits");
     test_max7219_mask_map();
+    test_font_seed();
     test_netlist_code_b();
     return report_end();
 }

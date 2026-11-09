@@ -4,7 +4,6 @@
 #   make -C tools/sim test
 #   make -C tools/sim PONG_DEBUG=1 makineat-ui      # pong ball at 1 FPS
 #   make -C tools/sim ARKALED_DEBUG=1 makineat-ui   # arkaled ball 0.25 FPS, paddles 1 FPS
-
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -O2 -I../fw -I../../games/space-shooter -I../../games/pong -I../../games/arkaled -I../../games/text-demo -I../../games/snake -I../../games/super-led-bros -I.
 ifeq ($(PONG_DEBUG),1)
@@ -17,7 +16,7 @@ SDL_CFLAGS = $(shell pkg-config --cflags sdl2 SDL2_image SDL2_ttf)
 LDLIBS = $(shell pkg-config --libs sdl2 SDL2_image SDL2_ttf)
 
 CORE = engine/signal.c chips/max7219.c chips/matrix8x8.c chips/status_digits.c chips/avr128db28.c board.c ../fw/wire.c
-COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/text_large.c ../fw/over.c ../fw/entity.c ../fw/status.c ../fw/rand.c
+COMMON = ../fw/frame.c ../fw/input.c ../fw/score.c ../fw/text.c ../fw/text_large.c ../fw/over.c ../fw/entity.c ../fw/status.c ../fw/rand.c ../fw/seven_seg_font.c
 SHOOTER = ../../games/space-shooter/game.c \
           ../../games/space-shooter/entity/player.c \
           ../../games/space-shooter/entity/bullet.c \
@@ -49,8 +48,8 @@ tests/test_max7219: tests/test_max7219.c chips/max7219.c engine/signal.c $(CHECK
 tests/test_matrix: tests/test_matrix.c chips/matrix8x8.c chips/max7219.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_matrix.c chips/matrix8x8.c chips/max7219.c engine/signal.c $(CHECK)
 
-tests/test_status_digits: tests/test_status_digits.c seven_seg.c chips/status_digits.c chips/max7219.c engine/signal.c $(CHECK)
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ tests/test_status_digits.c seven_seg.c chips/status_digits.c chips/max7219.c engine/signal.c $(LDLIBS) $(CHECK)
+tests/test_status_digits: tests/test_status_digits.c seven_seg.c ../fw/seven_seg_font.c chips/status_digits.c chips/max7219.c engine/signal.c $(CHECK)
+	$(CC) $(CFLAGS) $(SDL_CFLAGS) -o $@ tests/test_status_digits.c seven_seg.c ../fw/seven_seg_font.c chips/status_digits.c chips/max7219.c engine/signal.c $(LDLIBS) $(CHECK)
 
 tests/test_avr128db28: tests/test_avr128db28.c chips/avr128db28.c engine/signal.c $(CHECK)
 	$(CC) $(CFLAGS) -o $@ tests/test_avr128db28.c chips/avr128db28.c engine/signal.c $(CHECK)

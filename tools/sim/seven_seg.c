@@ -17,8 +17,12 @@ static SDL_Texture *load_layer(SDL_Renderer *renderer, const char *name)
 
     if (base != NULL) {
         snprintf(path, sizeof path, "%simg/7_segment_display_layers/%s", base, name);
-        SDL_free(base);
         surface = IMG_Load(path);
+        if (surface == NULL) {
+            snprintf(path, sizeof path, "%s../sim/img/7_segment_display_layers/%s", base, name);
+            surface = IMG_Load(path);
+        }
+        SDL_free(base);
     } else {
         surface = NULL;
     }
@@ -184,49 +188,7 @@ void seven_seg_sync_from_status_frame(SevenSegDisplay *disp, const uint8_t *fram
 
 uint8_t seven_seg_encode_char(char c)
 {
-    switch (c) {
-    case '0':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F;
-    case '1':
-        return SEVEN_SEG_B | SEVEN_SEG_C;
-    case '2':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_G;
-    case '3':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_G;
-    case '4':
-        return SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_F | SEVEN_SEG_G;
-    case '5':
-        return SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_F | SEVEN_SEG_G;
-    case '6':
-        return SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G;
-    case '7':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C;
-    case '8':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F |
-               SEVEN_SEG_G;
-    case '9':
-        return SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_F | SEVEN_SEG_G;
-    case '-':
-    case '_':
-        return SEVEN_SEG_G;
-    case ' ':
-        return 0;
-    default:
-        if (c >= 'a' && c <= 'f') {
-            static const uint8_t hex[6] = {
-                SEVEN_SEG_A | SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G,
-                SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G,
-                SEVEN_SEG_A | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G,
-                SEVEN_SEG_B | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_E | SEVEN_SEG_G,
-                SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_D | SEVEN_SEG_F | SEVEN_SEG_G,
-                SEVEN_SEG_A | SEVEN_SEG_C | SEVEN_SEG_E | SEVEN_SEG_F | SEVEN_SEG_G,
-            };
-            return hex[c - 'a'];
-        }
-        if (c >= 'A' && c <= 'F')
-            return seven_seg_encode_char((char)(c - 'A' + 'a'));
-        return 0;
-    }
+    return seven_seg_font_mask(c);
 }
 
 void seven_seg_put_char(SevenSegDisplay *disp, int digit, char c)
@@ -260,58 +222,42 @@ int seven_seg_print(SevenSegDisplay *disp, const char *text)
     return n;
 }
 
-static void blit_layer(SDL_Renderer *renderer, SDL_Texture *tex, int x, int y, int w, int h,
-                       const SDL_Rect *clip, int lit)
+static void blit_digit_layer(SDL_Renderer *renderer, SDL_Texture *tex, int x, int y, int src_w,
+                             int src_h, int dst_w, int dst_h, int lit)
 {
-    SDL_Rect src = {0, 0, w, h};
-    SDL_Rect dst = {x, y, w, h};
+    SDL_Rect src = {0, 0, src_w, src_h};
+    SDL_Rect dst = {x, y, dst_w, dst_h};
 
-    if (clip != NULL) {
-        if (dst.x < clip->x) {
-            int cut = clip->x - dst.x;
-            src.x += cut;
-            src.w -= cut;
-            dst.x = clip->x;
-            dst.w -= cut;
-        }
-        if (dst.y < clip->y) {
-            int cut = clip->y - dst.y;
-            src.y += cut;
-            src.h -= cut;
-            dst.y = clip->y;
-            dst.h -= cut;
-        }
-        if (dst.x + dst.w > clip->x + clip->w) {
-            dst.w = clip->x + clip->w - dst.x;
-            src.w = dst.w;
-        }
-        if (dst.y + dst.h > clip->y + clip->h) {
-            dst.h = clip->y + clip->h - dst.y;
-            src.h = dst.h;
-        }
-        if (dst.w <= 0 || dst.h <= 0)
-            return;
-    }
+    if (tex == NULL || dst_w <= 0 || dst_h <= 0)
+        return;
     if (layer_blit != NULL)
         layer_blit(renderer, tex, &src, &dst, lit);
     else
         SDL_RenderCopy(renderer, tex, &src, &dst);
 }
 
-static void draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
-                       uint8_t mask, const SDL_Rect *clip)
+void seven_seg_draw_digit(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, int y,
+                          uint8_t mask, int scale)
 {
     int bit;
-    int w = disp->digit_w;
-    int h = disp->digit_h;
+    int src_w;
+    int src_h;
+    int dst_w;
+    int dst_h;
 
-    blit_layer(renderer, disp->base, x, y, w, h, clip, 0);
+    if (disp == NULL || disp->base == NULL || scale < 1)
+        return;
+    src_w = disp->digit_w;
+    src_h = disp->digit_h;
+    dst_w = src_w * scale;
+    dst_h = src_h * scale;
+    blit_digit_layer(renderer, disp->base, x, y, src_w, src_h, dst_w, dst_h, 0);
     for (bit = 0; bit < 7; bit++) {
         if ((mask & (1u << bit)) != 0)
-            blit_layer(renderer, disp->seg[bit], x, y, w, h, clip, 1);
+            blit_digit_layer(renderer, disp->seg[bit], x, y, src_w, src_h, dst_w, dst_h, 1);
     }
     if ((mask & SEVEN_SEG_DP) != 0)
-        blit_layer(renderer, disp->dp, x, y, w, h, clip, 1);
+        blit_digit_layer(renderer, disp->dp, x, y, src_w, src_h, dst_w, dst_h, 1);
 }
 
 int seven_seg_row_width(const SevenSegDisplay *disp)
@@ -325,14 +271,22 @@ void seven_seg_draw(const SevenSegDisplay *disp, SDL_Renderer *renderer, int x, 
                     int canvas_w, int canvas_h)
 {
     int i;
+    SDL_Rect old;
     SDL_Rect clip = {0, 0, canvas_w, canvas_h};
+    SDL_bool enabled;
 
     if (disp == NULL || disp->digit_w <= 0)
         return;
 
-    for (i = 0; i < SEVEN_SEG_DIGITS; i++) {
-        draw_digit(disp, renderer, x + i * disp->digit_w, y, disp->mask[i], &clip);
-    }
+    enabled = SDL_RenderIsClipEnabled(renderer);
+    SDL_RenderGetClipRect(renderer, &old);
+    SDL_RenderSetClipRect(renderer, &clip);
+    for (i = 0; i < SEVEN_SEG_DIGITS; i++)
+        seven_seg_draw_digit(disp, renderer, x + i * disp->digit_w, y, disp->mask[i], 1);
+    if (enabled)
+        SDL_RenderSetClipRect(renderer, &old);
+    else
+        SDL_RenderSetClipRect(renderer, NULL);
 }
 
 int seven_seg_below_field_origin(const SevenSegDisplay *disp, int field_x, int field_y,

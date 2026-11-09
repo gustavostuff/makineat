@@ -58,12 +58,10 @@ static const uint8_t equals[TEXT_H] = {0x07, 0x00, 0x07, 0x00};
 static const uint8_t slash[TEXT_H] = {0x04, 0x02, 0x01, 0x00};
 static const uint8_t blank[TEXT_H] = {0x00, 0x00, 0x00, 0x00};
 
-const uint8_t *text_glyph(char c)
+static const uint8_t *text_glyph_exact(char c)
 {
     if (c >= '0' && c <= '9')
         return digits[c - '0'];
-    if (c >= 'a' && c <= 'z')
-        c = (char)(c - 'a' + 'A');
     if (c >= 'A' && c <= 'Z')
         return letters[c - 'A'];
     if (c == '.')
@@ -85,6 +83,22 @@ const uint8_t *text_glyph(char c)
     if (c == ' ')
         return blank;
     return 0;
+}
+
+const uint8_t *text_glyph(char c)
+{
+    const uint8_t *glyph = text_glyph_exact(c);
+    char other = 0;
+
+    if (glyph != 0)
+        return glyph;
+    if (c >= 'a' && c <= 'z')
+        other = (char)(c - 'a' + 'A');
+    else if (c >= 'A' && c <= 'Z')
+        other = (char)(c - 'A' + 'a');
+    if (other == 0)
+        return 0;
+    return text_glyph_exact(other);
 }
 
 static int text_scale_norm(int scale)

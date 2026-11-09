@@ -1,6 +1,7 @@
 #include "title/title.h"
 
 #include "pong.h"
+#include "seven_seg_font.h"
 #include "status.h"
 #include "text.h"
 
@@ -31,13 +32,8 @@ static const uint8_t wave[8] = {
     SEG_A, SEG_A, SEG_G, SEG_G, SEG_D, SEG_D, SEG_G, SEG_G,
 };
 
-/* P=ABEFG, O=ABCDEF, N=ABCEF, G=ACDEF. */
-static const uint8_t pong_seg[WORD_LEN] = {
-    (uint8_t)(SEG_A | SEG_B | SEG_E | SEG_F | SEG_G),
-    (uint8_t)(SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F),
-    (uint8_t)(SEG_A | SEG_B | SEG_C | SEG_E | SEG_F),
-    (uint8_t)(SEG_A | SEG_C | SEG_D | SEG_E | SEG_F),
-};
+/* P=ABEFG, O=ABCDEF, N=ABCEF, G=ACDEF, from the shared 7-segment font. */
+static const char pong_word[WORD_LEN] = {'P', 'O', 'N', 'G'};
 
 typedef struct {
     uint8_t count[2];
@@ -117,7 +113,7 @@ static void paint_pong_digits(void)
         int d = digit_off + i;
 
         if (d >= 0 && d < DIGITS)
-            status_set_digit((uint8_t)d, pong_seg[i]);
+            status_set_digit((uint8_t)d, seven_seg_font_max7219(pong_word[i]));
     }
 }
 

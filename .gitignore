@@ -33,6 +33,8 @@ pong.eep
 arkaled.eep
 unit-tests.sh
 tools/sim/makineat-ui
+tools/sim/seven-seg-font
+tools/seven-seg-font/seven-seg-font
 tools/sim/maki-nita-ui
 tools/sim/makinita-ui
 tools/sim/retrodiode-ui

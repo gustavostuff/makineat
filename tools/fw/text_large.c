@@ -50,12 +50,10 @@ static const uint8_t large_letters[26][TEXT_LARGE_H] = {
 
 static const uint8_t large_blank[TEXT_LARGE_H] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-const uint8_t *text_large_glyph(char c)
+static const uint8_t *text_large_glyph_exact(char c)
 {
     if (c >= '0' && c <= '9')
         return large_row0[c - '0'];
-    if (c >= 'a' && c <= 'z')
-        c = (char)(c - 'a' + 'A');
     if (c >= 'A' && c <= 'Z')
         return large_letters[c - 'A'];
     if (c == '-')
@@ -69,4 +67,20 @@ const uint8_t *text_large_glyph(char c)
     if (c == ' ')
         return large_blank;
     return 0;
+}
+
+const uint8_t *text_large_glyph(char c)
+{
+    const uint8_t *glyph = text_large_glyph_exact(c);
+    char other = 0;
+
+    if (glyph != 0)
+        return glyph;
+    if (c >= 'a' && c <= 'z')
+        other = (char)(c - 'a' + 'A');
+    else if (c >= 'A' && c <= 'Z')
+        other = (char)(c - 'A' + 'a');
+    if (other == 0)
+        return 0;
+    return text_large_glyph_exact(other);
 }
