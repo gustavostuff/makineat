@@ -58,6 +58,9 @@ tools/fw/audio/*.elf
 tools/fw/audio/*.hex
 *.o
 
+# KiCad fabrication outputs (Gerbers, drills, job files)
+**/manufacturing/
+
 # KiCad local files
 *.kicad_prl
 fp-info-cache

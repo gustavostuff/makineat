@@ -1278,7 +1278,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "skidl/makineat.net",
-      "plot": "",
+      "plot": "manufacturing/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
