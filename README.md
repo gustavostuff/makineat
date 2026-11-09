@@ -44,7 +44,7 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 ## Design
 
-The image below is an **AI-generated** concept idea of how the build _might_ look when assembled. It's not final but it will be used as guidance for the actual design.
+The image below is an **AI-generated** concept idea of how the build _might_ look when assembled. It's currently only being used as a reference.
 
 <img src="img/references/AI_concept_v_05.jpg" alt="AI concept" />
 
