@@ -13,21 +13,21 @@ Ten pads balance bench access against board area on a 100x100 mm layout. Existin
 | Label | Net | Role |
 | --- | --- | --- |
 | TP1 | GND | Ground reference at the power entry (J4 / bulk C10 region). |
-| TP2 | GND | Ground reference near the U1 to U4 matrix driver cluster. |
-| TP3 | +5V | Input rail at J4 before long distribution runs. |
+| TP2 | +5V | Input rail at J4 before long distribution runs. |
+| TP3 | GND | Ground reference near the U1 to U4 matrix driver cluster. |
 | TP4 | +5V | Same rail near the MAX7219 display cluster (load sag check). |
 | TP5 | CLK | Display SPI clock from cart contact B1 into U1. |
 | TP6 | DIN | Display SPI data in. |
-| TP7 | LOAD | Display SPI latch. |
-| TP8 | EVENT | Cart to system audio trigger (J3 B8, U5 PA1). |
-| TP9 | RESET | System and cart reset (J3 B7, U5 reset network). |
+| TP7 | EVENT | Cart to system audio trigger (J3 B8, U5 PA1). |
+| TP8 | RESET | System and cart reset (J3 B7, U5 reset network). |
+| TP9 | LOAD | Display SPI latch. |
 | TP10 | AUD | Audio path after the DAC divider, before LM386 U6 (high-impedance analog: probe briefly, avoid long clip leads). |
 
 ### Placement notes
 
-- Group TP1 and TP3 on the rear edge with J4. Group TP2 and TP4 on the front or side near the matrix drivers.
-- Place TP5 through TP9 in one short row reachable with a cart seated in J3 (SPI and control debug).
-- Keep TP10 adjacent to the U5/U6 audio corner; do not route the test pad under matrix `RCOL`/`LCOL` returns or parallel to SPI at length.
+- Group TP1 and TP2 on the rear edge with J4. Group TP3 and TP4 on the front or side near the matrix drivers.
+- Place TP5, TP6, TP7, TP8, and TP9 in one short row reachable with a cart seated in J3 (SPI and control debug).
+- Keep TP10 adjacent to the U5/U6 audio corner. Do not route the test pad under matrix `RCOL`/`LCOL` returns or parallel to SPI at length.
 - Omit dedicated pads on ISET nets, matrix segment strips, and the speaker output unless a later revision adds shielded coax test fixtures.
 
 `DOUT` after U4 and `AUDIO_UPDI` are not separate test points. J6 pin 1 already presents `AUDIO_UPDI`.

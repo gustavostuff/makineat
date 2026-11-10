@@ -377,20 +377,15 @@ def _test_points(
 ) -> None:
     probes = (
         ("TP1", gnd, "Rear edge at J4, beside C10", "Ground at the power entry"),
-        ("TP2", gnd, "Beside the U1 to U4 matrix drivers", "Ground by the matrix drivers"),
-        ("TP3", vcc, "Rear edge at J4, with TP1", "Rail at the power entry"),
+        ("TP2", vcc, "Rear edge at J4, with TP1", "Rail at the power entry"),
+        ("TP3", gnd, "Beside the U1 to U4 matrix drivers", "Ground by the matrix drivers"),
         ("TP4", vcc, "Beside the MAX7219 cluster, with TP2", "Rail by the display drivers"),
         ("TP5", clk, "Row by J3, with TP6 to TP9", "Display SPI clock"),
         ("TP6", din, "Row by J3, with TP5", "Display SPI data"),
-        ("TP7", load, "Row by J3, with TP5", "Display SPI latch"),
-        ("TP8", event, "Row by J3, with TP5", "Cart to audio trigger"),
-        ("TP9", reset, "Row by J3, with TP5", "System and cart reset"),
-        (
-            "TP10",
-            aud,
-            "U5 and U6 corner, clear of matrix returns and SPI",
-            "Audio after the DAC divider",
-        ),
+        ("TP7", event, "Row by J3, with TP5", "Cart to audio trigger"),
+        ("TP8", reset, "Row by J3, with TP5", "System and cart reset"),
+        ("TP9", load, "Row by J3, with TP5", "Display SPI latch"),
+        ("TP10", aud, "U5 and U6 corner, clear of matrix returns and SPI", "Audio after the DAC divider"),
     )
     for ref, net, text, description in probes:
         _test_point(ref, net, text, description)
@@ -769,7 +764,7 @@ def _check(text: str) -> None:
     if ("J3", "2") not in clk or ("U1", "13") not in clk or ("TP5", "1") not in clk:
         raise SystemExit(f"CLK nodes {clk}")
     load = nodes("LOAD")
-    if ("J3", "4") not in load or ("U1", "12") not in load or ("TP7", "1") not in load:
+    if ("J3", "4") not in load or ("U1", "12") not in load or ("TP9", "1") not in load:
         raise SystemExit(f"LOAD nodes {load}")
     p1_left = nodes("P1_LEFT")
     if p1_left != {("J3", "19"), ("J1", "2")}:
@@ -802,7 +797,7 @@ def _check(text: str) -> None:
     if p2_btn != {("J3", "1"), ("J2", "6")}:
         raise SystemExit(f"P2_BTN nodes {p2_btn}")
     reset_net = nodes("RESET")
-    if reset_net != {("J3", "14"), ("U5", "18"), ("R25", "1"), ("TP9", "1")}:
+    if reset_net != {("J3", "14"), ("U5", "18"), ("R25", "1"), ("TP8", "1")}:
         raise SystemExit(f"RESET nodes {reset_net}")
     if ("R25", "2") not in vcc:
         raise SystemExit("RESET pull-up does not reach +5V")
@@ -862,7 +857,7 @@ def _check(text: str) -> None:
             if (ref, "1") not in vcc or (ref, "2") not in gnd:
                 raise SystemExit(f"{ref} is not across +5V and GND")
     event = nodes("EVENT")
-    if event != {("J3", "16"), ("U5", "23"), ("R5", "1"), ("TP8", "1")}:
+    if event != {("J3", "16"), ("U5", "23"), ("R5", "1"), ("TP7", "1")}:
         raise SystemExit(f"EVENT nodes {event}")
     if ("R5", "2") not in vcc:
         raise SystemExit("EVENT pull-up does not reach +5V")
@@ -931,10 +926,10 @@ def _check(text: str) -> None:
         nc = nodes(f"NC_U6_{num}")
         if nc != {("U6", str(num))}:
             raise SystemExit(f"NC_U6_{num} nodes {nc}")
-    for ref in ("TP1", "TP2"):
+    for ref in ("TP1", "TP3"):
         if (ref, "1") not in gnd:
             raise SystemExit(f"{ref} is not on GND")
-    for ref in ("TP3", "TP4", "R35", "R45", "R55", "R65"):
+    for ref in ("TP2", "TP4", "R35", "R45", "R55", "R65"):
         if (ref, "1") not in vcc:
             raise SystemExit(f"{ref} is not on +5V")
     if ("D1", "1") not in gnd:
@@ -954,8 +949,8 @@ def _check(text: str) -> None:
             raise SystemExit(f"{led}_A nodes {actual}")
     notes = {
         "TP1": "Rear edge at J4, beside C10",
-        "TP2": "Beside the U1 to U4 matrix drivers",
-        "TP3": "Rear edge at J4, with TP1",
+        "TP2": "Rear edge at J4, with TP1",
+        "TP3": "Beside the U1 to U4 matrix drivers",
         "TP4": "Beside the MAX7219 cluster, with TP2",
         "TP5": "Row by J3, with TP6 to TP9",
         "TP6": "Row by J3, with TP5",
