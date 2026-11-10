@@ -678,8 +678,8 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 0 2 0)
-			(layer "F.Fab")
+			(at -3.097215 0.085011 0)
+			(layer "F.SilkS")
 			(uuid "2f37f6b4-81be-42b2-a841-a6c0e881f876")
 			(effects
 				(font
@@ -2917,7 +2917,7 @@
 			)
 		)
 		(property "Value" "M3: 3.2mm"
-			(at 0 -9.46 0)
+			(at -1 -11.96 0)
 			(layer "F.Fab")
 			(uuid "4f582701-d4cd-4d2f-97af-f435bacf4ee0")
 			(effects
@@ -4942,7 +4942,7 @@
 			)
 		)
 		(property "Value" "AUD"
-			(at 5 3 0)
+			(at 6.5 3.5 0)
 			(layer "F.Fab")
 			(uuid "b12774f8-a88e-4720-8b0f-1892182a43b3")
 			(effects
@@ -5081,7 +5081,7 @@
 			)
 		)
 		(property "Value" "Red Fault"
-			(at -14.46 2 90)
+			(at -7.46 0 90)
 			(layer "F.Fab")
 			(uuid "e96d55d7-fc37-4cbc-9ed9-71ee6bdc78e4")
 			(effects
@@ -5276,7 +5276,7 @@
 			(uuid "9682c681-1cfa-4671-ad0f-45d02f9ad9c6")
 		)
 		(fp_text user "${REFERENCE}"
-			(at -5.46 -1 90)
+			(at -4.96 -0.5 90)
 			(layer "F.Fab")
 			(uuid "a404e533-42e6-43f9-932b-99ebebd6a522")
 			(effects
@@ -5332,7 +5332,7 @@
 		(descr "CP, Radial series, Radial, pin pitch=2.50mm, diameter=5mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.50mm diameter 5mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C14"
-			(at 5.5 2 180)
+			(at 3.259401 -3.362342 180)
 			(layer "F.SilkS")
 			(uuid "ef77dbd8-abd3-4ed9-b70f-cbfe70124f87")
 			(effects
@@ -10363,7 +10363,7 @@
 			)
 		)
 		(property "Value" "1k LINK"
-			(at -7.46 -1 180)
+			(at -7.46 -2 180)
 			(layer "F.Fab")
 			(uuid "15a36f4a-b998-4f24-8485-3617a0b49678")
 			(effects
@@ -10491,7 +10491,7 @@
 			(uuid "007f2d0c-3e50-4831-98ca-50dbef551490")
 		)
 		(fp_text user "${REFERENCE}"
-			(at -5.46 -2.37 180)
+			(at -5.46 -1.5 180)
 			(layer "F.Fab")
 			(uuid "e9b71757-8ccb-419f-b283-4ab3c8017540")
 			(effects
@@ -17439,7 +17439,7 @@
 			)
 		)
 		(property "Value" "1k PWR"
-			(at -8.46 -2.46 0)
+			(at -5.96 0 0)
 			(layer "F.Fab")
 			(uuid "c1bf11f8-f28e-4d8c-9c39-e4770be940ba")
 			(effects
@@ -17606,7 +17606,7 @@
 		(descr "CP, Radial series, Radial, pin pitch=2.50mm, diameter=5mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.50mm diameter 5mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C13"
-			(at 1.25 -3.75 0)
+			(at 1.386997 3.773425 0)
 			(layer "F.SilkS")
 			(uuid "22b8c682-8086-4d0c-8043-fff98a6c3423")
 			(effects
@@ -17617,7 +17617,7 @@
 			)
 		)
 		(property "Value" "U3 10u"
-			(at 1.25 3.75 0)
+			(at -1 -8.5 0)
 			(layer "F.Fab")
 			(uuid "d7a7ce9e-0c83-48ca-b3b6-f392887031b0")
 			(effects
@@ -19711,7 +19711,7 @@
 		(descr "EDAC 395-020-558-212 right-angle motherboard socket. 2x10 THT, 2.54mm pitch along a row, 5.08mm between row centers (pads 1/3/5.. at X=0, 2/4/6.. at X=-5.08). Pad 1 rect at origin. Ten contacts per row. Same pad layout as 395-020-520-202.")
 		(tags "EDAC 395-020-558-212 mobo socket 2x10 2.54mm 5.08mm 90deg")
 		(property "Reference" "J3"
-			(at 5 13.43 0)
+			(at -4.66979 -3.415428 90)
 			(layer "F.SilkS")
 			(uuid "e3b51e3c-a374-435e-a638-178f1e851bc4")
 			(effects
@@ -19722,7 +19722,7 @@
 			)
 		)
 		(property "Value" "Cart"
-			(at 3 12.43 180)
+			(at -0.66979 -3.415428 270)
 			(layer "F.SilkS")
 			(uuid "66203691-67d0-4def-ae41-73a0ccbebafd")
 			(effects
@@ -21754,7 +21754,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at -13 -2 0)
+			(at -13.5 -3 0)
 			(layer "F.Fab")
 			(uuid "e17269ae-9c16-4fa9-b267-80d8c615fd19")
 			(effects
@@ -23083,7 +23083,7 @@
 			)
 		)
 		(property "Value" "M3: 3.2mm"
-			(at 2 -9.46 0)
+			(at 1.5 -10.96 0)
 			(layer "F.Fab")
 			(uuid "adf15297-d687-4f0f-b7bd-3af24c8d3853")
 			(effects
@@ -23778,7 +23778,7 @@
 			)
 		)
 		(property "Value" "1k FAULT"
-			(at -15.46 5 90)
+			(at -12.96 5 90)
 			(layer "F.Fab")
 			(uuid "41f96070-060d-4d16-8fdd-7ceca2c84a7d")
 			(effects
@@ -29328,8 +29328,8 @@
 			)
 		)
 		(property "Value" "GND"
-			(at -17 6 0)
-			(layer "F.Fab")
+			(at 1.157212 2.25547 0)
+			(layer "F.SilkS")
 			(uuid "2746f49f-297c-4fc7-af62-1ba6f6e4ef39")
 			(effects
 				(font
@@ -29429,7 +29429,7 @@
 			(uuid "bbb752f0-2112-405f-a3c2-ba78b2f1a763")
 		)
 		(fp_text user "${REFERENCE}"
-			(at -19 -3 0)
+			(at -21.5 -3 0)
 			(layer "F.Fab")
 			(uuid "b40b9df1-3251-48ba-8c9c-7d08ce15cf4d")
 			(effects
@@ -29855,7 +29855,7 @@
 			)
 		)
 		(property "Value" "LOAD"
-			(at 0 -4 0)
+			(at 0 -4.5 0)
 			(layer "F.Fab")
 			(uuid "676aa444-2b0c-4523-8a14-ed3a22cd68d7")
 			(effects
@@ -31921,6 +31921,18 @@
 			(justify left bottom)
 		)
 	)
+	(gr_text "github.com/gustavostuff/makineat"
+		(at 63.504463 36.241226 0)
+		(layer "F.SilkS")
+		(uuid "9b4ff74c-ddb3-48d0-872e-9ad4125bc86c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify left bottom)
+		)
+	)
 	(gr_text "L"
 		(at 52.834426 40.23258 0)
 		(layer "B.SilkS")
@@ -33292,7 +33304,7 @@
 		(uuid "110202c3-7bef-423d-84a5-a5970e20fddd")
 	)
 	(via
-		(at 33 109)
+		(at 32.679412 108.9573)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -33337,7 +33349,7 @@
 		(uuid "156e85a3-46a3-452d-8634-83f66c7bc471")
 	)
 	(via
-		(at 80 37.5)
+		(at 80.5 38)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -33355,7 +33367,7 @@
 		(uuid "175ec0ba-7d51-4981-8a61-8d27bea90abf")
 	)
 	(via
-		(at 39.891358 80.703384)
+		(at 39.675603 80.871075)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -33571,7 +33583,7 @@
 		(uuid "3967feec-fbcd-4cc2-8d6b-6f248473e10b")
 	)
 	(via
-		(at 85 35)
+		(at 85 34)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -34075,7 +34087,7 @@
 		(uuid "8bf0ac04-58a1-400b-8838-d1b454ba5552")
 	)
 	(via
-		(at 116.5 72.75)
+		(at 116 72.5)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -34381,7 +34393,7 @@
 		(uuid "c8d28fdf-434c-42ae-a314-5cda1f8c8313")
 	)
 	(via
-		(at 74 37.5)
+		(at 74.5 38)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -34525,7 +34537,7 @@
 		(uuid "e115ef24-89a4-4e38-8d9d-de175230931b")
 	)
 	(via
-		(at 77 37.5)
+		(at 77.5 38)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
@@ -34642,7 +34654,7 @@
 		(uuid "f979d1ae-3507-46c3-8659-a83663b80522")
 	)
 	(via
-		(at 82.75 37.25)
+		(at 83 38)
 		(size 0.6)
 		(drill 0.4)
 		(layers "F.Cu" "B.Cu")
