@@ -1,6 +1,6 @@
 <img src="img/logos/logo_v_08.svg" alt="Logo V8" />
 
-MakiNeat is a cartridge-based portable arcade tabletop. The name comes from _maquinita_, a Mexican word for arcade machines (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field, plus eight 7-segment digits displays. Graphics are 1-bit (LEDs are either ON or OFF).
+MakiNeat is a cartridge-based portable arcade tabletop. The name comes from _maquinita_, a Mexican word for arcade machines (pronounced very similarly). The display is four 8x8 LED matrices in a 16x16 field, plus eight 7-segment digits. Graphics are 1-bit (LEDs are either ON or OFF).
 
 On a similar spirit as the Magnavox Odyssey and the Vectrex, MakiNeat uses colored, translucent sheets to cover the screen. So the overlay is an extension of the cartridge, part of the game experience. Read [overlays](docs/overlays.md) and [design](docs/design.md) for details.
 
