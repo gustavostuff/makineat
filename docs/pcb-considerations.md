@@ -10,7 +10,7 @@ The active main layout ties **F.Cu** and **B.Cu** ground pours with a stitched v
 
 - Lower plane impedance between the matrix driver cluster and the audio corner so digit return pulses see a short path across layers.
 - Reduce slotting in the pour from signal tracks that cut one side only, especially under SPI and `EVENT` corridors.
-- Give probe and clip grounds (future test points in [test-points-and-status-leds.md](test-points-and-status-leds.md)) a nearby via to the opposite pour.
+- Give probe and clip grounds (test points in [test-points-and-status-leds.md](test-points-and-status-leds.md)) a nearby via to the opposite pour.
 
 Rules of thumb when editing pours after stitching:
 

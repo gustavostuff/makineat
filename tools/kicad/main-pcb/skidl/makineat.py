@@ -270,7 +270,133 @@ def _ic_ref(prefix: str, ic: int, extra: int = 0) -> str:
     return f"{prefix}{ic + 10 * extra}"
 
 
-def _audio(vcc: Net, gnd: Net, event: Net, reset: Net) -> None:
+TP_FP = "TestPoint:TestPoint_Pad_D1.5mm"
+LED_PINS = ((1, "K"), (2, "A"))
+
+
+def _place_text(part: Part, text: str) -> None:
+    part.fields["Text"] = text
+
+
+def _test_point(ref: str, net: Net, text: str, description: str) -> None:
+    pad = _part("TestPoint", ref, TP_FP, ((1, "1"),), net.name, description)
+    _place_text(pad, text)
+    _tie(pad, 1, net)
+
+
+def _status_led(
+    ref: str,
+    resistor: str,
+    vcc: Net,
+    cathode: Net,
+    footprint: str,
+    value: str,
+    description: str,
+    resistor_value: str,
+    resistor_description: str,
+    text: str,
+) -> None:
+    """1 kohm from +5V to the anode. The cathode net is GND or a U5 pin."""
+    anode = Net(f"{ref}_A")
+    led = _part("LED", ref, footprint, LED_PINS, value, description)
+    _place_text(led, text)
+    series = _passive(resistor, R_VERT_FP, resistor_value, resistor_description)
+    _tie(series, 1, vcc)
+    _tie(series, 2, anode)
+    _tie(led, 2, anode)
+    _tie(led, 1, cathode)
+
+
+def _status_leds(cpu: Part, vcc: Net, gnd: Net) -> None:
+    """D1 is the power lamp. D2 to D4 sink on PA4, PA5, and PA6."""
+    ok = Net("LED_OK")
+    link = Net("LED_LINK")
+    fault = Net("LED_FAULT")
+    _tie(cpu, 26, ok)
+    _tie(cpu, 27, link)
+    _tie(cpu, 28, fault)
+    _status_led(
+        "D1",
+        "R35",
+        vcc,
+        gnd,
+        "MakiNeat:LED_D3.0mm_Blue",
+        "Blue Power",
+        "Blue power indicator. On while +5V is present.",
+        "1k PWR",
+        "1 kohm series resistor for the power indicator.",
+        "Rear or top edge near J6 and J8",
+    )
+    _status_led(
+        "D2",
+        "R45",
+        vcc,
+        ok,
+        "MakiNeat:LED_D3.0mm_Green",
+        "Green OK",
+        "Green system OK indicator. On when U5 drives PA4 low.",
+        "1k OK",
+        "1 kohm series resistor for the system OK indicator.",
+        "With D1, near J6 and J8",
+    )
+    _status_led(
+        "D3",
+        "R55",
+        vcc,
+        link,
+        "MakiNeat:LED_D3.0mm_Yellow",
+        "Amber Link",
+        "Amber cart link indicator. On when U5 drives PA5 low.",
+        "1k LINK",
+        "1 kohm series resistor for the cart link indicator.",
+        "With D1, near J6 and J8",
+    )
+    _status_led(
+        "D4",
+        "R65",
+        vcc,
+        fault,
+        "MakiNeat:LED_D3.0mm_Red",
+        "Red Fault",
+        "Red fault indicator. On when U5 drives PA6 low.",
+        "1k FAULT",
+        "1 kohm series resistor for the fault indicator.",
+        "With D1, near J6 and J8",
+    )
+
+
+def _test_points(
+    vcc: Net,
+    gnd: Net,
+    din: Net,
+    clk: Net,
+    load: Net,
+    reset: Net,
+    event: Net,
+    aud: Net,
+) -> None:
+    probes = (
+        ("TP1", gnd, "Rear edge at J4, beside C10", "Ground at the power entry"),
+        ("TP2", gnd, "Beside the U1 to U4 matrix drivers", "Ground by the matrix drivers"),
+        ("TP3", vcc, "Rear edge at J4, with TP1", "Rail at the power entry"),
+        ("TP4", vcc, "Beside the MAX7219 cluster, with TP2", "Rail by the display drivers"),
+        ("TP5", clk, "Row by J3, with TP6 to TP9", "Display SPI clock"),
+        ("TP6", din, "Row by J3, with TP5", "Display SPI data"),
+        ("TP7", load, "Row by J3, with TP5", "Display SPI latch"),
+        ("TP8", event, "Row by J3, with TP5", "Cart to audio trigger"),
+        ("TP9", reset, "Row by J3, with TP5", "System and cart reset"),
+        (
+            "TP10",
+            aud,
+            "U5 and U6 corner, clear of matrix returns and SPI",
+            "Audio after the DAC divider",
+        ),
+    )
+    for ref, net, text, description in probes:
+        _test_point(ref, net, text, description)
+
+
+def _audio(vcc: Net, gnd: Net, event: Net, reset: Net) -> Net:
     """Console synth. PD6 feeds the LM386 through the divider in the audio doc."""
     cpu = _part(
         "AVR128DB28-I/SP",
@@ -376,10 +502,12 @@ def _audio(vcc: Net, gnd: Net, event: Net, reset: Net) -> None:
     c26 = _passive(_ic_ref("C", 6, 2), C_ELEC_FP, "U6 BYP", "10 uF on U6 pins 7 and 4")
     _tie(c26, 1, bypass)
     _tie(c26, 2, gnd)
+    _status_leds(cpu, vcc, gnd)
     # Unused AVR pins and LM386 gain pins 1 and 8 stay open. Stub them
     # so every footprint pad has a pin in the netlist.
     _stub_unused(cpu, AUDIO_PINS)
     _stub_unused(amp, AMP_PINS)
+    return aud
 
 
 def build() -> None:
@@ -472,7 +600,7 @@ def build() -> None:
     c10 = _passive("C10", C_ELEC_FP, "470u VCC", "470 uF power entry bulk reservoir")
     _tie(c10, 1, vcc)
     _tie(c10, 2, gnd)
-    _audio(vcc, gnd, event, reset)
+    aud = _audio(vcc, gnd, event, reset)
 
     drivers = []
     matrices = []
@@ -573,6 +701,8 @@ def build() -> None:
         _tie(u7, MATRIX_DRV_PINS[matrix_pin], net)
         _tie(j9, hdr_pin, net)
 
+    _test_points(vcc, gnd, din, clk, load, reset, event, aud)
+
 
 def _check(text: str) -> None:
     import re
@@ -633,13 +763,13 @@ def _check(text: str) -> None:
         if (u, "4") not in gnd or (u, "9") not in gnd:
             raise SystemExit(f"GND does not reach both {u} ground pins")
     din = nodes("DIN")
-    if din != {("J3", "6"), ("U1", "1")}:
+    if din != {("J3", "6"), ("U1", "1"), ("TP6", "1")}:
         raise SystemExit(f"DIN nodes {din}")
     clk = nodes("CLK")
-    if ("J3", "2") not in clk or ("U1", "13") not in clk:
+    if ("J3", "2") not in clk or ("U1", "13") not in clk or ("TP5", "1") not in clk:
         raise SystemExit(f"CLK nodes {clk}")
     load = nodes("LOAD")
-    if ("J3", "4") not in load or ("U1", "12") not in load:
+    if ("J3", "4") not in load or ("U1", "12") not in load or ("TP7", "1") not in load:
         raise SystemExit(f"LOAD nodes {load}")
     p1_left = nodes("P1_LEFT")
     if p1_left != {("J3", "19"), ("J1", "2")}:
@@ -672,7 +802,7 @@ def _check(text: str) -> None:
     if p2_btn != {("J3", "1"), ("J2", "6")}:
         raise SystemExit(f"P2_BTN nodes {p2_btn}")
     reset_net = nodes("RESET")
-    if reset_net != {("J3", "14"), ("U5", "18"), ("R25", "1")}:
+    if reset_net != {("J3", "14"), ("U5", "18"), ("R25", "1"), ("TP9", "1")}:
         raise SystemExit(f"RESET nodes {reset_net}")
     if ("R25", "2") not in vcc:
         raise SystemExit("RESET pull-up does not reach +5V")
@@ -690,8 +820,18 @@ def _check(text: str) -> None:
         raise SystemExit("cart UPDI header missing")
     if text.count(f'(footprint "{R_HORIZ_FP}")') != 6:
         raise SystemExit("expected 6 horizontal resistor footprints")
-    if text.count(f'(footprint "{R_VERT_FP}")') != 5:
-        raise SystemExit("expected 5 vertical resistor footprints")
+    if text.count(f'(footprint "{R_VERT_FP}")') != 9:
+        raise SystemExit("expected 9 vertical resistor footprints")
+    if text.count(f'(footprint "{TP_FP}")') != 10:
+        raise SystemExit("expected 10 test point footprints")
+    for footprint in (
+        "MakiNeat:LED_D3.0mm_Blue",
+        "MakiNeat:LED_D3.0mm_Green",
+        "MakiNeat:LED_D3.0mm_Yellow",
+        "MakiNeat:LED_D3.0mm_Red",
+    ):
+        if text.count(f'(footprint "{footprint}")') != 1:
+            raise SystemExit(f"missing status LED footprint {footprint}")
     if text.count('(value "10k EVENT")') != 1 or text.count('(value "10k DAC")') != 1 or text.count('(value "10k RESET")') != 1:
         raise SystemExit("expected the EVENT pull-up, DAC load, and RESET pull-up")
     if text.count('(value "22k IN")') != 1 or text.count('(value "1k IN")') != 1:
@@ -722,7 +862,7 @@ def _check(text: str) -> None:
             if (ref, "1") not in vcc or (ref, "2") not in gnd:
                 raise SystemExit(f"{ref} is not across +5V and GND")
     event = nodes("EVENT")
-    if event != {("J3", "16"), ("U5", "23"), ("R5", "1")}:
+    if event != {("J3", "16"), ("U5", "23"), ("R5", "1"), ("TP8", "1")}:
         raise SystemExit(f"EVENT nodes {event}")
     if ("R5", "2") not in vcc:
         raise SystemExit("EVENT pull-up does not reach +5V")
@@ -732,7 +872,7 @@ def _check(text: str) -> None:
     if ("R15", "2") not in gnd:
         raise SystemExit("DAC load does not reach GND")
     aud = nodes("AUD")
-    if aud != {("C35", "2"), ("R6", "1")}:
+    if aud != {("C35", "2"), ("R6", "1"), ("TP10", "1")}:
         raise SystemExit(f"AUD nodes {aud}")
     audin = nodes("AUDIN")
     if audin != {("R6", "2"), ("R16", "1"), ("U6", "3")}:
@@ -780,7 +920,7 @@ def _check(text: str) -> None:
         raise SystemExit(f"UPDI nodes {cart_updi}")
     if ("J8", "2") not in vcc or ("J8", "3") not in gnd:
         raise SystemExit("cart UPDI header power missing")
-    used_u5 = {6, 12, 14, 15, 18, 19, 20, 21, 23}
+    used_u5 = {6, 12, 14, 15, 18, 19, 20, 21, 23, 26, 27, 28}
     for num, _name in AUDIO_PINS:
         if num in used_u5:
             continue
@@ -791,6 +931,51 @@ def _check(text: str) -> None:
         nc = nodes(f"NC_U6_{num}")
         if nc != {("U6", str(num))}:
             raise SystemExit(f"NC_U6_{num} nodes {nc}")
+    for ref in ("TP1", "TP2"):
+        if (ref, "1") not in gnd:
+            raise SystemExit(f"{ref} is not on GND")
+    for ref in ("TP3", "TP4", "R35", "R45", "R55", "R65"):
+        if (ref, "1") not in vcc:
+            raise SystemExit(f"{ref} is not on +5V")
+    if ("D1", "1") not in gnd:
+        raise SystemExit("D1 cathode is not on GND")
+    led_cathodes = (
+        ("LED_OK", "D2", "26"),
+        ("LED_LINK", "D3", "27"),
+        ("LED_FAULT", "D4", "28"),
+    )
+    for net_name, led, pin in led_cathodes:
+        actual = nodes(net_name)
+        if actual != {("U5", pin), (led, "1")}:
+            raise SystemExit(f"{net_name} nodes {actual}")
+    for led, resistor in (("D1", "R35"), ("D2", "R45"), ("D3", "R55"), ("D4", "R65")):
+        actual = nodes(f"{led}_A")
+        if actual != {(resistor, "2"), (led, "2")}:
+            raise SystemExit(f"{led}_A nodes {actual}")
+    notes = {
+        "TP1": "Rear edge at J4, beside C10",
+        "TP2": "Beside the U1 to U4 matrix drivers",
+        "TP3": "Rear edge at J4, with TP1",
+        "TP4": "Beside the MAX7219 cluster, with TP2",
+        "TP5": "Row by J3, with TP6 to TP9",
+        "TP6": "Row by J3, with TP5",
+        "TP7": "Row by J3, with TP5",
+        "TP8": "Row by J3, with TP5",
+        "TP9": "Row by J3, with TP5",
+        "TP10": "U5 and U6 corner, clear of matrix returns and SPI",
+        "D1": "Rear or top edge near J6 and J8",
+        "D2": "With D1, near J6 and J8",
+        "D3": "With D1, near J6 and J8",
+        "D4": "With D1, near J6 and J8",
+    }
+    for ref, note in notes.items():
+        start = text.find(f'(ref "{ref}")')
+        if start < 0:
+            raise SystemExit(f"missing {ref}")
+        nxt = text.find("\n    (comp", start)
+        block = text[start:nxt if nxt > 0 else None]
+        if f'(name "Text") "{note}"' not in block:
+            raise SystemExit(f"{ref} Text field is not the placement note")
     for link_name, from_node, to_node in (
         ("DOUT_U1", ("U1", "24"), ("U2", "1")),
         ("DOUT_U2", ("U2", "24"), ("U3", "1")),

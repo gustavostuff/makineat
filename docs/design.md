@@ -6,7 +6,7 @@ The electrical source of truth is `tools/kicad/main-pcb/skidl/makineat.py`. `too
 
 | Board | KiCad tree | Layout state |
 | --- | --- | --- |
-| Main system | `tools/kicad/main-pcb/` (`makineat_v_05.kicad_pcb` is the active layout) | Copper routing is in place but not final. Ground pour via stitching (5 mm grid) is on the active layout. Test points, status LEDs, remaining EMI margins, and noise review are outstanding. See [test-points-and-status-leds.md](test-points-and-status-leds.md). Not fabricated or tested in hardware. |
+| Main system | `tools/kicad/main-pcb/` (`makineat_v_05.kicad_pcb` is the active layout) | Copper routing is in place but not final. Ground pour via stitching (5 mm grid) is on the active layout. Test points and status LEDs are in the SKiDL netlist for placement on `makineat_v_07.kicad_pcb`. Remaining EMI margins and noise review are outstanding. See [test-points-and-status-leds.md](test-points-and-status-leds.md). Not fabricated or tested in hardware. |
 | Cartridge | `tools/kicad/cart-pcb/` | Layout matches the SKiDL netlist and appears ready for fabrication review. Not fabricated or tested in hardware. |
 | Status digit daughterboard | [status-digits.md](status-digits.md) | No KiCad project or PCB file yet. |
 
@@ -143,7 +143,6 @@ From `tools/kicad/main-pcb/skidl/net_classes.py`: 5V is 0.8 mm track width. **RC
 
 * Global brightness (Bright button with tap-to-increment and hold-plus-stick adjustment, system AVR writing MAX7219 intensity) and extra system wiring for that feature.
 * Status display daughterboard PCB layout (see [status-digits.md](status-digits.md)). Driver U7 and mating headers J7 and J9 are on the main PCB netlist.
-* Test points and status LEDs on the main board (see [test-points-and-status-leds.md](test-points-and-status-leds.md)).
 * The playfield is the 256 LEDs from the four matrices only.
 
 ## Future plans

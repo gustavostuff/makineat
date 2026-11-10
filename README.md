@@ -53,7 +53,7 @@ The image below is an **AI-generated** concept idea of how the build _might_ loo
 - [Design](docs/design.md) is the system netlist, cart edge, display chain, audio wiring, and PCB layout status.
 - [Firmware](docs/firmware.md) is the game loop, inputs, sound, SDK, and simulator.
 - [PCB routing considerations](docs/pcb-considerations.md) is noise isolation, ground via stitching, and trace pairing rules for the main and cart layouts.
-- [Test points and status LEDs](docs/test-points-and-status-leds.md) is the planned main-board bring-up pads and indicator colors (not on PCB yet).
+- [Test points and status LEDs](docs/test-points-and-status-leds.md) is the main-board bring-up pads and indicator LEDs in the SKiDL netlist, for placement on `makineat_v_07.kicad_pcb`.
 - [Overlays](docs/overlays.md) covers physical sheets, simulator tinting, and edit controls.
 - [Future plans](docs/future-plans.md) is the hardware and firmware enhancement roadmap.
 - [Status digits](docs/status-digits.md) is the fifth MAX7219 driver, J7/J9 interfaces, and the planned digit daughterboard.
