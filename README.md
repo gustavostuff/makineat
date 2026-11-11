@@ -10,7 +10,7 @@ Simple graphics + simple input can still be fun. A stick (and sometimes a button
 
 ## PCBs
 
-Copper tracing is mostly done but not polished. The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
+Copper tracing is mostly done (in theory) but not tested IRL yet. The full [SKiDL netlist](tools/kicad/main-pcb/skidl/makineat.py) and KiCad files are under `tools/kicad/main-pcb/` and `tools/kicad/cart-pcb/` (not tested IRL).
 
 Main system PCB, 100x100 mm:
 
