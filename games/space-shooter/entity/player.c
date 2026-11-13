@@ -5,9 +5,8 @@
 #define FIELD 16
 #define STEP_EVERY 2
 
-static const Shape ship_shape = SHAPE3(1, 0,
+static const Shape ship_shape = SHAPE2(1, 0,
     "010",
-    "111",
     "111");
 
 static int ship_id = -1;

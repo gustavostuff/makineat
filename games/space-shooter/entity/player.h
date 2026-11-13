@@ -4,9 +4,8 @@
 #include "input.h"
 
 /*
- * The ship. Three columns, three rows:
+ * The ship. Three columns, two rows:
  *   010
- *   111
  *   111
  * The stick steps it one LED every two ticks.
  * It can reach every edge of the field.

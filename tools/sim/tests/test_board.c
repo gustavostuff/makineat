@@ -140,20 +140,20 @@ static void test_square_on_leds(void)
     expect(board_fault(&board) == MAX7219_OK, "the ship flush stays inside the timings");
     expect(board_led_on(&board, 7, 13), "the nose is lit");
     expect(!board_led_on(&board, 6, 13), "the shoulder beside the nose is dark");
-    expect(board_led_on(&board, 6, 15) && board_led_on(&board, 8, 15),
-           "the bottom row of the ship is lit");
+    expect(board_led_on(&board, 6, 14) && board_led_on(&board, 8, 14),
+           "the body row of the ship is lit");
 
     board_set_switches(&board, 0, 0, 0, 1, 0);
     input_tick(0, 0, 0, 1, 0, &in);
     game_tick(&in);
     drivers_flush();
-    expect(board_led_on(&board, 6, 15), "debounce holds the ship for the first tick");
+    expect(board_led_on(&board, 6, 14), "debounce holds the ship for the first tick");
 
     input_tick(0, 0, 0, 1, 0, &in);
     game_tick(&in);
     drivers_flush();
-    expect(!board_led_on(&board, 6, 15), "the old left column turns off");
-    expect(board_led_on(&board, 9, 15), "the new right column turns on");
+    expect(!board_led_on(&board, 6, 14), "the old left column turns off");
+    expect(board_led_on(&board, 9, 14), "the new right column turns on");
 }
 
 static uint8_t heard[4];

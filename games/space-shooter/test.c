@@ -54,9 +54,9 @@ static void test_ship(void)
     expect(pixel_get(7, 13) && !pixel_get(6, 13) && !pixel_get(8, 13),
            "the nose is the center LED of the top row");
     expect(pixel_get(6, 14) && pixel_get(7, 14) && pixel_get(8, 14),
-           "the middle row is full");
-    expect(pixel_get(6, 15) && pixel_get(7, 15) && pixel_get(8, 15),
-           "the bottom row is full");
+           "the body row is full");
+    expect(!pixel_get(6, 15) && !pixel_get(7, 15) && !pixel_get(8, 15),
+           "the ship is two rows tall");
     expect(!pixel_get(15, 15), "the corner past the ship stays dark");
     expect(ship_x() == 6, "the ship starts near the middle of the bottom");
 
@@ -73,17 +73,26 @@ static void test_ship(void)
     game_reset();
     feed(1, 0, 0, 1, 0);
     feed(1, 0, 0, 1, 0);
-    expect(pixel_get(8, 12) && pixel_get(7, 13) && !pixel_get(8, 15),
+    expect(pixel_get(8, 12) && pixel_get(7, 13) && pixel_get(9, 13) && !pixel_get(8, 14),
            "a diagonal steps both axes");
 
     input_reset();
     game_reset();
     feed(1, 0, 0, 0, 0);
     feed(1, 0, 0, 0, 0);
-    expect(pixel_get(7, 12) && !pixel_get(6, 15), "the ship can leave the bottom row");
+    expect(pixel_get(7, 12) && pixel_get(6, 13) && !pixel_get(6, 14),
+           "the ship can leave its starting row");
     feed(0, 1, 0, 0, 0);
     feed(0, 1, 0, 0, 0);
-    expect(pixel_get(7, 13) && pixel_get(6, 15), "the ship can return to the bottom row");
+    expect(pixel_get(7, 13) && pixel_get(6, 14) && !pixel_get(6, 15),
+           "the ship can return to its starting row");
+    feed(0, 1, 0, 0, 0);
+    feed(0, 1, 0, 0, 0);
+    expect(pixel_get(7, 14) && pixel_get(6, 15) && pixel_get(8, 15),
+           "the ship can sit on the bottom row");
+    feed(0, 1, 0, 0, 0);
+    feed(0, 1, 0, 0, 0);
+    expect(pixel_get(7, 14) && pixel_get(6, 15), "the ship stops at the bottom edge");
 
     input_reset();
     game_reset();
@@ -119,7 +128,7 @@ static void test_shot(void)
     input_reset();
     game_reset();
     sound_log_reset();
-    rock_add(7, 8, 2, 16, 0, 30);
+    rock_add(7, 8, 2, 4, 0);
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
     expect(pixel_get(7, 12) && pixel_get(7, 8), "the shot and the rock are both on screen");
@@ -145,40 +154,60 @@ static void test_speeds(void)
 {
     input_reset();
     game_reset();
-    rock_add(0, 0, 2, 4, 0, 30);
-    rock_add(3, 0, 2, 8, 0, 30);
-    rock_add(6, 0, 2, 12, 0, 30);
-    rock_add(9, 0, 2, 16, 0, 30);
-    advance(4);
-    expect(!pixel_get(0, 0) && pixel_get(0, 1), "one rock steps every 4 ticks");
-    expect(pixel_get(3, 0) && pixel_get(6, 0) && pixel_get(9, 0),
+    rock_add(0, 0, 2, 8, 0);
+    rock_add(4, 0, 2, 6, 0);
+    rock_add(8, 0, 2, 16, 0);
+    rock_add(12, 0, 2, 4, 0);
+    advance(3);
+    expect(pixel_get(0, 0) && pixel_get(4, 0) && pixel_get(8, 0) && pixel_get(12, 0),
+           "4, 6, 8, and 16 FPS rocks wait out their first steps");
+    expect(!pixel_get(8, 2), "16 FPS has not stepped after 3 ticks");
+    advance(1);
+    expect(pixel_get(8, 1) && !pixel_get(8, 0), "16 FPS steps on tick 4");
+    expect(pixel_get(0, 0) && pixel_get(4, 0) && pixel_get(12, 0),
            "the slower rocks stay put");
     advance(4);
-    expect(!pixel_get(3, 0) && pixel_get(3, 1), "one rock steps every 8 ticks");
-    expect(pixel_get(6, 0) && pixel_get(9, 0), "the 12 and 16 rocks stay put");
-    advance(4);
-    expect(!pixel_get(6, 0) && pixel_get(6, 1), "one rock steps every 12 ticks");
-    expect(pixel_get(9, 0), "the 16 rock stays put");
-    advance(4);
-    expect(!pixel_get(9, 0) && pixel_get(9, 1), "one rock steps every 16 ticks");
+    expect(pixel_get(0, 1) && !pixel_get(0, 0), "8 FPS steps on tick 8");
+    expect(pixel_get(8, 2) && !pixel_get(8, 1), "16 FPS steps again on tick 8");
+    expect(pixel_get(4, 0) && pixel_get(12, 0), "6 and 4 FPS are still waiting");
+    advance(2);
+    expect(pixel_get(4, 1) && !pixel_get(4, 0), "6 FPS steps on tick 10");
+    expect(pixel_get(12, 0) && !pixel_get(12, 2), "4 FPS is still waiting at tick 10");
+    expect(pixel_get(0, 1) && !pixel_get(0, 3), "8 FPS holds its row until the next step");
 
     input_reset();
     game_reset();
-    rock_add(10, 4, 2, 16, 1, 15);
+    rock_add(2, 4, 2, 4, -4);
+    rock_add(6, 4, 2, 4, 0);
+    rock_add(10, 4, 2, 4, 4);
     advance(14);
-    expect(pixel_get(10, 4) && pixel_get(11, 4) && !pixel_get(12, 4),
-           "sideways drift waits out its period");
+    expect(pixel_get(2, 4) && pixel_get(6, 4) && pixel_get(10, 4),
+           "4 FPS waits 14 ticks on both axes");
+    expect(!pixel_get(1, 4) && !pixel_get(12, 4), "sideways drift has not started");
     advance(1);
-    expect(pixel_get(11, 4) && pixel_get(12, 4) && !pixel_get(10, 4),
-           "a rock steps one column every 15 ticks");
+    expect(pixel_get(1, 5) && pixel_get(2, 5) && !pixel_get(2, 4),
+           "a rock steps left at 4 FPS");
+    expect(pixel_get(6, 5) && pixel_get(7, 5) && !pixel_get(6, 4) && !pixel_get(5, 5),
+           "zero horizontal speed falls straight at 4 FPS");
+    expect(pixel_get(11, 5) && pixel_get(12, 5) && !pixel_get(10, 4),
+           "a rock steps right at 4 FPS");
+
+    input_reset();
+    game_reset();
+    rock_add(0, 2, 2, 5, 0);
+    rock_add(3, 2, 2, 4, 2);
+    rock_add(6, 2, 2, 4, -4);
+    feed(0, 0, 0, 0, 0);
+    expect(!pixel_get(0, 2) && !pixel_get(3, 2), "a rock rejects a speed outside the sets");
+    expect(pixel_get(6, 2) && pixel_get(7, 2), "horizontal -4 FPS is a legal rock");
 }
 
 static void test_both_sizes(void)
 {
     input_reset();
     game_reset();
-    rock_add(1, 3, 2, 16, 0, 30);
-    rock_add(1, -1, 3, 16, 0, 30);
+    rock_add(1, 3, 2, 4, 0);
+    rock_add(1, -1, 3, 4, 0);
     feed(0, 0, 0, 0, 0);
     expect(pixel_get(1, 3) && pixel_get(2, 3) && pixel_get(1, 4),
            "a spawned 2x2 rock is on screen");
@@ -191,7 +220,7 @@ static void test_both_sizes(void)
 
 static void die(void)
 {
-    rock_add(6, 13, 2, 16, 0, 30);
+    rock_add(6, 13, 2, 4, 0);
     feed(0, 0, 0, 0, 0);
 }
 
@@ -347,7 +376,7 @@ static void test_rock_line_score(void)
 
     input_reset();
     game_reset();
-    rock_add(0, 11, 2, 4, 0, 30);
+    rock_add(0, 11, 2, 8, 0);
     for (i = 0; i < 8 && rock_score_get() == 0; i++)
         feed(0, 0, 0, 0, 0);
     expect(rock_score_get() == 1, "a rock past row 13 scores for the rocks");
@@ -355,18 +384,30 @@ static void test_rock_line_score(void)
     expect(pixel_get(7, 13), "the ship survives a rock that only crossed the line");
 }
 
-static void test_ramp(void)
+static void test_bands(void)
 {
-    int mid = ROCK_RAMP * 2 / 3;
-
-    expect(rock_fall_period(4, 0) == 4 && rock_fall_period(16, 0) == 16,
-           "a new round keeps the slow fall");
-    expect(rock_fall_period(4, mid) == 2, "the fast rocks reach 30 FPS during the minute");
-    expect(rock_fall_period(16, mid) > 2, "the slow rocks are still slower then");
-    expect(rock_fall_period(4, ROCK_RAMP) == 1 && rock_fall_period(8, ROCK_RAMP) == 1 &&
-           rock_fall_period(12, ROCK_RAMP) == 1 && rock_fall_period(16, ROCK_RAMP) == 1,
-           "every rock falls once a tick by the end of one minute");
-    expect(rock_fall_period(8, ROCK_RAMP + 50) == 1, "the pace stays at one tick");
+    expect(rock_vert_fps(0, 0) == 4 && rock_vert_fps(1, 0) == 6 && rock_vert_fps(2, 0) == 8,
+           "the first 10 seconds fall at 4, 6, or 8 FPS");
+    expect(rock_vert_fps(0, ROCK_BAND_TICKS - 1) == 4 &&
+               rock_vert_fps(2, ROCK_BAND_TICKS - 1) == 8,
+           "the first band lasts through tick 599");
+    expect(rock_vert_fps(0, ROCK_BAND_TICKS) == 8 && rock_vert_fps(1, ROCK_BAND_TICKS) == 10 &&
+               rock_vert_fps(2, ROCK_BAND_TICKS) == 12 &&
+               rock_vert_fps(0, 2 * ROCK_BAND_TICKS - 1) == 8,
+           "the next 10 seconds fall at 8, 10, or 12 FPS");
+    expect(rock_vert_fps(0, 2 * ROCK_BAND_TICKS) == 12 &&
+               rock_vert_fps(1, 2 * ROCK_BAND_TICKS) == 14 &&
+               rock_vert_fps(2, 2 * ROCK_BAND_TICKS) == 16 &&
+               rock_vert_fps(0, 3 * ROCK_BAND_TICKS - 1) == 12,
+           "the third 10 seconds fall at 12, 14, or 16 FPS");
+    expect(rock_vert_fps(0, 3 * ROCK_BAND_TICKS) == 16 &&
+               rock_vert_fps(1, 3 * ROCK_BAND_TICKS) == 18 &&
+               rock_vert_fps(2, 3 * ROCK_BAND_TICKS) == 20,
+           "after 30 seconds the rocks fall at 16, 18, or 20 FPS");
+    expect(rock_vert_fps(2, 3 * ROCK_BAND_TICKS + 5000) == 20,
+           "the last band stays for the rest of the round");
+    expect(rock_horiz_fps(0) == -4 && rock_horiz_fps(1) == 0 && rock_horiz_fps(2) == 4,
+           "horizontal speed is -4, 0, or 4 FPS");
 }
 
 int main(void)
@@ -380,7 +421,7 @@ int main(void)
     test_crash();
     test_score();
     test_rock_line_score();
-    test_ramp();
+    test_bands();
     test_glyphs();
     return report_end();
 }
