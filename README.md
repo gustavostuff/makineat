@@ -36,7 +36,7 @@ SKiDL export writes `tools/kicad/main-pcb/skidl/makineat.net` and updates net cl
 
 ## 7-segment font
 
-`tools/seven-seg-font` edits the shared 7-segment font. Each row is a symbol and the segments that light for it. Games use that table when they draw their own digits, such as the Pong title screen. Closing the editor writes `tools/fw/seven_seg_font.c`.
+`tools/seven-seg-font` edits the shared 7-segment font. Each row is a symbol and the segments that light for it. Games use that table when they draw their own digits, such as the Pong title screen. Closing the editor writes `tools/fw/seven_seg_font.json` and refreshes the glyph table in `tools/fw/seven_seg_font_table.h`.
 
 `./seven-seg-editor.sh` opens the editor.
 

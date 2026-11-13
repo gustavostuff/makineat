@@ -190,33 +190,175 @@ static void remove_row(int at)
         focus_row--;
 }
 
-static int parse_glyph_line(const char *line, char *symbol, unsigned *mask)
+static const char *skip_ws(const char *p)
 {
-    const char *p = strstr(line, "{ '");
-    char *end = NULL;
-
-    if (p == NULL)
-        return 0;
-    p += 3;
-    if (*p == '\\') {
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
         p++;
-        if (*p != '\\' && *p != '\'')
+    return p;
+}
+
+static int expect_lit(const char **pp, const char *lit)
+{
+    const char *p = skip_ws(*pp);
+    size_t n = strlen(lit);
+
+    if (strncmp(p, lit, n) != 0)
+        return 0;
+    *pp = p + n;
+    return 1;
+}
+
+static int parse_json_string(const char **pp, char *out, int out_n, int *out_len)
+{
+    const char *p = skip_ws(*pp);
+    int n = 0;
+
+    if (*p != '"')
+        return 0;
+    p++;
+    while (*p != '\0' && *p != '"') {
+        unsigned char c;
+
+        if (*p == '\\') {
+            p++;
+            if (*p == '"' || *p == '\\' || *p == '/') {
+                c = (unsigned char)*p++;
+            } else if (*p == 'u' && p[1] != '\0' && p[2] != '\0' && p[3] != '\0' && p[4] != '\0') {
+                char hex[5];
+                char *end = NULL;
+                unsigned value;
+
+                memcpy(hex, p + 1, 4);
+                hex[4] = '\0';
+                value = (unsigned)strtoul(hex, &end, 16);
+                if (end != hex + 4 || value > 0xFF)
+                    return 0;
+                c = (unsigned char)value;
+                p += 5;
+            } else {
+                return 0;
+            }
+        } else {
+            c = (unsigned char)*p++;
+        }
+        if (n + 1 >= out_n)
             return 0;
-        *symbol = *p++;
-    } else if (*p != '\0' && *p != '\'') {
-        *symbol = *p++;
-    } else {
+        out[n++] = (char)c;
+    }
+    if (*p != '"')
+        return 0;
+    out[n] = '\0';
+    *out_len = n;
+    *pp = p + 1;
+    return 1;
+}
+
+static int parse_glyph_object(const char **pp, Row *row)
+{
+    const char *p = *pp;
+    int have_symbol = 0;
+    int have_mask = 0;
+    char symbol = 0;
+    unsigned mask = 0;
+
+    if (!expect_lit(&p, "{"))
+        return 0;
+    for (;;) {
+        char key[16];
+        int key_len = 0;
+
+        p = skip_ws(p);
+        if (*p == '}') {
+            p++;
+            break;
+        }
+        if (!parse_json_string(&p, key, (int)sizeof key, &key_len))
+            return 0;
+        if (!expect_lit(&p, ":"))
+            return 0;
+        if (strcmp(key, "symbol") == 0) {
+            char value[8];
+            int n = 0;
+
+            if (!parse_json_string(&p, value, (int)sizeof value, &n) || n != 1 || value[0] == '\0')
+                return 0;
+            symbol = value[0];
+            have_symbol = 1;
+        } else if (strcmp(key, "mask") == 0) {
+            char value[8];
+            int n = 0;
+            char *end = NULL;
+            const char *hex;
+
+            if (!parse_json_string(&p, value, (int)sizeof value, &n) || n == 0)
+                return 0;
+            hex = value;
+            if (n >= 2 && value[0] == '0' && (value[1] == 'x' || value[1] == 'X'))
+                hex = value + 2;
+            mask = (unsigned)strtoul(hex, &end, 16);
+            if (end == hex || *end != '\0' || mask > 0xFF)
+                return 0;
+            have_mask = 1;
+        } else {
+            return 0;
+        }
+        p = skip_ws(p);
+        if (*p == ',') {
+            p++;
+            continue;
+        }
+        if (*p == '}') {
+            p++;
+            break;
+        }
         return 0;
     }
-    if (*p != '\'')
+    if (!have_symbol || !have_mask)
         return 0;
-    p = strstr(p, "0x");
-    if (p == NULL)
-        return 0;
-    *mask = (unsigned)strtoul(p, &end, 16);
-    if (end == p)
-        return 0;
+    row->symbol = symbol;
+    row->mask = (uint8_t)mask;
+    *pp = p;
     return 1;
+}
+
+static char *read_all(FILE *fp)
+{
+    size_t cap = 4096;
+    size_t n = 0;
+    char *buf = malloc(cap);
+
+    if (buf == NULL)
+        return NULL;
+    for (;;) {
+        size_t got;
+
+        if (n + 1 >= cap) {
+            size_t next = cap * 2;
+            char *grown;
+
+            if (next > 65536) {
+                free(buf);
+                return NULL;
+            }
+            grown = realloc(buf, next);
+            if (grown == NULL) {
+                free(buf);
+                return NULL;
+            }
+            buf = grown;
+            cap = next;
+        }
+        got = fread(buf + n, 1, cap - n - 1, fp);
+        n += got;
+        if (got == 0)
+            break;
+    }
+    if (ferror(fp)) {
+        free(buf);
+        return NULL;
+    }
+    buf[n] = '\0';
+    return buf;
 }
 
 static void load_compiled(void)
@@ -236,8 +378,8 @@ static void load_compiled(void)
 static int find_font_file(void)
 {
     const char *rels[] = {
-        "tools/fw/seven_seg_font.c",
-        "../fw/seven_seg_font.c",
+        "tools/fw/seven_seg_font.json",
+        "../fw/seven_seg_font.json",
         NULL,
     };
     char *base = SDL_GetBasePath();
@@ -246,7 +388,7 @@ static int find_font_file(void)
 
     font_file[0] = '\0';
     if (base != NULL) {
-        snprintf(font_file, sizeof font_file, "%s../fw/seven_seg_font.c", base);
+        snprintf(font_file, sizeof font_file, "%s../fw/seven_seg_font.json", base);
         SDL_free(base);
         fp = fopen(font_file, "r");
         if (fp != NULL) {
@@ -269,8 +411,11 @@ static int find_font_file(void)
 static int load_font_file(void)
 {
     FILE *fp;
-    char line[256];
-    int n = 0;
+    char *text;
+    const char *p;
+    char key[16];
+    int key_len = 0;
+    int count = 0;
     Row parsed[MAX_ROWS];
 
     if (font_file[0] == '\0')
@@ -278,21 +423,154 @@ static int load_font_file(void)
     fp = fopen(font_file, "r");
     if (fp == NULL)
         return -1;
-    while (fgets(line, sizeof line, fp) != NULL && n < MAX_ROWS) {
-        char symbol = '\0';
-        unsigned mask = 0;
-
-        if (!parse_glyph_line(line, &symbol, &mask))
-            continue;
-        if (symbol == '\0')
-            continue;
-        parsed[n].symbol = symbol;
-        parsed[n].mask = (uint8_t)mask;
-        n++;
-    }
+    text = read_all(fp);
     fclose(fp);
-    memcpy(rows, parsed, (size_t)n * sizeof rows[0]);
-    row_count = n;
+    if (text == NULL)
+        return -1;
+    p = text;
+    if (!expect_lit(&p, "{") || !parse_json_string(&p, key, (int)sizeof key, &key_len) ||
+        key_len != 6 || strcmp(key, "glyphs") != 0 || !expect_lit(&p, ":") || !expect_lit(&p, "[")) {
+        free(text);
+        return -1;
+    }
+    p = skip_ws(p);
+    if (*p != ']') {
+        for (;;) {
+            if (count >= MAX_ROWS || !parse_glyph_object(&p, &parsed[count])) {
+                free(text);
+                return -1;
+            }
+            count++;
+            p = skip_ws(p);
+            if (*p == ',') {
+                p++;
+                continue;
+            }
+            break;
+        }
+    }
+    if (!expect_lit(&p, "]") || !expect_lit(&p, "}")) {
+        free(text);
+        return -1;
+    }
+    p = skip_ws(p);
+    if (*p != '\0') {
+        free(text);
+        return -1;
+    }
+    memcpy(rows, parsed, (size_t)count * sizeof rows[0]);
+    row_count = count;
+    free(text);
+    return 0;
+}
+
+static int table_path(char *out, size_t n)
+{
+    const char *slash = strrchr(font_file, '/');
+    size_t dir;
+    const char *name = "seven_seg_font_table.h";
+
+    if (slash == NULL)
+        return snprintf(out, n, "%s", name) < (int)n ? 0 : -1;
+    dir = (size_t)(slash - font_file + 1);
+    if (dir + strlen(name) >= n)
+        return -1;
+    memcpy(out, font_file, dir);
+    memcpy(out + dir, name, strlen(name) + 1);
+    return 0;
+}
+
+static int write_json_string(FILE *fp, char symbol)
+{
+    if (fputc('"', fp) == EOF)
+        return -1;
+    if (symbol == '"' || symbol == '\\') {
+        if (fprintf(fp, "\\%c", symbol) < 0)
+            return -1;
+    } else if ((unsigned char)symbol < 0x20) {
+        if (fprintf(fp, "\\u%04x", (unsigned char)symbol) < 0)
+            return -1;
+    } else if (fputc(symbol, fp) == EOF) {
+        return -1;
+    }
+    return fputc('"', fp) == EOF ? -1 : 0;
+}
+
+static int write_c_symbol(FILE *fp, char symbol)
+{
+    if (symbol == '\\' || symbol == '\'')
+        return fprintf(fp, "'\\%c'", symbol) < 0 ? -1 : 0;
+    if ((unsigned char)symbol < 0x20 || (unsigned char)symbol > 0x7E)
+        return fprintf(fp, "'\\x%02X'", (unsigned char)symbol) < 0 ? -1 : 0;
+    return fprintf(fp, "'%c'", symbol) < 0 ? -1 : 0;
+}
+
+static int emit_json(FILE *fp, const Row *data, int n)
+{
+    int i;
+
+    fputs("{\n  \"glyphs\": [\n", fp);
+    for (i = 0; i < n; i++) {
+        fputs("    { \"symbol\": ", fp);
+        if (write_json_string(fp, data[i].symbol) != 0)
+            return -1;
+        if (fprintf(fp, ", \"mask\": \"%02X\" }%s\n", (unsigned)data[i].mask, i + 1 < n ? "," : "") < 0)
+            return -1;
+    }
+    fputs("  ]\n}\n", fp);
+    return ferror(fp) ? -1 : 0;
+}
+
+static int emit_table(FILE *fp, const Row *data, int n)
+{
+    int i;
+
+    fputs("/* Glyph table written by tools/seven-seg-font from seven_seg_font.json. */\n", fp);
+    fputs("#ifndef SEVEN_SEG_FONT_TABLE_H\n", fp);
+    fputs("#define SEVEN_SEG_FONT_TABLE_H\n\n", fp);
+    fputs("#include \"seven_seg_font.h\"\n\n", fp);
+    if (n == 0) {
+        fputs("const SevenSegGlyph seven_seg_font[1] = {\n", fp);
+        fputs("    { 0, 0x00 },\n", fp);
+        fputs("};\n\n", fp);
+        fputs("const int seven_seg_font_count = 0;\n\n", fp);
+    } else {
+        fputs("const SevenSegGlyph seven_seg_font[] = {\n", fp);
+        for (i = 0; i < n; i++) {
+            fputs("    { ", fp);
+            if (write_c_symbol(fp, data[i].symbol) != 0)
+                return -1;
+            if (fprintf(fp, ", 0x%02X },\n", (unsigned)data[i].mask) < 0)
+                return -1;
+        }
+        fputs("};\n\n", fp);
+        if (fprintf(fp, "const int seven_seg_font_count = %d;\n\n", n) < 0)
+            return -1;
+    }
+    fputs("#endif\n", fp);
+    return ferror(fp) ? -1 : 0;
+}
+
+static int emit_atomic(const char *path, int (*emit)(FILE *, const Row *, int), const Row *data, int n)
+{
+    char tmp[1100];
+    FILE *fp;
+    int bad;
+
+    if (snprintf(tmp, sizeof tmp, "%s.tmp", path) >= (int)sizeof tmp)
+        return -1;
+    fp = fopen(tmp, "w");
+    if (fp == NULL)
+        return -1;
+    bad = emit(fp, data, n) != 0 || ferror(fp);
+    if (fclose(fp) != 0 || bad) {
+        remove(tmp);
+        return -1;
+    }
+    if (rename(tmp, path) != 0) {
+        remove(tmp);
+        return -1;
+    }
     return 0;
 }
 
@@ -315,103 +593,22 @@ static void reveal_row(const SevenSegDisplay *disp, int index)
 
 static int save_font_file(void)
 {
-    FILE *fp;
-    char tmp[1040];
+    char table[1024];
     int i;
     int kept = 0;
-    int bad;
     Row next[MAX_ROWS];
 
-    if (font_file[0] == '\0')
-        return -1;
-    if (snprintf(tmp, sizeof tmp, "%s.tmp", font_file) >= (int)sizeof tmp)
+    if (font_file[0] == '\0' || table_path(table, sizeof table) != 0)
         return -1;
     for (i = 0; i < row_count; i++) {
         if (rows[i].symbol == '\0')
             continue;
         next[kept++] = rows[i];
     }
-    fp = fopen(tmp, "w");
-    if (fp == NULL)
+    if (emit_atomic(font_file, emit_json, next, kept) != 0)
         return -1;
-    fputs("/* seven-seg font. Saved by tools/seven-seg-font. */\n", fp);
-    fputs("#include \"seven_seg_font.h\"\n\n", fp);
-    if (kept == 0) {
-        fputs("const SevenSegGlyph seven_seg_font[1] = {\n", fp);
-        fputs("    { 0, 0x00 },\n", fp);
-        fputs("};\n\n", fp);
-        fputs("const int seven_seg_font_count = 0;\n\n", fp);
-    } else {
-        fputs("const SevenSegGlyph seven_seg_font[] = {\n", fp);
-        for (i = 0; i < kept; i++) {
-            char symbol = next[i].symbol;
-
-            if (symbol == '\\' || symbol == '\'')
-                fprintf(fp, "    { '\\%c', 0x%02X },\n", symbol, (unsigned)next[i].mask);
-            else
-                fprintf(fp, "    { '%c', 0x%02X },\n", symbol, (unsigned)next[i].mask);
-        }
-        fputs("};\n\n", fp);
-        fprintf(fp, "const int seven_seg_font_count = %d;\n\n", kept);
-    }
-    fputs("static int seven_seg_font_find(char c, uint8_t *mask)\n", fp);
-    fputs("{\n", fp);
-    fputs("    int i;\n\n", fp);
-    fputs("    if (c == '\\0')\n", fp);
-    fputs("        return 0;\n", fp);
-    fputs("    for (i = 0; i < seven_seg_font_count; i++) {\n", fp);
-    fputs("        if (seven_seg_font[i].symbol == c) {\n", fp);
-    fputs("            *mask = seven_seg_font[i].mask;\n", fp);
-    fputs("            return 1;\n", fp);
-    fputs("        }\n", fp);
-    fputs("    }\n", fp);
-    fputs("    return 0;\n", fp);
-    fputs("}\n\n", fp);
-    fputs("uint8_t seven_seg_font_mask(char c)\n", fp);
-    fputs("{\n", fp);
-    fputs("    uint8_t mask = 0;\n", fp);
-    fputs("    char other = 0;\n\n", fp);
-    fputs("    if (seven_seg_font_find(c, &mask))\n", fp);
-    fputs("        return mask;\n", fp);
-    fputs("    if (c >= 'a' && c <= 'z')\n", fp);
-    fputs("        other = (char)(c - 'a' + 'A');\n", fp);
-    fputs("    else if (c >= 'A' && c <= 'Z')\n", fp);
-    fputs("        other = (char)(c - 'A' + 'a');\n", fp);
-    fputs("    if (other != 0 && seven_seg_font_find(other, &mask))\n", fp);
-    fputs("        return mask;\n", fp);
-    fputs("    return 0;\n", fp);
-    fputs("}\n\n", fp);
-    fputs("uint8_t seven_seg_font_max7219(char c)\n", fp);
-    fputs("{\n", fp);
-    fputs("    uint8_t mask = seven_seg_font_mask(c);\n", fp);
-    fputs("    uint8_t out = 0;\n\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_A) != 0)\n", fp);
-    fputs("        out |= 0x40;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_B) != 0)\n", fp);
-    fputs("        out |= 0x20;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_C) != 0)\n", fp);
-    fputs("        out |= 0x10;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_D) != 0)\n", fp);
-    fputs("        out |= 0x08;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_E) != 0)\n", fp);
-    fputs("        out |= 0x04;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_F) != 0)\n", fp);
-    fputs("        out |= 0x02;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_G) != 0)\n", fp);
-    fputs("        out |= 0x01;\n", fp);
-    fputs("    if ((mask & SEVEN_SEG_DP) != 0)\n", fp);
-    fputs("        out |= 0x80;\n", fp);
-    fputs("    return out;\n", fp);
-    fputs("}\n", fp);
-    bad = ferror(fp);
-    if (fclose(fp) != 0 || bad) {
-        remove(tmp);
+    if (emit_atomic(table, emit_table, next, kept) != 0)
         return -1;
-    }
-    if (rename(tmp, font_file) != 0) {
-        remove(tmp);
-        return -1;
-    }
     memcpy(rows, next, (size_t)kept * sizeof rows[0]);
     row_count = kept;
     focus_row = -1;

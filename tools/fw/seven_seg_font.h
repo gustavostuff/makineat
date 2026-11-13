@@ -18,7 +18,7 @@ typedef struct SevenSegGlyph {
     uint8_t mask;
 } SevenSegGlyph;
 
-/* Glyph list saved by tools/seven-seg-font. */
+/* Glyph list in seven_seg_font_table.h, written from seven_seg_font.json. */
 extern const SevenSegGlyph seven_seg_font[];
 extern const int seven_seg_font_count;
 
