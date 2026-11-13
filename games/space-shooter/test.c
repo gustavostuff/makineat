@@ -27,7 +27,7 @@ static int ship_x(void)
     int x;
 
     for (x = 0; x < 16; x++) {
-        if (pixel_get((uint8_t)x, 14))
+        if (pixel_get((uint8_t)x, 15))
             return x;
     }
     return -1;
@@ -51,11 +51,11 @@ static void test_ship(void)
 
     input_reset();
     game_reset();
-    expect(pixel_get(7, 13) && !pixel_get(6, 13) && !pixel_get(8, 13),
+    expect(pixel_get(7, 14) && !pixel_get(6, 14) && !pixel_get(8, 14),
            "the nose is the center LED of the top row");
-    expect(pixel_get(6, 14) && pixel_get(7, 14) && pixel_get(8, 14),
+    expect(pixel_get(6, 15) && pixel_get(7, 15) && pixel_get(8, 15),
            "the body row is full");
-    expect(!pixel_get(6, 15) && !pixel_get(7, 15) && !pixel_get(8, 15),
+    expect(!pixel_get(6, 13) && !pixel_get(7, 13) && !pixel_get(8, 13),
            "the ship is two rows tall");
     expect(!pixel_get(15, 15), "the corner past the ship stays dark");
     expect(ship_x() == 6, "the ship starts near the middle of the bottom");
@@ -73,23 +73,19 @@ static void test_ship(void)
     game_reset();
     feed(1, 0, 0, 1, 0);
     feed(1, 0, 0, 1, 0);
-    expect(pixel_get(8, 12) && pixel_get(7, 13) && pixel_get(9, 13) && !pixel_get(8, 14),
+    expect(pixel_get(8, 13) && pixel_get(7, 14) && pixel_get(9, 14) && !pixel_get(8, 15),
            "a diagonal steps both axes");
 
     input_reset();
     game_reset();
     feed(1, 0, 0, 0, 0);
     feed(1, 0, 0, 0, 0);
-    expect(pixel_get(7, 12) && pixel_get(6, 13) && !pixel_get(6, 14),
-           "the ship can leave its starting row");
-    feed(0, 1, 0, 0, 0);
-    feed(0, 1, 0, 0, 0);
     expect(pixel_get(7, 13) && pixel_get(6, 14) && !pixel_get(6, 15),
-           "the ship can return to its starting row");
+           "the ship can leave the bottom row");
     feed(0, 1, 0, 0, 0);
     feed(0, 1, 0, 0, 0);
-    expect(pixel_get(7, 14) && pixel_get(6, 15) && pixel_get(8, 15),
-           "the ship can sit on the bottom row");
+    expect(pixel_get(7, 14) && pixel_get(6, 15),
+           "the ship can return to the bottom row");
     feed(0, 1, 0, 0, 0);
     feed(0, 1, 0, 0, 0);
     expect(pixel_get(7, 14) && pixel_get(6, 15), "the ship stops at the bottom edge");
@@ -118,12 +114,12 @@ static void test_shot(void)
     feed(0, 0, 0, 0, 1);
     expect(sound_log_count() == 1 && sound_log_at(0) == 1,
            "a spawned bullet sends the laser");
-    expect(pixel_get(7, 12), "the bullet leaves the nose");
-    expect(!pixel_get(7, 11), "the bullet is one LED on the fire tick");
+    expect(pixel_get(7, 13), "the bullet leaves the nose");
+    expect(!pixel_get(7, 12), "the bullet is one LED on the fire tick");
     feed(0, 0, 0, 0, 0);
-    expect(pixel_get(7, 12) && !pixel_get(7, 11), "the bullet waits one tick");
+    expect(pixel_get(7, 13) && !pixel_get(7, 12), "the bullet waits one tick");
     feed(0, 0, 0, 0, 0);
-    expect(pixel_get(7, 11) && !pixel_get(7, 12), "the second tick climbs one LED");
+    expect(pixel_get(7, 12) && !pixel_get(7, 13), "the second tick climbs one LED");
 
     input_reset();
     game_reset();
@@ -131,12 +127,12 @@ static void test_shot(void)
     rock_add(7, 8, 2, 4, 0);
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
-    expect(pixel_get(7, 12) && pixel_get(7, 8), "the shot and the rock are both on screen");
-    for (i = 0; i < 6; i++)
+    expect(pixel_get(7, 13) && pixel_get(7, 8), "the shot and the rock are both on screen");
+    for (i = 0; i < 8; i++)
         feed(0, 0, 0, 0, 0);
     expect(!pixel_get(7, 8) && !pixel_get(8, 9) && !pixel_get(7, 9),
            "the rock is gone after the hit");
-    expect(pixel_get(7, 13), "the ship is still there after a shot");
+    expect(pixel_get(7, 14), "the ship is still there after a shot");
     expect(score_get() == 1, "the score shows one point");
     expect(sound_log_count() == 2 && sound_log_at(0) == 1 && sound_log_at(1) == 2,
            "the shot sends the laser and the hit sends the explosion");
@@ -268,7 +264,7 @@ static void test_crash(void)
     expect(frown(), "the end picture waits for the button");
     feed(0, 0, 0, 0, 1);
     feed(0, 0, 0, 0, 1);
-    expect(pixel_get(7, 13) && !pixel_get(6, 13) && !frown(),
+    expect(pixel_get(7, 14) && !pixel_get(6, 14) && !frown(),
            "the button starts the next round");
 
     input_reset();
@@ -381,7 +377,7 @@ static void test_rock_line_score(void)
         feed(0, 0, 0, 0, 0);
     expect(rock_score_get() == 1, "a rock past row 13 scores for the rocks");
     expect(status_get_digit(7) == 1, "the rocks score shows in the right digit");
-    expect(pixel_get(7, 13), "the ship survives a rock that only crossed the line");
+    expect(pixel_get(7, 14), "the ship survives a rock that only crossed the line");
 }
 
 static void test_bands(void)

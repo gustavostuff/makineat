@@ -46,7 +46,7 @@ void player_reset(void)
 {
     if (ship_id >= 0)
         entity_kill(ship_id);
-    ship_id = entity_spawn(&ship_shape, 7, 13, 0, 0, STEP_EVERY, ENTITY_INACTIVE);
+    ship_id = entity_spawn(&ship_shape, 7, 14, 0, 0, STEP_EVERY, ENTITY_INACTIVE);
 }
 
 void player_tick(const Input *in)
